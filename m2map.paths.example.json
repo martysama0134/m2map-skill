@@ -1,0 +1,21 @@
+{
+  "$comment": [
+    "Copy to m2map.paths.json and edit for your machine. m2map.paths.json is gitignored.",
+    "Resolve these in code with m2map.config.paths() -- never hardcode a host path.",
+    "NOTE: 'd:/ymir work/...' strings inside Metin2 data files (textureset entries,",
+    "buildingfile/treefile keys, msenv textures) are literal client asset references.",
+    "They are part of the file format. Do not rewrite them. 'ymir_work' below is the",
+    "separate question of where those assets are extracted on this machine."
+  ],
+
+  "corpus": "D:/maps",
+  "client_pack": "C:/path/to/client/pack",
+  "ymir_work": "D:/ymir work",
+
+  "worldeditor": "C:/path/to/WorldEditorRemix",
+  "mapforge": "C:/path/to/M2-MapForge",
+  "opengranny": "C:/path/to/OpenGranny",
+  "pygr2": null,
+
+  "output_dir": "D:/maps"
+}

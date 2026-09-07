@@ -45,6 +45,10 @@ run "codex plugin manifest"    exists plugins/m2map/.codex-plugin/plugin.json
 
 run "agent variants synced"    python tools/sync.py --check
 
+# --- no machine-specific paths in anything we ship ------------------------
+
+run "no host paths leaked"     python tools/scrub_paths.py --check
+
 # --- python unit tests ----------------------------------------------------
 
 if command -v python >/dev/null 2>&1; then

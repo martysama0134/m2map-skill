@@ -3,6 +3,13 @@
 /CLAUDE.md
 /.claude/
 
+# --- machine-specific paths (this repo is published) ---
+# Committed files refer to host locations by placeholder (<CLIENT_PACK>,
+# <CORPUS>, ...). The real values live here and are never committed.
+# tools/scrub_paths.py --check enforces it.
+/CLAUDE.local.md
+/m2map.paths.json
+
 # --- python ---
 __pycache__/
 *.py[cod]
