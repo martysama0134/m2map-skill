@@ -1,0 +1,8715 @@
+{
+ "schema_version": 1,
+ "generated_from": {
+  "map_corpus": "<CORPUS> (142 map folders)",
+  "per_map_inputs": [
+   "<map>/setting.txt",
+   "<map>/mapproperty.txt",
+   "<map>/<XXXYYY>/ sector directory listing",
+   "<map>/<XXXYYY>/areadata.txt"
+  ],
+  "textureset_dir": "<CLIENT_PACK>/textureset/textureset (99 .txt files)",
+  "environment_dir": "<CLIENT_PACK>/yw_etc/ymir work/environment (104 .msenv files)",
+  "property_db": "<CLIENT_PACK>/property/property (2113 files, 2112 CRCs indexed)",
+  "format_spec": "<REPO>/skills/m2map/reference/mapformat",
+  "generated_at": "2026-09-07"
+ },
+ "corpus_summary": {
+  "map_count": 142,
+  "sector_dir_total": 1343,
+  "areadata_object_total": 48851,
+  "areadata_crc_resolution": "48851 of 48851 records (100%) resolved against the 2112-entry property CRC index",
+  "maps_with_own_terrain": 111,
+  "maps_that_are_proxies": 26,
+  "maps_with_partial_terrain": 5,
+  "era_note": "Zero beta-era maps in this corpus. Every sector directory that exists carries the full modern 10-file set (areaambiencedata, areadata, areaproperty, attr.atr, height.raw, minimap.dds, shadowmap.dds, shadowmap.raw, tile.raw, water.wtr). The mapformat README claim that metin2_map_c1 is a 5-file beta map is FALSE here: c1/000000 holds all ten files. Only three sector-level exceptions exist - metin2_map_boss_awaken_skipia and metin2_map_boss_crack_skipia hold one sector each containing only attr.atr, and metin2_map_smhdungeon_02 sectors lack minimap.dds. Every map is therefore tagged era=modern.",
+  "cell_scale": "200 in all 139 maps that have a setting.txt",
+  "height_scale": "0.500000 in all 139 maps that have a setting.txt",
+  "map_type": "\"Outdoor\" in all 142 mapproperty.txt files - not one Indoor map in the corpus",
+  "view_radius": "128 in 116 maps, 256 in 16, 4096 in 4 (metin2_map_e1 and its three proxies), 512 in 2, 384 in 1",
+  "terrain_source_note": "31 maps carry ParentMapName. 26 of those have no sector directories at all and are pure client-side proxies that reuse the parents terrain; 5 (smhgate_a1/b1/c1, smhgate_devils, boss_*_skipia) ship a partial sector subset."
+ },
+ "archetypes": {
+  "field_empire": {
+   "label": "Empire temperate field and capitals (B-family terrain)",
+   "maps": [
+    "map_b_fielddungeon",
+    "metin2_guild_war2",
+    "metin2_guild_war4",
+    "metin2_map_a1",
+    "metin2_map_a3",
+    "metin2_map_b1",
+    "metin2_map_b3",
+    "metin2_map_battlefied",
+    "metin2_map_c1",
+    "metin2_map_c3",
+    "metin2_map_guild_02",
+    "metin2_map_guild_03",
+    "metin2_map_milgyo",
+    "metin2_map_smhgate_a1",
+    "metin2_map_smhgate_b1",
+    "metin2_map_smhgate_c1",
+    "metin2_map_sungzi",
+    "metin2_map_wedding_01"
+   ],
+   "member_count": 18,
+   "texturesets": [
+    "metin2_A1.txt",
+    "metin2_A3.txt",
+    "metin2_B1.txt",
+    "metin2_B3.txt",
+    "metin2_B_fielddungeon.txt",
+    "metin2_C1.txt",
+    "metin2_C3.txt",
+    "metin2_battlefield.txt",
+    "metin2_guild_war2.txt",
+    "metin2_guild_war4.txt",
+    "metin2_map_wedding_01.txt",
+    "metin2_milgyo.txt"
+   ],
+   "environments": [
+    "A1.msenv",
+    "A3.msenv",
+    "B1.msenv",
+    "B3.msenv",
+    "C1.msenv",
+    "C3.msenv",
+    "battlefield.msenv",
+    "map_b_fielddungeo.msenv",
+    "milgyo.msenv",
+    "sungzi.msenv",
+    "war2.msenv",
+    "war4.msenv"
+   ],
+   "reference_map": "metin2_map_a1",
+   "typical_size": [
+    2,
+    2
+   ],
+   "typical_size_basis": "modal MapSize over the 15 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    4,
+    5
+   ],
+   "size_range": [
+    [
+     1,
+     1
+    ],
+    [
+     4,
+     5
+    ]
+   ],
+   "size_histogram": {
+    "1x1": 1,
+    "2x2": 6,
+    "3x3": 1,
+    "4x4": 4,
+    "4x5": 6
+   },
+   "total_objects": 8927,
+   "dominant_object_families": [
+    "zone/b/obj=4174",
+    "tree=3652",
+    "zone/b/building=742",
+    "zone/c/building=131",
+    "zone/a/building=86",
+    "effect/background=46",
+    "zone/°ø¿ë=38",
+    "effect/etc/fall=23"
+   ],
+   "evidence": "All members draw terrain exclusively from d:/ymir work/terrainmaps/B/**. metin2_a1.txt, metin2_b1.txt, metin2_c1.txt, metin2_b_fielddungeon.txt and metin2_map_t1.txt are BYTE-IDENTICAL 17-texture palettes (md5-verified); metin2_a3/b3/c3/wedding_01 carry the same 11-texture subset list. Trees are exclusively the b1_/b3_ deciduous SpeedTree set - all 618 tree records in a1 are b-family (561 b1_* + 57 b3_*), zero n1_/n2_. Empire identity is carried ONLY by the building family, never by terrain or fog: zone/a/building in a1 (54 objs), zone/b/building in b1 (282), zone/c/building in c1 (71) - and a1.msenv is byte-identical to c1.msenv, so terrain plus environment alone cannot separate the three capitals. smhgate_a1/b1/c1 are 3-sector cut-outs of a1/b1/c1 with the parents setting.txt copied verbatim."
+  },
+  "field_valley": {
+   "label": "Green valley / three-way field (A-family terrain)",
+   "maps": [
+    "map_a2",
+    "map_n_threeway",
+    "metin2_map_guild_01",
+    "metin2_map_smhgate_threeway"
+   ],
+   "member_count": 4,
+   "texturesets": [
+    "metin2_A2.txt"
+   ],
+   "environments": [
+    "A2.msenv"
+   ],
+   "reference_map": "map_a2",
+   "typical_size": [
+    6,
+    6
+   ],
+   "typical_size_basis": "modal MapSize over the 3 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    6,
+    6
+   ],
+   "size_range": [
+    [
+     2,
+     2
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "size_histogram": {
+    "2x2": 1,
+    "6x6": 3
+   },
+   "total_objects": 2068,
+   "dominant_object_families": [
+    "tree=1072",
+    "zone/b/obj=969",
+    "zone/a/building=18",
+    "effect/background=5",
+    "zone/dungeon/devil_tower=2",
+    "effect/etc/fall=2"
+   ],
+   "evidence": "Exclusive use of terrainmaps/A/** (a/beach, a/field, a/grass, a/stone, a/tile - the 10 textures of metin2_a2.txt). Jaccard against the field_empire B-palette is 0.00, a hard split on the primary evidence axis. All four maps declare Environment A2.msenv (fog 0.36 0.43 0.39, unique in the corpus). map_a2 and map_n_threeway are byte-identical map CONTENT (md5 over every sector file) - threeway is a verbatim copy of A2 relocated by BasePosition."
+  },
+  "desert": {
+   "label": "Desert and desert frontier",
+   "maps": [
+    "metin2_map_golden_land",
+    "metin2_map_golden_land_stage",
+    "metin2_map_n_desert_01",
+    "metin2_map_nusluck01",
+    "metin2_map_smhgate_desert",
+    "metin2_map_sungzi_desert_01",
+    "metin2_map_sungzi_desert_hill_01",
+    "metin2_map_sungzi_desert_hill_02",
+    "metin2_map_sungzi_desert_hill_03",
+    "metin2_map_wl_01"
+   ],
+   "member_count": 10,
+   "texturesets": [
+    "metin2_map_golden_land.txt",
+    "metin2_n_desert1.txt",
+    "metin2_wl_01.txt"
+   ],
+   "environments": [
+    "metin2_map_golden_land.msenv",
+    "metin2_map_golden_land_stage.msenv",
+    "milgyo.msenv"
+   ],
+   "reference_map": "metin2_map_n_desert_01",
+   "typical_size": [
+    2,
+    4
+   ],
+   "typical_size_basis": "modal MapSize over the 8 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    6,
+    6
+   ],
+   "size_range": [
+    [
+     2,
+     1
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "size_histogram": {
+    "2x1": 1,
+    "2x2": 1,
+    "2x4": 3,
+    "3x1": 1,
+    "4x4": 2,
+    "6x6": 2
+   },
+   "total_objects": 4113,
+   "dominant_object_families": [
+    "tree=2048",
+    "zone/b/obj=1040",
+    "zone/n/obj/map_n_desert_01=641",
+    "zone/golden_land=114",
+    "zone/n/desert=101",
+    "zone/nusluck=87",
+    "effect/background=70",
+    "zone/a/building=8"
+   ],
+   "evidence": "n/desert/{field,grass,sand,stone} terrain family; metin2_n_desert1.txt and metin2_map_golden_land.txt hold identical 12-texture lists. Nine of the ten members declare Environment milgyo.msenv (fog 0.90 0.80 0.67, cloud clouds_zone01) - the second largest environment-sharing group in the corpus. Flora is the n2_ arid SpeedTree set - all 1149 tree records in n_desert_01 are n2_ arid species (n2_aloevera_rt_flowers 276, n2_cinnamonfern 184, n2_joshuatree 81). Props come from zone/n/desert and zone/n/obj/map_n_desert_01. wl_01 + nusluck01 additionally share the metin2_wl_01.txt palette and are the vegetated desert-fringe variant (wl_01: 361 of 451 tree records are n2_, 80%). sungzi_desert_hill_01/02/03 are byte-identical to each other."
+  },
+  "snow_field": {
+   "label": "Snow field / snow mountain",
+   "maps": [
+    "map_n_snowm_01",
+    "metin2_map_smhgate_snow",
+    "metin2_map_sungzi_snow",
+    "metin2_map_sungzi_snow_pass01",
+    "metin2_map_sungzi_snow_pass02",
+    "metin2_map_sungzi_snow_pass03"
+   ],
+   "member_count": 6,
+   "texturesets": [
+    "metin2_N_snowm.txt"
+   ],
+   "environments": [
+    "N-snowm01.msenv"
+   ],
+   "reference_map": "map_n_snowm_01",
+   "typical_size": [
+    2,
+    4
+   ],
+   "typical_size_basis": "modal MapSize over the 5 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    6,
+    6
+   ],
+   "size_range": [
+    [
+     2,
+     4
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "size_histogram": {
+    "2x4": 3,
+    "3x3": 1,
+    "6x6": 2
+   },
+   "total_objects": 1681,
+   "dominant_object_families": [
+    "tree=1128",
+    "zone/n/obj/snow.m=532",
+    "effect/background=11",
+    "zone/b/obj=5",
+    "zone/b/building=4",
+    "zone/n/icemount=1"
+   ],
+   "evidence": "Single terrain family n/snow.m; all six declare TextureSet metin2_N_snowm.txt AND Environment N-snowm01.msenv - a perfect 6:1:1 map/textureset/environment group, the cleanest cluster in the corpus. Flora is exclusively the n1_ winter set - all 853 tree records in map_n_snowm_01 are n1_ (n1_coloradobluespruce_rt_01/02/03 = 337, n1_beech_rt_winter/02/03 = 331). Props from zone/n/obj/snow.m (356 in the reference map). sungzi_snow_pass01/02/03 are byte-identical to each other."
+  },
+  "flame_field": {
+   "label": "Flame land / volcanic field",
+   "maps": [
+    "metin2_map_labyrinth",
+    "metin2_map_n_flame_01",
+    "metin2_map_smhgate_flame",
+    "metin2_map_sungzi_flame_hill_01",
+    "metin2_map_sungzi_flame_hill_02",
+    "metin2_map_sungzi_flame_hill_03"
+   ],
+   "member_count": 6,
+   "texturesets": [
+    "metin2_boss_entrance.txt",
+    "metin2_n_flame_01.txt"
+   ],
+   "environments": [
+    "map_boss_entrance.msenv",
+    "map_n_flame_01.msenv"
+   ],
+   "reference_map": "metin2_map_n_flame_01",
+   "typical_size": [
+    2,
+    4
+   ],
+   "typical_size_basis": "modal MapSize over the 5 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    6,
+    6
+   ],
+   "size_range": [
+    [
+     1,
+     1
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "size_histogram": {
+    "1x1": 1,
+    "2x4": 3,
+    "6x6": 2
+   },
+   "total_objects": 496,
+   "dominant_object_families": [
+    "tree=305",
+    "effect/background=62",
+    "zone/n/obj/map_n_flame_01=48",
+    "zone/b/obj=33",
+    "zone/dungeon/flame_dungeon=31",
+    "zone/n/flame=7",
+    "zone/dungeon/flame_dragon=6",
+    "zone/dungeon/boss_dungeon_awake=4"
+   ],
+   "evidence": "Single terrain family 'n/flame area'; metin2_n_flame_01.txt (7 textures) and metin2_boss_entrance.txt (8) have Jaccard 0.88. Every member renders with fog 0.52 0.21 0.11 over cloud clouds_zone02 (map_n_flame_01.msenv and map_boss_entrance.msenv carry identical Fog blocks). Vegetation is only the dead-vine pair b2_ivyspy_rt_winter/_winter2 (286 of 286 tree records in n_flame_01). Props from zone/n/obj/map_n_flame_01 and zone/dungeon/flame_dungeon. sungzi_flame_hill_01/02/03 are byte-identical to each other."
+  },
+  "darkforest_coast": {
+   "label": "Dark-forest coast and Devils Dragon Island continent",
+   "maps": [
+    "metin2_map_bayblacksand",
+    "metin2_map_capedragonhead",
+    "metin2_map_dawnmistwood",
+    "metin2_map_e1",
+    "metin2_map_e1_01",
+    "metin2_map_e1_02",
+    "metin2_map_e1_03",
+    "metin2_map_mt_thunder"
+   ],
+   "member_count": 8,
+   "texturesets": [
+    "metin2_BayBlackSand.txt",
+    "metin2_CapeDragonHead.txt",
+    "metin2_DawnMistWood.txt",
+    "metin2_map_e1.txt",
+    "metin2_mtthunder.txt"
+   ],
+   "environments": [
+    "CapeDragonHead.msenv",
+    "DawnMistWood.msenv",
+    "bayblacksand.msenv",
+    "e1.msenv",
+    "mtthunder.msenv"
+   ],
+   "reference_map": "metin2_map_capedragonhead",
+   "typical_size": [
+    6,
+    6
+   ],
+   "typical_size_basis": "modal MapSize over the 5 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    6,
+    6
+   ],
+   "size_range": [
+    [
+     2,
+     2
+    ],
+    [
+     7,
+     4
+    ]
+   ],
+   "size_histogram": {
+    "2x2": 4,
+    "3x6": 1,
+    "4x6": 1,
+    "6x6": 1,
+    "7x4": 1
+   },
+   "total_objects": 5875,
+   "dominant_object_families": [
+    "tree=2010",
+    "zone/b/obj=1765",
+    "zone/devils_dragon_island=861",
+    "zone/devils_dragon_island/camp=684",
+    "zone/devils_dragon_island/bone=242",
+    "zone/n/obj/map_n_desert_01=140",
+    "zone/n/desert=61",
+    "effect/background=46"
+   ],
+   "evidence": "Chained terrain palettes: metin2_mtthunder.txt is a subset of metin2_capedragonhead.txt (which is Jaccard 0.58 to metin2_map_e1.txt), metin2_bayblacksand.txt = bayblacksand + capedragonhead, metin2_dawnmistwood.txt = bayblacksand + dawnmistwood. The decisive shared evidence is the object palette: zone/devils_dragon_island/** is dominant in every member with terrain (bayblacksand 531, capedragonhead 440, mt_thunder 407, dawnmistwood 358, e1 51). It does occur outside the cluster, but only as scenery filler at 2-36 records per map - the largest such use is dawnmist_dungeon_01 (36), which is this continents own dungeon. e1_01/02/03 are ParentMapName proxies of metin2_map_e1."
+  },
+  "ice_valley": {
+   "label": "Snake valley / white-dragon ice valley",
+   "maps": [
+    "metin2_map_icecrystalcave",
+    "metin2_map_snakevalley",
+    "metin2_map_whitdragonvalley"
+   ],
+   "member_count": 3,
+   "texturesets": [
+    "metin2_map_snakevalley.txt",
+    "metin2_map_whitdragonvalley.txt"
+   ],
+   "environments": [
+    "metin2_map_icecrystalcave.msenv",
+    "metin2_map_whitdragonvalley.msenv",
+    "snakevalley.msenv"
+   ],
+   "reference_map": "metin2_map_snakevalley",
+   "typical_size": [
+    6,
+    3
+   ],
+   "typical_size_basis": "modal MapSize over the 3 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    6,
+    3
+   ],
+   "size_range": [
+    [
+     3,
+     3
+    ],
+    [
+     6,
+     3
+    ]
+   ],
+   "size_histogram": {
+    "3x3": 1,
+    "5x4": 1,
+    "6x3": 1
+   },
+   "total_objects": 1549,
+   "dominant_object_families": [
+    "tree=571",
+    "zone/n/obj/snow.m=343",
+    "zone/snakevalley=332",
+    "zone/b/obj=237",
+    "zone/n/icemount/icebon=27",
+    "zone/eastplain=19",
+    "zone/ydragon=9",
+    "effect/background=5"
+   ],
+   "evidence": "metin2_map_snakevalley.txt and metin2_map_whitdragonvalley.txt have Jaccard 0.48 and both mix capedragonhead + n/snow.m + snakevalley terrain; icecrystalcave declares metin2_map_whitdragonvalley.txt outright. zone/snakevalley props appear in snakevalley (329) and icecrystalcave (3). n/snow.m props plus n1_ winter trees dominate whitdragonvalley (177 props / 146 trees) and icecrystalcave (166 / 273), which is what separates this cluster from darkforest_coast despite the shared capedragonhead textures."
+  },
+  "eastplain": {
+   "label": "Eastplain and empire castle",
+   "maps": [
+    "metin2_map_eastplain_01",
+    "metin2_map_eastplain_02",
+    "metin2_map_eastplain_03",
+    "metin2_map_empirecastle"
+   ],
+   "member_count": 4,
+   "texturesets": [
+    "metin2_eastplain.txt",
+    "metin2_map_empirecastle.txt"
+   ],
+   "environments": [
+    "Eastplain_01.msenv",
+    "Eastplain_02.msenv",
+    "Eastplain_03.msenv",
+    "empirecastle.msenv"
+   ],
+   "reference_map": "metin2_map_eastplain_01",
+   "typical_size": [
+    4,
+    5
+   ],
+   "typical_size_basis": "modal MapSize over the 4 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    4,
+    5
+   ],
+   "size_range": [
+    [
+     2,
+     2
+    ],
+    [
+     4,
+     5
+    ]
+   ],
+   "size_histogram": {
+    "2x2": 1,
+    "3x6": 1,
+    "4x2": 1,
+    "4x5": 1
+   },
+   "total_objects": 1507,
+   "dominant_object_families": [
+    "zone/eastplain=932",
+    "tree=192",
+    "zone/dungeon/dawnmistwood_dungeon=127",
+    "zone/eastplain/obj=108",
+    "zone/b/obj=53",
+    "zone/ghost/obj=41",
+    "zone/eastplain/building=32",
+    "effect/background=8"
+   ],
+   "evidence": "All four use the zone/eastplain art family and nothing else in the corpus does (zone/eastplain** record totals: eastplain_01 397, _02 328, _03 248, empirecastle 99 including zone/eastplain/building 22). eastplain_01/02/03 share TextureSet metin2_eastplain.txt; empirecastles palette overlaps it at Jaccard 0.30 through the shared empirewar/tille folder. eastplain_01.msenv and eastplain_03.msenv are byte-identical and empirecastle.msenv repeats their Fog (0.24 0.35 0.36). Jaccard against the empirewar texturesets is below 0.25, which is why eastplain and empire_war are kept apart."
+  },
+  "empire_war": {
+   "label": "Empire siege-war arenas (three seasonal skins)",
+   "maps": [
+    "metin2_map_battlearena01",
+    "metin2_map_battlearena02",
+    "metin2_map_battlearena03",
+    "metin2_map_empirewar01",
+    "metin2_map_empirewar02",
+    "metin2_map_empirewar03"
+   ],
+   "member_count": 6,
+   "texturesets": [
+    "metin2_map_empirewar01.txt",
+    "metin2_map_empirewar02.txt",
+    "metin2_map_empirewar03.txt"
+   ],
+   "environments": [
+    "A1.msenv",
+    "desert_02.msenv",
+    "snowm02.msenv"
+   ],
+   "reference_map": "metin2_map_empirewar02",
+   "typical_size": [
+    2,
+    2
+   ],
+   "typical_size_basis": "modal MapSize over the 3 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    2,
+    2
+   ],
+   "size_range": [
+    [
+     2,
+     2
+    ],
+    [
+     2,
+     2
+    ]
+   ],
+   "size_histogram": {
+    "2x2": 6
+   },
+   "total_objects": 575,
+   "dominant_object_families": [
+    "zone/b/obj=153",
+    "zone/n/obj/snow.m=148",
+    "zone/n/desert=147",
+    "tree=113",
+    "effect/background=9",
+    "zone/b/building=5"
+   ],
+   "evidence": "Three 2x2 siege maps that are one layout in three seasonal skins: metin2_map_empirewar01/02/03.txt use the mutually exclusive terrain folders empirewar/snow, empirewar/summer and empirewar/desert with matching environments snowm02.msenv / A1.msenv / desert_02.msenv. Object palettes follow the skin exactly (zone/n/obj/snow.m 148 | zone/b/obj 139 | zone/n/desert 147). battlearena01/02/03 are terrain-less ParentMapName proxies of empirewar01/02/03 with the parents setting.txt copied."
+  },
+  "guild_village": {
+   "label": "Guild village and small guild-war grounds",
+   "maps": [
+    "gm_guild_build",
+    "metin2_guild_village",
+    "metin2_guild_village_01",
+    "metin2_guild_village_02",
+    "metin2_guild_village_03",
+    "metin2_guild_war1",
+    "metin2_guild_war3"
+   ],
+   "member_count": 7,
+   "texturesets": [
+    "gm_guild_build.txt",
+    "metin2_guild_village.txt",
+    "metin2_guild_war1.txt",
+    "metin2_guild_war3.txt"
+   ],
+   "environments": [
+    "gm_guild_build.msenv",
+    "guild_village.msenv",
+    "metin2_guild_war1.msenv",
+    "metin2_guild_war3.msenv"
+   ],
+   "reference_map": "metin2_guild_village",
+   "typical_size": [
+    1,
+    1
+   ],
+   "typical_size_basis": "modal MapSize over the 4 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    2,
+    2
+   ],
+   "size_range": [
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     2
+    ]
+   ],
+   "size_histogram": {
+    "1x1": 3,
+    "2x2": 1
+   },
+   "total_objects": 541,
+   "dominant_object_families": [
+    "zone/b/obj=362",
+    "tree=140",
+    "zone/b/building=29",
+    "zone/°ø¿ë=4",
+    "effect/background=2",
+    "zone/a/building=1",
+    "zone/c/building=1",
+    "effect/etc/fall=1"
+   ],
+   "evidence": "The guild_village terrain folder is used by exactly these maps: metin2_guild_village.txt, metin2_guild_war1.txt and metin2_guild_war3.txt (the last two byte-identical), plus gm_guild_build.txt at Jaccard 0.71. metin2_guild_war1.msenv and metin2_guild_war3.msenv are byte-identical. guild_village_01/02/03 are mapproperty-only proxies (ParentMapName metin2_guild_village) with NO setting.txt at all. NOTE: guild_war2, guild_war4 and guild_01/02/03 carry 'guild' in the name but sit on plain field palettes with zero guild art, so they land in field_empire / field_valley - 'guild' is a server function, not a visual identity, and the filename-based guild cluster does not survive the evidence."
+  },
+  "arena_pvp": {
+   "label": "PvP arena, OX event and shop plaza",
+   "maps": [
+    "metin2_map_duel",
+    "metin2_map_guild_battle",
+    "metin2_map_guild_battle_base",
+    "metin2_map_oxevent",
+    "metin2_map_privateshop",
+    "metin2_map_pvp_arena"
+   ],
+   "member_count": 6,
+   "texturesets": [
+    "metin2_duel.txt",
+    "metin2_map_guild_battle.txt",
+    "metin2_map_oxevent.txt"
+   ],
+   "environments": [
+    "A1.msenv",
+    "a1.msenv",
+    "metin2_map_guild_battle_01.msenv"
+   ],
+   "reference_map": "metin2_map_oxevent",
+   "typical_size": [
+    2,
+    2
+   ],
+   "typical_size_basis": "modal MapSize over the 6 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    2,
+    2
+   ],
+   "size_range": [
+    [
+     1,
+     1
+    ],
+    [
+     2,
+     2
+    ]
+   ],
+   "size_histogram": {
+    "1x1": 3,
+    "2x2": 3
+   },
+   "total_objects": 1226,
+   "dominant_object_families": [
+    "zone/b/obj=530",
+    "zone/b/building=180",
+    "zone/duel=179",
+    "tree=138",
+    "zone/a/building=56",
+    "zone/guild_battle=56",
+    "effect/background=49",
+    "zone/eastplain/obj=14"
+   ],
+   "evidence": "Small flat plazas built from the zone/duel prop set (duel 72, pvp_arena 72, oxevent 35) over zone/b/building plazas (oxevent 100, privateshop 80, guild_battle_base 34). duel and pvp_arena both declare TextureSet metin2_duel.txt + Environment A1.msenv and hold the identical 157-object palette; oxevent and privateshop both declare metin2_map_oxevent.txt + a1.msenv. guild_battle and guild_battle_base share metin2_map_guild_battle.txt + metin2_map_guild_battle_01.msenv and the bespoke zone/guild_battle prop set. Highest object density in the corpus: 110-253 objects per sector on 1x1-2x2 grids, against a corpus median near 33."
+  },
+  "dungeon_block": {
+   "label": "Flat black-box block dungeon (interior)",
+   "maps": [
+    "metin2_map_anglar_dungeon_01",
+    "metin2_map_boss_awaken_skipia",
+    "metin2_map_boss_crack_skipia",
+    "metin2_map_deviltower1",
+    "metin2_map_maze_dungeon1",
+    "metin2_map_maze_dungeon2",
+    "metin2_map_maze_dungeon3",
+    "metin2_map_monkey_dungeon_11",
+    "metin2_map_monkey_dungeon_12",
+    "metin2_map_monkey_dungeon_13",
+    "metin2_map_monkeydungeon",
+    "metin2_map_monkeydungeon_02",
+    "metin2_map_monkeydungeon_03",
+    "metin2_map_mt_th_dungeon_01",
+    "metin2_map_skipia_dungeon_01",
+    "metin2_map_skipia_dungeon_02",
+    "metin2_map_skipia_dungeon_boss",
+    "metin2_map_smhdungeon_01",
+    "metin2_map_smhdungeon_02",
+    "metin2_map_snake_temple_02",
+    "metin2_map_spiderdungeon",
+    "metin2_map_spiderdungeon_02",
+    "metin2_map_spiderdungeon_03"
+   ],
+   "member_count": 23,
+   "texturesets": [
+    "metin2_map_anglar_dungeon_01.txt",
+    "metin2_map_deviltower1.txt",
+    "metin2_map_smhtower_d.txt",
+    "metin2_map_spiderd.txt",
+    "metin2_mtthunder_dungeon.txt",
+    "metin2_n_saguidungeon.txt"
+   ],
+   "environments": [
+    "anglar_dungeon_01.msenv",
+    "dark.msenv",
+    "monkeydungeon_02.msenv",
+    "monkeydungeon_03.msenv",
+    "moonlight04.msenv",
+    "skipia_dungeon.msenv"
+   ],
+   "reference_map": "metin2_map_skipia_dungeon_02",
+   "typical_size": [
+    3,
+    3
+   ],
+   "typical_size_basis": "modal MapSize over the 18 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    6,
+    6
+   ],
+   "size_range": [
+    [
+     1,
+     1
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "size_histogram": {
+    "1x1": 1,
+    "2x2": 2,
+    "3x3": 14,
+    "4x4": 1,
+    "6x6": 5
+   },
+   "total_objects": 10232,
+   "dominant_object_families": [
+    "zone/dungeon/haven_dungeon=7602",
+    "effect/background=848",
+    "zone/dungeon/mt_thunder_dungeon=604",
+    "zone/dungeon/anglar_dungeon=389",
+    "zone/dungeon/monkey_dungeon=264",
+    "zone/dungeon/maze_dungeon=264",
+    "zone/b/obj=151",
+    "zone/dungeon/spider_dungeon=57"
+   ],
+   "evidence": "Interior box dungeons. The single-texture palettes metin2_map_anglar_dungeon_01.txt, metin2_map_deviltower1.txt and metin2_n_saguidungeon.txt are byte-identical (one dungeon/*.dds); metin2_map_spiderd.txt and metin2_map_smhtower_d.txt add only one or two more. Environments are black fog (dark.msenv, skipia_dungeon.msenv and monkeydungeon_02/03.msenv all Fog 0.00 0.00 0.00; moonlight04 0.12/0.12/0.16; anglar 0.05/0.00/0.10). Geometry is 77-100% DungeonBlock+Effect with zero Tree records. 18 of the 19 maps in the corpus that write TerrainVisible 0 are in this cluster (the 19th, whitedragoncave_01, is in dungeon_themed). Formal separation rule applied: textureset texture count <= 5 AND maximum fog channel <= 0.20."
+  },
+  "dungeon_themed": {
+   "label": "Themed dungeon / ruin (biome-skinned interior)",
+   "maps": [
+    "metin2_map_boss_awaken_dawnmist",
+    "metin2_map_boss_awaken_flame",
+    "metin2_map_boss_awaken_snow",
+    "metin2_map_boss_crack_dawnmist",
+    "metin2_map_boss_crack_flame",
+    "metin2_map_boss_crack_snow",
+    "metin2_map_dawnmist_dungeon_01",
+    "metin2_map_devilscatacomb",
+    "metin2_map_n_flame_dragon",
+    "metin2_map_n_flame_dungeon_01",
+    "metin2_map_n_snow_dungeon_01",
+    "metin2_map_otherworld_01",
+    "metin2_map_otherworld_02",
+    "metin2_map_otherworld_03",
+    "metin2_map_otherworld_04",
+    "metin2_map_secretdungeon_01",
+    "metin2_map_smhgate_dawnmist",
+    "metin2_map_smhgate_devils",
+    "metin2_map_whitedragoncave_01",
+    "metin2_map_whitedragoncave_02",
+    "metin2_map_whitedragoncave_boss"
+   ],
+   "member_count": 21,
+   "texturesets": [
+    "metin2_DawnMistWood_dungeon.txt",
+    "metin2_map_devilsCatacomb.txt",
+    "metin2_map_n_flame_dragon_01.txt",
+    "metin2_map_n_flame_dungeon_01.txt",
+    "metin2_map_n_snow_dungeon_01.txt",
+    "metin2_map_otherworld_01.txt",
+    "metin2_map_otherworld_02.txt",
+    "metin2_map_secretdungeon.txt",
+    "metin2_map_whitedragoncave_01.txt",
+    "metin2_map_whitedragoncave_02.txt",
+    "metin2_map_whitedragoncave_03.txt"
+   ],
+   "environments": [
+    "DawnMistWood_dungeon.msenv",
+    "map_devilsCatacomb.msenv",
+    "metin2_map_n_flame_dragon_01.msenv",
+    "metin2_map_n_flame_dungeon_01.msenv",
+    "metin2_map_n_snow_dungeon_01.msenv",
+    "metin2_map_otherworld_01.msenv",
+    "metin2_map_otherworld_02.msenv",
+    "metin2_map_secretdungeon.msenv",
+    "metin2_map_whitedragoncave_01.msenv",
+    "metin2_map_whitedragoncave_02.msenv",
+    "metin2_map_whitedragoncave_boss.msenv"
+   ],
+   "reference_map": "metin2_map_dawnmist_dungeon_01",
+   "typical_size": [
+    2,
+    2
+   ],
+   "typical_size_basis": "modal MapSize over the 12 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    3,
+    4
+   ],
+   "size_range": [
+    [
+     1,
+     1
+    ],
+    [
+     7,
+     7
+    ]
+   ],
+   "size_histogram": {
+    "1x1": 1,
+    "2x2": 6,
+    "3x3": 5,
+    "3x4": 4,
+    "4x3": 3,
+    "6x6": 1,
+    "7x7": 1
+   },
+   "total_objects": 4334,
+   "dominant_object_families": [
+    "zone/secretdungeon=751",
+    "zone/otherworld=619",
+    "zone/dungeon/dawnmistwood_dungeon=618",
+    "zone/b/obj=603",
+    "tree=313",
+    "zone/whitedragoncave/whitedragoncave_01=301",
+    "effect/background=288",
+    "zone/dungeon/flame_dungeon=236"
+   ],
+   "evidence": "Same interior construction as dungeon_block but skinned to a parent biome, so each fails that clusters rule: themed multi-texture palettes (devilscatacomb 12, dawnmistwood_dungeon 9, otherworld_01 8, n_flame_dungeon_01 6, secretdungeon 6, whitedragoncave 4) and coloured environments (flame 0.51/0.28/0.14, snow 0.10/0.78/0.94, otherworld 0.69/0.16/0.07, whitedragoncave 0.54/0.58/0.82, dawnmist 0.16/0.16/0.23). Blocks come from one dedicated zone/dungeon/<theme> or zone/<theme> family per map (dawnmistwood_dungeon 618, secretdungeon 542, otherworld 505, whitedragoncave_01 301, flame_dungeon 188, snow_dungeon 73). The eight boss_awaken_*/boss_crack_* plus smhgate_dawnmist and smhgate_devils members are ParentMapName proxies of the maps above. otherworld_02 is included despite sitting on the field_empire B-palette because 84% of its objects are zone/secretdungeon (209) and zone/otherworld (114) - object evidence overrides terrain evidence here."
+  },
+  "elemental": {
+   "label": "Elemental (Sungma) forest zones",
+   "maps": [
+    "metin2_map_elemental_01",
+    "metin2_map_elemental_02",
+    "metin2_map_elemental_03",
+    "metin2_map_elemental_04"
+   ],
+   "member_count": 4,
+   "texturesets": [
+    "metin2_map_elemental_01.txt",
+    "metin2_map_elemental_02.txt",
+    "metin2_map_elemental_03.txt"
+   ],
+   "environments": [
+    "metin2_map_elemental_01.msenv",
+    "metin2_map_elemental_02.msenv",
+    "metin2_map_elemental_03.msenv",
+    "metin2_map_elemental_04.msenv"
+   ],
+   "reference_map": "metin2_map_elemental_01",
+   "typical_size": [
+    5,
+    5
+   ],
+   "typical_size_basis": "modal MapSize over the 4 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    5,
+    5
+   ],
+   "size_range": [
+    [
+     1,
+     2
+    ],
+    [
+     5,
+     5
+    ]
+   ],
+   "size_histogram": {
+    "1x2": 1,
+    "5x5": 3
+   },
+   "total_objects": 965,
+   "dominant_object_families": [
+    "tree=840",
+    "zone/b/obj=78",
+    "effect/background=36",
+    "zone/n/obj/map_n_flame_01=7",
+    "zone/b/building=4"
+   ],
+   "evidence": "All four texturesets (metin2_map_elemental_01/02/03.txt, with elemental_04 declaring elemental_01s) contain the elemental_01 terrain folder plus the same b/tile + capedragonhead + guild_village fillers, and nothing else in the corpus touches the elemental_01 folder. metin2_map_elemental_01.txt is shared by elemental_01 and elemental_04. Object palettes are 76-94% Tree with essentially no buildings - the structural signature of this cluster. elemental_01 and elemental_02 also carry the undocumented Environment1 / EnvironmentRange1-2 split-environment keys."
+  },
+  "trent_forest": {
+   "label": "Trent night forest",
+   "maps": [
+    "metin2_map_trent",
+    "metin2_map_trent02"
+   ],
+   "member_count": 2,
+   "texturesets": [
+    "metin2_map_trent.txt"
+   ],
+   "environments": [
+    "trent.msenv",
+    "trent02.msenv"
+   ],
+   "reference_map": "metin2_map_trent02",
+   "typical_size": [
+    3,
+    3
+   ],
+   "typical_size_basis": "modal MapSize over the 2 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    3,
+    3
+   ],
+   "size_range": [
+    [
+     2,
+     2
+    ],
+    [
+     3,
+     3
+    ]
+   ],
+   "size_histogram": {
+    "2x2": 1,
+    "3x3": 1
+   },
+   "total_objects": 608,
+   "dominant_object_families": [
+    "tree=380",
+    "zone/b/obj=216",
+    "zone/n/milgyo=6",
+    "effect/background=3",
+    "zone/c/building=2",
+    "zone/dungeon/thief_dungeon=1"
+   ],
+   "evidence": "Both declare TextureSet metin2_map_trent.txt (terrain family trent/{field,grass,stone,tile}, used by no other map) and near-identical night environments trent.msenv (fog 0.15 0.06 0.06) and trent02.msenv (0.13 0.05 0.05), both on cloud clouds_zone05. Object palette is b1_/b3_ deciduous trees over generic zone/b/obj with no bespoke building family, which is why they are not folded into field_empire: the terrain palette is disjoint from B/**."
+  },
+  "event_instance": {
+   "label": "Bespoke event / instance stage",
+   "maps": [
+    "metin2_12zi_stage",
+    "metin2_guild_pve",
+    "metin2_map_battleroyale",
+    "metin2_map_defensewave",
+    "metin2_map_defensewave_port",
+    "metin2_map_miniboss_01",
+    "metin2_map_miniboss_02",
+    "metin2_map_mists_of_island",
+    "metin2_map_snake_temple_01",
+    "metin2_map_treasure_hunt"
+   ],
+   "member_count": 10,
+   "texturesets": [
+    "metin2_12temple.txt",
+    "metin2_battleroyale.txt",
+    "metin2_guild_pve.txt",
+    "metin2_map_defensewave.txt",
+    "metin2_map_miniboss.txt",
+    "metin2_map_mists_of_island.txt",
+    "metin2_map_snake_temple.txt",
+    "metin2_map_treasure_hunt.txt"
+   ],
+   "environments": [
+    "12zi_stage_01_02.msenv",
+    "defensewave_blue.msenv",
+    "metin2_guild_pve.msenv",
+    "metin2_map_battleroyale.msenv",
+    "metin2_map_mists_of_island.msenv",
+    "metin2_map_snake_temple.msenv",
+    "metin2_map_treasure_hunt.msenv",
+    "miniboss.msenv"
+   ],
+   "reference_map": "metin2_12zi_stage",
+   "typical_size": [
+    3,
+    3
+   ],
+   "typical_size_basis": "modal MapSize over the 10 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    6,
+    6
+   ],
+   "size_range": [
+    [
+     2,
+     2
+    ],
+    [
+     6,
+     6
+    ]
+   ],
+   "size_histogram": {
+    "2x2": 3,
+    "3x3": 5,
+    "6x6": 2
+   },
+   "total_objects": 3895,
+   "dominant_object_families": [
+    "tree=1321",
+    "zone/dungeon/temple_dungeon=667",
+    "zone/geuglagsa=484",
+    "zone/n/obj/map_n_desert_01=340",
+    "zone/b/obj=308",
+    "zone/treasure_hunt=150",
+    "zone/dungeon/dawnmistwood_dungeon=126",
+    "zone/defensewave=104"
+   ],
+   "evidence": "Residual class defined by a positive structural rule, not by a shared palette: every member owns a bespoke single-use art family (zone/dungeon/temple_dungeon 655 in 12zi_stage, zone/geuglagsa 484 in snake_temple_01, zone/treasure_hunt 150, zone/defensewave 104, zone/mists_of_island 89, zone/miniboss 36+7, zone/metin2_guild_pvp 4, and battleroyales 37-texture all-biome palette - the widest in the corpus) plus its own TextureSet and its own .msenv used by no other map. They are small instanced stages, median 3x3. Two members are format-notable: metin2_map_treasure_hunt is the ONLY map that writes the extended 'CRC#sx#sy#sz' areadata token (288 of 288 records), and metin2_12zi_stage carries Environment1..Environment8."
+  },
+  "dev_stub": {
+   "label": "Developer test stub",
+   "maps": [
+    "metin2_map_t1",
+    "metin2_map_t2",
+    "metin2_map_t3",
+    "metin2_map_t4"
+   ],
+   "member_count": 4,
+   "texturesets": [
+    "metin2_map_t1.txt",
+    "metin2_map_t2.txt",
+    "metin2_map_t3.txt"
+   ],
+   "environments": [
+    "moonlight05.msenv",
+    "t1.msenv",
+    "t2.msenv"
+   ],
+   "reference_map": "metin2_map_t1",
+   "typical_size": [
+    1,
+    1
+   ],
+   "typical_size_basis": "modal MapSize over the 4 member(s) with their own terrain; ties broken by the reference map",
+   "reference_size": [
+    3,
+    3
+   ],
+   "size_range": [
+    [
+     1,
+     1
+    ],
+    [
+     3,
+     3
+    ]
+   ],
+   "size_histogram": {
+    "1x1": 3,
+    "3x3": 1
+   },
+   "total_objects": 259,
+   "dominant_object_families": [
+    "zone/b/obj=135",
+    "tree=111",
+    "effect/background=13"
+   ],
+   "evidence": "Unfinished scratch maps. Hard evidence: metin2_map_t2/t3/t4 have BasePosition 6400,0 / 32000,0 / 57600,0 - multiples of the 6,400 server sector but NOT of the 25,600 client sectree, which the format requires for sectree alignment; besides gm_guild_build they are the only maps in the corpus that violate it. metin2_map_t1/setting.txt contains a corrupt stray line 'ungeon2.msenv' (a truncated Environment value the tokenizer swallows as a valueless key). Their texturesets are verbatim copies of shipped ones (metin2_map_t1.txt is byte-identical to metin2_a1.txt; t3 and t4 share metin2_map_t3.txt) and t1.msenv is byte-identical to t2.msenv. No bespoke art family exists: every object is generic zone/b/obj plus b-family trees."
+  }
+ },
+ "maps": {
+  "gm_guild_build": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    83200,
+    0
+   ],
+   "textureset": "textureset\\gm_guild_build.txt",
+   "environment": "gm_guild_build.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "guild_village",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 158,
+   "distinct_property_crcs": 67,
+   "object_families": {
+    "zone/b/obj": 91,
+    "tree": 39,
+    "zone/b/building": 20,
+    "zone/°ø¿ë": 4,
+    "zone/a/building": 1,
+    "zone/c/building": 1
+   },
+   "object_types": {
+    "Building": 118,
+    "Tree": 39,
+    "Effect": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "map_a2": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    256000,
+    665600
+   ],
+   "textureset": "textureset\\metin2_A2.txt",
+   "environment": "A2.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "field_valley",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 961,
+   "distinct_property_crcs": 47,
+   "object_families": {
+    "tree": 491,
+    "zone/b/obj": 458,
+    "zone/a/building": 9,
+    "effect/background": 2,
+    "zone/dungeon/devil_tower": 1
+   },
+   "object_types": {
+    "Tree": 491,
+    "Building": 468,
+    "Effect": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "map_b_fielddungeon": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "metin2_B_fielddungeon.txt",
+   "environment": "map_b_fielddungeo.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 173,
+   "distinct_property_crcs": 16,
+   "object_families": {
+    "tree": 114,
+    "zone/b/obj": 36,
+    "zone/b/building": 23
+   },
+   "object_types": {
+    "Tree": 114,
+    "Building": 59
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "map_n_snowm_01": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    358400,
+    153600
+   ],
+   "textureset": "textureset\\metin2_N_snowm.txt",
+   "environment": "N-snowm01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "snow_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 1230,
+   "distinct_property_crcs": 54,
+   "object_families": {
+    "tree": 853,
+    "zone/n/obj/snow.m": 356,
+    "effect/background": 11,
+    "zone/b/obj": 5,
+    "zone/b/building": 4,
+    "zone/n/icemount": 1
+   },
+   "object_types": {
+    "Tree": 853,
+    "Building": 330,
+    "DungeonBlock": 36,
+    "Effect": 11
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "monsterarrange.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "map_n_threeway": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    256000,
+    665600
+   ],
+   "textureset": "textureset\\metin2_A2.txt",
+   "environment": "A2.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "field_valley",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 961,
+   "distinct_property_crcs": 47,
+   "object_families": {
+    "tree": 491,
+    "zone/b/obj": 458,
+    "zone/a/building": 9,
+    "effect/background": 2,
+    "zone/dungeon/devil_tower": 1
+   },
+   "object_types": {
+    "Tree": 491,
+    "Building": 468,
+    "Effect": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_12zi_stage": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    307200,
+    1408000
+   ],
+   "textureset": "textureset\\metin2_12temple.txt",
+   "environment": "12zi_stage_01_02.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "event_instance",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 983,
+   "distinct_property_crcs": 124,
+   "object_families": {
+    "zone/dungeon/temple_dungeon": 655,
+    "tree": 213,
+    "zone/b/obj": 45,
+    "zone/dungeon/flame_dungeon": 24,
+    "zone/dungeon/dawnmistwood_dungeon": 23,
+    "effect/etc/fall": 16
+   },
+   "object_types": {
+    "Building": 751,
+    "Tree": 213,
+    "Effect": 19
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_guild_pve": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    1152000
+   ],
+   "textureset": "textureset\\metin2_guild_pve.txt",
+   "environment": "metin2_guild_pve.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "event_instance",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 27,
+   "distinct_property_crcs": 12,
+   "object_families": {
+    "zone/devils_dragon_island": 17,
+    "zone/metin2_guild_pvp": 4,
+    "zone/dungeon/flame_dragon": 2,
+    "effect/background": 2,
+    "zone/n/flame": 1,
+    "zone/dungeon/flame_dungeon": 1
+   },
+   "object_types": {
+    "Building": 23,
+    "DungeonBlock": 2,
+    "Effect": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_guild_village": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_guild_village.txt",
+   "environment": "guild_village.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "guild_village",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 155,
+   "distinct_property_crcs": 44,
+   "object_families": {
+    "zone/b/obj": 100,
+    "tree": 51,
+    "zone/b/building": 4
+   },
+   "object_types": {
+    "Building": 104,
+    "Tree": 51
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_guild_village_01": {
+   "size": null,
+   "cell_scale": null,
+   "height_scale": null,
+   "base_position": null,
+   "textureset": null,
+   "environment": null,
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "guild_village",
+   "view_radius": null,
+   "terrain_visible": null,
+   "parent_map": "metin2_guild_village",
+   "terrain_source": "proxy:metin2_guild_village",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": null,
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt"
+   ]
+  },
+  "metin2_guild_village_02": {
+   "size": null,
+   "cell_scale": null,
+   "height_scale": null,
+   "base_position": null,
+   "textureset": null,
+   "environment": null,
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "guild_village",
+   "view_radius": null,
+   "terrain_visible": null,
+   "parent_map": "metin2_guild_village",
+   "terrain_source": "proxy:metin2_guild_village",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": null,
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt"
+   ]
+  },
+  "metin2_guild_village_03": {
+   "size": null,
+   "cell_scale": null,
+   "height_scale": null,
+   "base_position": null,
+   "textureset": null,
+   "environment": null,
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "guild_village",
+   "view_radius": null,
+   "terrain_visible": null,
+   "parent_map": "metin2_guild_village",
+   "terrain_source": "proxy:metin2_guild_village",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": null,
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt"
+   ]
+  },
+  "metin2_guild_war1": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1049600,
+    10496000
+   ],
+   "textureset": "textureset\\metin2_guild_war1.txt",
+   "environment": "metin2_guild_war1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "guild_village",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 53,
+   "distinct_property_crcs": 30,
+   "object_families": {
+    "zone/b/obj": 30,
+    "tree": 21,
+    "effect/background": 2
+   },
+   "object_types": {
+    "Building": 30,
+    "Tree": 21,
+    "Effect": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_guild_war2": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1075200,
+    1049600
+   ],
+   "textureset": "textureset\\metin2_guild_war2.txt",
+   "environment": "war2.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 62,
+   "distinct_property_crcs": 22,
+   "object_families": {
+    "tree": 33,
+    "zone/b/obj": 28,
+    "effect/background": 1
+   },
+   "object_types": {
+    "Tree": 33,
+    "Building": 28,
+    "Effect": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_guild_war3": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1152000,
+    1049600
+   ],
+   "textureset": "textureset\\metin2_guild_war3.txt",
+   "environment": "metin2_guild_war3.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "guild_village",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 175,
+   "distinct_property_crcs": 84,
+   "object_families": {
+    "zone/b/obj": 141,
+    "tree": 29,
+    "zone/b/building": 5
+   },
+   "object_types": {
+    "Building": 146,
+    "Tree": 29
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_guild_war4": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1177600,
+    1049600
+   ],
+   "textureset": "textureset\\metin2_guild_war4.txt",
+   "environment": "war4.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 256,
+   "distinct_property_crcs": 31,
+   "object_families": {
+    "zone/b/obj": 130,
+    "tree": 124,
+    "zone/dungeon/thief_dungeon": 2
+   },
+   "object_types": {
+    "Building": 132,
+    "Tree": 124
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_a1": {
+   "size": [
+    4,
+    5
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    409600,
+    896000
+   ],
+   "textureset": "textureset\\metin2_A1.txt",
+   "environment": "A1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 20,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    128000
+   ],
+   "object_count": 1226,
+   "distinct_property_crcs": 137,
+   "object_families": {
+    "tree": 618,
+    "zone/b/obj": 546,
+    "zone/a/building": 54,
+    "effect/etc/fall": 5,
+    "effect/background": 2,
+    "zone/b/building": 1
+   },
+   "object_types": {
+    "Tree": 618,
+    "Building": 601,
+    "Effect": 7
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "monsterareainfo.txt",
+    "monsterarrange.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_a3": {
+   "size": [
+    4,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    307200,
+    819200
+   ],
+   "textureset": "textureset\\metin2_A3.txt",
+   "environment": "A3.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 16,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "003000",
+    "003001",
+    "003002",
+    "003003"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    102400
+   ],
+   "object_count": 1116,
+   "distinct_property_crcs": 152,
+   "object_families": {
+    "zone/b/obj": 671,
+    "tree": 425,
+    "effect/background": 9,
+    "zone/°ø¿ë": 5,
+    "effect/etc/fall": 3,
+    "zone/a/building": 2
+   },
+   "object_types": {
+    "Building": 679,
+    "Tree": 425,
+    "Effect": 12
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "monsterarrange.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_anglar_dungeon_01": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    153600,
+    1049600
+   ],
+   "textureset": "textureset\\metin2_map_anglar_dungeon_01.txt",
+   "environment": "anglar_dungeon_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 788,
+   "distinct_property_crcs": 21,
+   "object_families": {
+    "effect/background": 399,
+    "zone/dungeon/anglar_dungeon": 389
+   },
+   "object_types": {
+    "Effect": 399,
+    "DungeonBlock": 389
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_b1": {
+   "size": [
+    4,
+    5
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    102400
+   ],
+   "textureset": "textureset\\metin2_B1.txt",
+   "environment": "B1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 20,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    128000
+   ],
+   "object_count": 1284,
+   "distinct_property_crcs": 170,
+   "object_families": {
+    "zone/b/obj": 602,
+    "tree": 388,
+    "zone/b/building": 282,
+    "zone/°ø¿ë": 7,
+    "effect/background": 4,
+    "effect/etc/fall": 1
+   },
+   "object_types": {
+    "Building": 891,
+    "Tree": 388,
+    "Effect": 5
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "monsterarrange.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_b3": {
+   "size": [
+    4,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    102400,
+    204800
+   ],
+   "textureset": "textureset\\metin2_B3.txt",
+   "environment": "B3.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 16,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "003000",
+    "003001",
+    "003002",
+    "003003"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    102400
+   ],
+   "object_count": 1030,
+   "distinct_property_crcs": 140,
+   "object_families": {
+    "zone/b/obj": 538,
+    "tree": 474,
+    "zone/°ø¿ë": 6,
+    "effect/background": 5,
+    "effect/etc/fall": 3,
+    "zone/b/building": 3
+   },
+   "object_types": {
+    "Building": 548,
+    "Tree": 474,
+    "Effect": 8
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "monsterareainfo.txt",
+    "monsterarrange.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_battlearena01": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    665600,
+    230400
+   ],
+   "textureset": "textureset\\metin2_map_empirewar01.txt",
+   "environment": "snowm02.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "empire_war",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_empirewar01",
+   "terrain_source": "proxy:metin2_map_empirewar01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_battlearena02": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    716800,
+    230400
+   ],
+   "textureset": "textureset\\metin2_map_empirewar02.txt",
+   "environment": "A1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "empire_war",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_empirewar02",
+   "terrain_source": "proxy:metin2_map_empirewar02",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_battlearena03": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    768000,
+    230400
+   ],
+   "textureset": "textureset\\metin2_map_empirewar03.txt",
+   "environment": "desert_02.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "empire_war",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_empirewar03",
+   "terrain_source": "proxy:metin2_map_empirewar03",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_battlefied": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    691200,
+    0
+   ],
+   "textureset": "textureset\\metin2_battlefield.txt",
+   "environment": "battlefield.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 68,
+   "distinct_property_crcs": 12,
+   "object_families": {
+    "tree": 49,
+    "zone/b/obj": 12,
+    "effect/etc/fall": 6,
+    "zone/b/building": 1
+   },
+   "object_types": {
+    "Tree": 49,
+    "Building": 13,
+    "Effect": 6
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_battleroyale": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    204800,
+    332800
+   ],
+   "textureset": "textureset\\metin2_battleroyale.txt",
+   "environment": "metin2_map_battleroyale.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "event_instance",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 1464,
+   "distinct_property_crcs": 167,
+   "object_families": {
+    "tree": 805,
+    "zone/n/obj/map_n_desert_01": 340,
+    "zone/b/obj": 136,
+    "zone/dungeon/dawnmistwood_dungeon": 103,
+    "zone/n/obj/snow.m": 54,
+    "zone/eastplain": 12
+   },
+   "object_types": {
+    "Tree": 805,
+    "Building": 649,
+    "Effect": 10
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_bayblacksand": {
+   "size": [
+    3,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1049600,
+    1510400
+   ],
+   "textureset": "textureset\\metin2_BayBlackSand.txt",
+   "environment": "bayblacksand.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 18,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005"
+   ],
+   "era": "modern",
+   "archetype": "darkforest_coast",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    153600
+   ],
+   "object_count": 881,
+   "distinct_property_crcs": 122,
+   "object_families": {
+    "tree": 262,
+    "zone/devils_dragon_island/bone": 234,
+    "zone/devils_dragon_island/camp": 197,
+    "zone/devils_dragon_island": 100,
+    "zone/b/obj": 76,
+    "effect/background": 9
+   },
+   "object_types": {
+    "Building": 610,
+    "Tree": 262,
+    "Effect": 9
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_boss_awaken_dawnmist": {
+   "size": [
+    3,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    332800,
+    1971200
+   ],
+   "textureset": "textureset\\metin2_DawnMistWood_dungeon.txt",
+   "environment": "DawnMistWood_dungeon.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_dawnmist_dungeon_01",
+   "terrain_source": "proxy:metin2_map_dawnmist_dungeon_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    76800,
+    102400
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_boss_awaken_flame": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    153600,
+    1971200
+   ],
+   "textureset": "textureset\\metin2_map_n_flame_dungeon_01.txt",
+   "environment": "metin2_map_n_flame_dungeon_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_n_flame_dungeon_01",
+   "terrain_source": "proxy:metin2_map_n_flame_dungeon_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_boss_awaken_skipia": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    1971200
+   ],
+   "textureset": "textureset\\metin2_n_saguidungeon.txt",
+   "environment": "skipia_dungeon.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": "metin2_map_skipia_dungeon_02",
+   "terrain_source": "partial:metin2_map_skipia_dungeon_02",
+   "sector_file_profile": "attr-only",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_boss_awaken_snow": {
+   "size": [
+    4,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    230400,
+    1971200
+   ],
+   "textureset": "textureset\\metin2_map_n_snow_dungeon_01.txt",
+   "environment": "metin2_map_n_snow_dungeon_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_n_snow_dungeon_01",
+   "terrain_source": "proxy:metin2_map_n_snow_dungeon_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    102400,
+    76800
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_boss_crack_dawnmist": {
+   "size": [
+    3,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    332800,
+    1817600
+   ],
+   "textureset": "textureset\\metin2_DawnMistWood_dungeon.txt",
+   "environment": "DawnMistWood_dungeon.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_dawnmist_dungeon_01",
+   "terrain_source": "proxy:metin2_map_dawnmist_dungeon_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    76800,
+    102400
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_boss_crack_flame": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    153600,
+    1817600
+   ],
+   "textureset": "textureset\\metin2_map_n_flame_dungeon_01.txt",
+   "environment": "metin2_map_n_flame_dungeon_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_n_flame_dungeon_01",
+   "terrain_source": "proxy:metin2_map_n_flame_dungeon_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_boss_crack_skipia": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    1817600
+   ],
+   "textureset": "textureset\\metin2_n_saguidungeon.txt",
+   "environment": "skipia_dungeon.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": "metin2_map_skipia_dungeon_02",
+   "terrain_source": "partial:metin2_map_skipia_dungeon_02",
+   "sector_file_profile": "attr-only",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_boss_crack_snow": {
+   "size": [
+    4,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    230400,
+    1817600
+   ],
+   "textureset": "textureset\\metin2_map_n_snow_dungeon_01.txt",
+   "environment": "metin2_map_n_snow_dungeon_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_n_snow_dungeon_01",
+   "terrain_source": "proxy:metin2_map_n_snow_dungeon_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    102400,
+    76800
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_c1": {
+   "size": [
+    4,
+    5
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    921600,
+    204800
+   ],
+   "textureset": "textureset\\metin2_C1.txt",
+   "environment": "C1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 20,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    128000
+   ],
+   "object_count": 891,
+   "distinct_property_crcs": 144,
+   "object_families": {
+    "zone/b/obj": 488,
+    "tree": 316,
+    "zone/c/building": 71,
+    "effect/background": 7,
+    "zone/°ø¿ë": 4,
+    "effect/etc/fall": 3
+   },
+   "object_types": {
+    "Building": 565,
+    "Tree": 316,
+    "Effect": 10
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "monsterarrange.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_c3": {
+   "size": [
+    4,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    819200,
+    204800
+   ],
+   "textureset": "textureset\\metin2_C3.txt",
+   "environment": "C3.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 16,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "003000",
+    "003001",
+    "003002",
+    "003003"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    102400
+   ],
+   "object_count": 629,
+   "distinct_property_crcs": 62,
+   "object_families": {
+    "tree": 343,
+    "zone/b/obj": 273,
+    "zone/°ø¿ë": 5,
+    "effect/background": 4,
+    "zone/c/building": 2,
+    "effect/etc/fall": 1
+   },
+   "object_types": {
+    "Tree": 343,
+    "Building": 281,
+    "Effect": 5
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "monsterarrange.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_capedragonhead": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1024000,
+    1664000
+   ],
+   "textureset": "textureset\\metin2_CapeDragonHead.txt",
+   "environment": "CapeDragonHead.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "darkforest_coast",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 1965,
+   "distinct_property_crcs": 219,
+   "object_families": {
+    "zone/b/obj": 873,
+    "tree": 614,
+    "zone/devils_dragon_island": 280,
+    "zone/devils_dragon_island/camp": 160,
+    "effect/background": 18,
+    "zone/b/building": 17
+   },
+   "object_types": {
+    "Building": 1333,
+    "Tree": 614,
+    "Effect": 18
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_dawnmist_dungeon_01": {
+   "size": [
+    3,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    768000,
+    1408000
+   ],
+   "textureset": "textureset\\metin2_DawnMistWood_dungeon.txt",
+   "environment": "DawnMistWood_dungeon.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 12,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "002000",
+    "002001",
+    "002002",
+    "002003"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    102400
+   ],
+   "object_count": 786,
+   "distinct_property_crcs": 142,
+   "object_families": {
+    "zone/dungeon/dawnmistwood_dungeon": 618,
+    "zone/b/obj": 64,
+    "effect/background": 59,
+    "zone/devils_dragon_island": 18,
+    "zone/devils_dragon_island/bone": 18,
+    "zone/a/building": 5
+   },
+   "object_types": {
+    "Building": 626,
+    "DungeonBlock": 100,
+    "Effect": 60
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_dawnmistwood": {
+   "size": [
+    7,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1177600,
+    1664000
+   ],
+   "textureset": "textureset\\metin2_DawnMistWood.txt",
+   "environment": "DawnMistWood.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 28,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "006000",
+    "006001",
+    "006002",
+    "006003"
+   ],
+   "era": "modern",
+   "archetype": "darkforest_coast",
+   "view_radius": 512,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    179200,
+    102400
+   ],
+   "object_count": 1162,
+   "distinct_property_crcs": 158,
+   "object_families": {
+    "tree": 475,
+    "zone/b/obj": 311,
+    "zone/devils_dragon_island": 265,
+    "zone/devils_dragon_island/camp": 93,
+    "effect/background": 17,
+    "zone/b/building": 1
+   },
+   "object_types": {
+    "Building": 670,
+    "Tree": 475,
+    "Effect": 17
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_defensewave": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_defensewave.txt",
+   "environment": "defensewave_blue.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "event_instance",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 131,
+   "distinct_property_crcs": 38,
+   "object_families": {
+    "zone/defensewave": 104,
+    "zone/b/obj": 17,
+    "effect/background": 10
+   },
+   "object_types": {
+    "Building": 119,
+    "Effect": 10,
+    "DungeonBlock": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_defensewave_port": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_defensewave.txt",
+   "environment": "defensewave_blue.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "event_instance",
+   "view_radius": 384,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 18,
+   "distinct_property_crcs": 14,
+   "object_families": {
+    "zone/defensewave_port": 8,
+    "zone/devils_dragon_island": 6,
+    "zone/ghost": 2,
+    "zone/b/obj": 1,
+    "zone/eastplain": 1
+   },
+   "object_types": {
+    "Building": 18
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_devilscatacomb": {
+   "size": [
+    7,
+    7
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_devilsCatacomb.txt",
+   "environment": "map_devilsCatacomb.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 54,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "000006",
+    "000007",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "001006",
+    "001007",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "002006",
+    "002007",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "003006",
+    "003007",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "004006",
+    "004007",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005",
+    "005006",
+    "006000",
+    "006001",
+    "006002",
+    "006003",
+    "006004",
+    "006005",
+    "006006"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    179200,
+    179200
+   ],
+   "object_count": 977,
+   "distinct_property_crcs": 180,
+   "object_families": {
+    "zone/b/obj": 489,
+    "tree": 174,
+    "zone/c/building": 101,
+    "effect/background": 72,
+    "zone/devilcave": 59,
+    "zone/dungeon/devil_underground": 35
+   },
+   "object_types": {
+    "Building": 729,
+    "Tree": 174,
+    "Effect": 73,
+    "DungeonBlock": 1
+   },
+   "root_files": [
+    "map_dd_teste.msenv",
+    "map_dd_teste_old.msenv",
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_deviltower1": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    128000,
+    793600
+   ],
+   "textureset": "textureset\\metin2_map_deviltower1.txt",
+   "environment": "dark.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 10,
+   "distinct_property_crcs": 4,
+   "object_families": {
+    "zone/dungeon/devil_tower": 3,
+    "zone/dungeon/devil_tower2": 3,
+    "zone/dungeon/devil_tower3": 3,
+    "effect/background": 1
+   },
+   "object_types": {
+    "DungeonBlock": 9,
+    "Effect": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_duel": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    844800,
+    0
+   ],
+   "textureset": "textureset\\metin2_duel.txt",
+   "environment": "A1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "arena_pvp",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 157,
+   "distinct_property_crcs": 18,
+   "object_families": {
+    "zone/duel": 72,
+    "zone/b/obj": 46,
+    "effect/background": 17,
+    "zone/a/building": 16,
+    "tree": 6
+   },
+   "object_types": {
+    "Building": 134,
+    "Effect": 17,
+    "Tree": 6
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_e1": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    768000,
+    896000
+   ],
+   "textureset": "textureset\\metin2_map_e1.txt",
+   "environment": "e1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "darkforest_coast",
+   "view_radius": 4096,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 386,
+   "distinct_property_crcs": 165,
+   "object_families": {
+    "tree": 157,
+    "zone/b/obj": 152,
+    "zone/devils_dragon_island": 27,
+    "zone/devils_dragon_island/camp": 16,
+    "zone/e1": 12,
+    "effect/etc/fall": 11
+   },
+   "object_types": {
+    "Building": 218,
+    "Tree": 157,
+    "Effect": 11
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_e1_01": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    768000,
+    896000
+   ],
+   "textureset": "textureset\\metin2_map_e1.txt",
+   "environment": "e1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "darkforest_coast",
+   "view_radius": 4096,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_e1",
+   "terrain_source": "proxy:metin2_map_e1",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_e1_02": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    819200,
+    896000
+   ],
+   "textureset": "textureset\\metin2_map_e1.txt",
+   "environment": "e1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "darkforest_coast",
+   "view_radius": 4096,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_e1",
+   "terrain_source": "proxy:metin2_map_e1",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_e1_03": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    870400,
+    896000
+   ],
+   "textureset": "textureset\\metin2_map_e1.txt",
+   "environment": "e1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "darkforest_coast",
+   "view_radius": 4096,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_e1",
+   "terrain_source": "proxy:metin2_map_e1",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_eastplain_01": {
+   "size": [
+    4,
+    5
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1049600,
+    435200
+   ],
+   "textureset": "textureset\\metin2_eastplain.txt",
+   "environment": "Eastplain_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 20,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004"
+   ],
+   "era": "modern",
+   "archetype": "eastplain",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    128000
+   ],
+   "object_count": 728,
+   "distinct_property_crcs": 180,
+   "object_families": {
+    "zone/eastplain": 357,
+    "tree": 140,
+    "zone/dungeon/dawnmistwood_dungeon": 123,
+    "zone/ghost/obj": 36,
+    "zone/eastplain/obj": 31,
+    "zone/b/obj": 18
+   },
+   "object_types": {
+    "Building": 583,
+    "Tree": 140,
+    "Effect": 3,
+    "DungeonBlock": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_eastplain_02": {
+   "size": [
+    3,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1152000,
+    435200
+   ],
+   "textureset": "textureset\\metin2_eastplain.txt",
+   "environment": "Eastplain_02.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 18,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005"
+   ],
+   "era": "modern",
+   "archetype": "eastplain",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    153600
+   ],
+   "object_count": 342,
+   "distinct_property_crcs": 43,
+   "object_families": {
+    "zone/eastplain": 328,
+    "tree": 10,
+    "effect/background": 3,
+    "zone/smh_tower": 1
+   },
+   "object_types": {
+    "Building": 329,
+    "Tree": 10,
+    "Effect": 3
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_eastplain_03": {
+   "size": [
+    4,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1228800,
+    435200
+   ],
+   "textureset": "textureset\\metin2_eastplain.txt",
+   "environment": "Eastplain_03.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 8,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001",
+    "002000",
+    "002001",
+    "003000",
+    "003001"
+   ],
+   "era": "modern",
+   "archetype": "eastplain",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    51200
+   ],
+   "object_count": 264,
+   "distinct_property_crcs": 51,
+   "object_families": {
+    "zone/eastplain": 247,
+    "tree": 9,
+    "zone/dungeon/dawnmistwood_dungeon": 4,
+    "effect/background": 2,
+    "effect/etc/fall": 1,
+    "zone/eastplain/building": 1
+   },
+   "object_types": {
+    "Building": 252,
+    "Tree": 9,
+    "Effect": 3
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_elemental_01": {
+   "size": [
+    5,
+    5
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    921600
+   ],
+   "textureset": "textureset\\metin2_map_elemental_01.txt",
+   "environment": "metin2_map_elemental_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 25,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004"
+   ],
+   "era": "modern",
+   "archetype": "elemental",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    128000,
+    128000
+   ],
+   "object_count": 361,
+   "distinct_property_crcs": 20,
+   "object_families": {
+    "tree": 340,
+    "zone/b/obj": 13,
+    "effect/background": 7,
+    "zone/b/building": 1
+   },
+   "object_types": {
+    "Tree": 340,
+    "Building": 14,
+    "Effect": 7
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_elemental_02": {
+   "size": [
+    5,
+    5
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    128000,
+    921600
+   ],
+   "textureset": "textureset\\metin2_map_elemental_02.txt",
+   "environment": "metin2_map_elemental_02.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 25,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004"
+   ],
+   "era": "modern",
+   "archetype": "elemental",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    128000,
+    128000
+   ],
+   "object_count": 250,
+   "distinct_property_crcs": 23,
+   "object_families": {
+    "tree": 206,
+    "effect/background": 23,
+    "zone/b/obj": 13,
+    "zone/n/obj/map_n_flame_01": 7,
+    "zone/b/building": 1
+   },
+   "object_types": {
+    "Tree": 206,
+    "Effect": 23,
+    "Building": 21
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_elemental_03": {
+   "size": [
+    5,
+    5
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    256000,
+    921600
+   ],
+   "textureset": "textureset\\metin2_map_elemental_03.txt",
+   "environment": "metin2_map_elemental_03.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 25,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004"
+   ],
+   "era": "modern",
+   "archetype": "elemental",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    128000,
+    128000
+   ],
+   "object_count": 320,
+   "distinct_property_crcs": 46,
+   "object_families": {
+    "tree": 268,
+    "zone/b/obj": 45,
+    "effect/background": 6,
+    "zone/b/building": 1
+   },
+   "object_types": {
+    "Tree": 268,
+    "Building": 46,
+    "Effect": 6
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_elemental_04": {
+   "size": [
+    1,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    384000,
+    921600
+   ],
+   "textureset": "textureset\\metin2_map_elemental_01.txt",
+   "environment": "metin2_map_elemental_04.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 2,
+   "sectors": [
+    "000000",
+    "000001"
+   ],
+   "era": "modern",
+   "archetype": "elemental",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    51200
+   ],
+   "object_count": 34,
+   "distinct_property_crcs": 11,
+   "object_families": {
+    "tree": 26,
+    "zone/b/obj": 7,
+    "zone/b/building": 1
+   },
+   "object_types": {
+    "Tree": 26,
+    "Building": 8
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_empirecastle": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    512000,
+    486400
+   ],
+   "textureset": "textureset\\metin2_map_empirecastle.txt",
+   "environment": "empirecastle.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "eastplain",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 173,
+   "distinct_property_crcs": 34,
+   "object_families": {
+    "zone/eastplain/obj": 77,
+    "zone/b/obj": 35,
+    "tree": 33,
+    "zone/eastplain/building": 22,
+    "zone/ghost/obj": 5,
+    "effect/background": 1
+   },
+   "object_types": {
+    "Building": 139,
+    "Tree": 33,
+    "Effect": 1
+   },
+   "root_files": [
+    "a1.msenv",
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_empirewar01": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_empirewar01.txt",
+   "environment": "snowm02.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "empire_war",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 187,
+   "distinct_property_crcs": 42,
+   "object_families": {
+    "zone/n/obj/snow.m": 148,
+    "tree": 34,
+    "effect/background": 3,
+    "zone/b/obj": 2
+   },
+   "object_types": {
+    "Building": 150,
+    "Tree": 34,
+    "Effect": 3
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "snowm02.msenv"
+   ]
+  },
+  "metin2_map_empirewar02": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_empirewar02.txt",
+   "environment": "A1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "empire_war",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 181,
+   "distinct_property_crcs": 37,
+   "object_families": {
+    "zone/b/obj": 139,
+    "tree": 34,
+    "zone/b/building": 5,
+    "effect/background": 3
+   },
+   "object_types": {
+    "Building": 144,
+    "Tree": 34,
+    "Effect": 3
+   },
+   "root_files": [
+    "a1.msenv",
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_empirewar03": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_empirewar03.txt",
+   "environment": "desert_02.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "empire_war",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 207,
+   "distinct_property_crcs": 43,
+   "object_families": {
+    "zone/n/desert": 147,
+    "tree": 45,
+    "zone/b/obj": 12,
+    "effect/background": 3
+   },
+   "object_types": {
+    "Building": 159,
+    "Tree": 45,
+    "Effect": 3
+   },
+   "root_files": [
+    "desert_02.msenv",
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_golden_land": {
+   "size": [
+    2,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    332800,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_golden_land.txt",
+   "environment": "metin2_map_golden_land.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "desert",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_golden_land_stage",
+   "terrain_source": "proxy:metin2_map_golden_land_stage",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    51200,
+    25600
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_golden_land_stage": {
+   "size": [
+    3,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    409600,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_golden_land.txt",
+   "environment": "metin2_map_golden_land_stage.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 3,
+   "sectors": [
+    "000000",
+    "001000",
+    "002000"
+   ],
+   "era": "modern",
+   "archetype": "desert",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    25600
+   ],
+   "object_count": 401,
+   "distinct_property_crcs": 82,
+   "object_families": {
+    "tree": 162,
+    "zone/golden_land": 114,
+    "zone/n/obj/map_n_desert_01": 89,
+    "zone/n/desert": 25,
+    "zone/b/obj": 11
+   },
+   "object_types": {
+    "Building": 239,
+    "Tree": 162
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_guild_01": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    128000,
+    0
+   ],
+   "textureset": "textureset\\metin2_A2.txt",
+   "environment": "A2.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "field_valley",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 146,
+   "distinct_property_crcs": 38,
+   "object_families": {
+    "tree": 90,
+    "zone/b/obj": 53,
+    "effect/etc/fall": 2,
+    "effect/background": 1
+   },
+   "object_types": {
+    "Tree": 90,
+    "Building": 53,
+    "Effect": 3
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_guild_02": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    179200,
+    0
+   ],
+   "textureset": "textureset\\metin2_C1.txt",
+   "environment": "C1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 130,
+   "distinct_property_crcs": 58,
+   "object_families": {
+    "zone/b/obj": 64,
+    "tree": 61,
+    "effect/background": 3,
+    "zone/b/building": 2
+   },
+   "object_types": {
+    "Building": 66,
+    "Tree": 61,
+    "Effect": 3
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_guild_03": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    230400,
+    0
+   ],
+   "textureset": "textureset\\metin2_B1.txt",
+   "environment": "B1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 237,
+   "distinct_property_crcs": 47,
+   "object_families": {
+    "tree": 205,
+    "zone/b/obj": 29,
+    "zone/n/obj/map_n_desert_01": 1,
+    "effect/etc/fall": 1,
+    "effect/background": 1
+   },
+   "object_types": {
+    "Tree": 205,
+    "Building": 30,
+    "Effect": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_guild_battle": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    256000,
+    51200
+   ],
+   "textureset": "textureset\\metin2_map_guild_battle.txt",
+   "environment": "metin2_map_guild_battle_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "arena_pvp",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 130,
+   "distinct_property_crcs": 51,
+   "object_families": {
+    "zone/guild_battle": 45,
+    "zone/b/obj": 36,
+    "tree": 30,
+    "zone/eastplain/obj": 9,
+    "effect/background": 4,
+    "zone/mists_of_island": 3
+   },
+   "object_types": {
+    "Building": 94,
+    "Tree": 30,
+    "Effect": 6
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_guild_battle_base": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    307200,
+    51200
+   ],
+   "textureset": "textureset\\metin2_map_guild_battle.txt",
+   "environment": "metin2_map_guild_battle_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "arena_pvp",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 253,
+   "distinct_property_crcs": 72,
+   "object_families": {
+    "zone/b/obj": 207,
+    "tree": 21,
+    "zone/guild_battle": 11,
+    "effect/background": 9,
+    "zone/eastplain/obj": 5
+   },
+   "object_types": {
+    "Building": 223,
+    "Tree": 21,
+    "Effect": 9
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_icecrystalcave": {
+   "size": [
+    5,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    1510400
+   ],
+   "textureset": "textureset\\metin2_map_whitdragonvalley.txt",
+   "environment": "metin2_map_icecrystalcave.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 20,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "004000",
+    "004001",
+    "004002",
+    "004003"
+   ],
+   "era": "modern",
+   "archetype": "ice_valley",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    128000,
+    102400
+   ],
+   "object_count": 502,
+   "distinct_property_crcs": 53,
+   "object_families": {
+    "tree": 273,
+    "zone/n/obj/snow.m": 166,
+    "zone/b/obj": 59,
+    "zone/snakevalley": 3,
+    "effect/background": 1
+   },
+   "object_types": {
+    "Tree": 273,
+    "Building": 228,
+    "Effect": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_labyrinth": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    307200,
+    1792000
+   ],
+   "textureset": "textureset\\metin2_boss_entrance.txt",
+   "environment": "map_boss_entrance.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "flame_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 50,
+   "distinct_property_crcs": 19,
+   "object_families": {
+    "tree": 19,
+    "zone/dungeon/flame_dungeon": 12,
+    "zone/b/obj": 8,
+    "zone/dungeon/flame_dragon": 6,
+    "zone/dungeon/boss_dungeon_awake": 4,
+    "effect/background": 1
+   },
+   "object_types": {
+    "Building": 30,
+    "Tree": 19,
+    "Effect": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_maze_dungeon1": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    768000,
+    1203200
+   ],
+   "textureset": "textureset\\metin2_map_deviltower1.txt",
+   "environment": "moonlight04.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 111,
+   "distinct_property_crcs": 7,
+   "object_families": {
+    "zone/dungeon/maze_dungeon": 88,
+    "effect/background": 23
+   },
+   "object_types": {
+    "DungeonBlock": 88,
+    "Effect": 23
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_maze_dungeon2": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    844800,
+    1203200
+   ],
+   "textureset": "textureset\\metin2_map_deviltower1.txt",
+   "environment": "moonlight04.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 111,
+   "distinct_property_crcs": 7,
+   "object_families": {
+    "zone/dungeon/maze_dungeon": 88,
+    "effect/background": 23
+   },
+   "object_types": {
+    "DungeonBlock": 88,
+    "Effect": 23
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_maze_dungeon3": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    921600,
+    1203200
+   ],
+   "textureset": "textureset\\metin2_map_deviltower1.txt",
+   "environment": "moonlight04.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 111,
+   "distinct_property_crcs": 7,
+   "object_families": {
+    "zone/dungeon/maze_dungeon": 88,
+    "effect/background": 23
+   },
+   "object_types": {
+    "DungeonBlock": 88,
+    "Effect": 23
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_milgyo": {
+   "size": [
+    4,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    537600,
+    51200
+   ],
+   "textureset": "textureset\\metin2_milgyo.txt",
+   "environment": "milgyo.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 16,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "003000",
+    "003001",
+    "003002",
+    "003003"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    102400
+   ],
+   "object_count": 862,
+   "distinct_property_crcs": 86,
+   "object_families": {
+    "zone/b/building": 325,
+    "zone/b/obj": 268,
+    "tree": 244,
+    "zone/n/milgyo": 18,
+    "zone/devilcave": 5,
+    "effect/background": 1
+   },
+   "object_types": {
+    "Building": 617,
+    "Tree": 244,
+    "Effect": 1
+   },
+   "root_files": [
+    "atlas.sub",
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_miniboss_01": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_miniboss.txt",
+   "environment": "miniboss.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "event_instance",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 58,
+   "distinct_property_crcs": 31,
+   "object_families": {
+    "zone/miniboss": 36,
+    "zone/dungeon/temple_dungeon": 12,
+    "effect/background": 4,
+    "zone/devils_dragon_island": 4,
+    "tree": 2
+   },
+   "object_types": {
+    "Building": 52,
+    "Effect": 4,
+    "Tree": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_miniboss_02": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_miniboss.txt",
+   "environment": "miniboss.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "event_instance",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 62,
+   "distinct_property_crcs": 22,
+   "object_families": {
+    "tree": 42,
+    "effect/background": 8,
+    "zone/miniboss": 7,
+    "zone/dungeon/flame_dungeon": 4,
+    "zone/b/obj": 1
+   },
+   "object_types": {
+    "Tree": 42,
+    "Building": 12,
+    "Effect": 8
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_mists_of_island": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_mists_of_island.txt",
+   "environment": "metin2_map_mists_of_island.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "event_instance",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 294,
+   "distinct_property_crcs": 56,
+   "object_families": {
+    "zone/mists_of_island": 89,
+    "tree": 82,
+    "zone/b/obj": 76,
+    "zone/a/building": 40,
+    "effect/background": 5,
+    "zone/devils_dragon_island": 2
+   },
+   "object_types": {
+    "Building": 207,
+    "Tree": 82,
+    "Effect": 5
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_monkey_dungeon_11": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    768000,
+    435200
+   ],
+   "textureset": "textureset\\metin2_map_deviltower1.txt",
+   "environment": "dark.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": "metin2_map_monkeydungeon",
+   "terrain_source": "proxy:metin2_map_monkeydungeon",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_monkey_dungeon_12": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    844800,
+    435200
+   ],
+   "textureset": "textureset\\metin2_map_deviltower1.txt",
+   "environment": "dark.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": "metin2_map_monkeydungeon",
+   "terrain_source": "proxy:metin2_map_monkeydungeon",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_monkey_dungeon_13": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    921600,
+    435200
+   ],
+   "textureset": "textureset\\metin2_map_deviltower1.txt",
+   "environment": "dark.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": "metin2_map_monkeydungeon",
+   "terrain_source": "proxy:metin2_map_monkeydungeon",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_monkeydungeon": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    819200,
+    51200
+   ],
+   "textureset": "textureset\\metin2_map_deviltower1.txt",
+   "environment": "dark.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 114,
+   "distinct_property_crcs": 7,
+   "object_families": {
+    "zone/dungeon/monkey_dungeon": 88,
+    "effect/background": 26
+   },
+   "object_types": {
+    "DungeonBlock": 88,
+    "Effect": 26
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_monkeydungeon_02": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    128000,
+    640000
+   ],
+   "textureset": "textureset\\metin2_map_deviltower1.txt",
+   "environment": "monkeydungeon_02.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 114,
+   "distinct_property_crcs": 7,
+   "object_families": {
+    "zone/dungeon/monkey_dungeon": 88,
+    "effect/background": 26
+   },
+   "object_types": {
+    "DungeonBlock": 88,
+    "Effect": 26
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_monkeydungeon_03": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    128000,
+    716800
+   ],
+   "textureset": "textureset\\metin2_map_deviltower1.txt",
+   "environment": "monkeydungeon_03.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 114,
+   "distinct_property_crcs": 7,
+   "object_families": {
+    "zone/dungeon/monkey_dungeon": 88,
+    "effect/background": 26
+   },
+   "object_types": {
+    "DungeonBlock": 88,
+    "Effect": 26
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_mt_th_dungeon_01": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    844800,
+    1408000
+   ],
+   "textureset": "textureset\\metin2_mtthunder_dungeon.txt",
+   "environment": "dark.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 821,
+   "distinct_property_crcs": 14,
+   "object_families": {
+    "zone/dungeon/mt_thunder_dungeon": 604,
+    "effect/background": 193,
+    "effect/etc/fall": 24
+   },
+   "object_types": {
+    "DungeonBlock": 604,
+    "Effect": 217
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_mt_thunder": {
+   "size": [
+    4,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1126400,
+    1510400
+   ],
+   "textureset": "textureset\\metin2_mtthunder.txt",
+   "environment": "mtthunder.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 24,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005"
+   ],
+   "era": "modern",
+   "archetype": "darkforest_coast",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    153600
+   ],
+   "object_count": 1481,
+   "distinct_property_crcs": 255,
+   "object_families": {
+    "tree": 502,
+    "zone/b/obj": 353,
+    "zone/devils_dragon_island/camp": 218,
+    "zone/devils_dragon_island": 189,
+    "zone/n/obj/map_n_desert_01": 140,
+    "zone/n/desert": 61
+   },
+   "object_types": {
+    "Building": 977,
+    "Tree": 502,
+    "Effect": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_n_desert_01": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    204800,
+    486400
+   ],
+   "textureset": "textureset\\metin2_n_desert1.txt",
+   "environment": "milgyo.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "desert",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 1889,
+   "distinct_property_crcs": 101,
+   "object_families": {
+    "tree": 1149,
+    "zone/n/obj/map_n_desert_01": 531,
+    "zone/b/obj": 199,
+    "effect/background": 7,
+    "zone/dungeon/thief_dungeon": 2,
+    "effect/etc/fall": 1
+   },
+   "object_types": {
+    "Tree": 1149,
+    "Building": 732,
+    "Effect": 8
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "monsterarrange.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_n_flame_01": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    588800,
+    614400
+   ],
+   "textureset": "textureset\\metin2_n_flame_01.txt",
+   "environment": "map_n_flame_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "flame_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 404,
+   "distinct_property_crcs": 36,
+   "object_families": {
+    "tree": 286,
+    "zone/n/obj/map_n_flame_01": 48,
+    "effect/background": 31,
+    "zone/dungeon/flame_dungeon": 19,
+    "zone/b/obj": 13,
+    "zone/n/flame": 7
+   },
+   "object_types": {
+    "Tree": 286,
+    "Building": 87,
+    "Effect": 31
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "monsterarrange.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_n_flame_dragon": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_n_flame_dragon_01.txt",
+   "environment": "metin2_map_n_flame_dragon_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 59,
+   "distinct_property_crcs": 23,
+   "object_families": {
+    "zone/dungeon/flame_dungeon": 39,
+    "zone/dungeon/flame_dragon": 18,
+    "effect/background": 2
+   },
+   "object_types": {
+    "Building": 57,
+    "Effect": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_n_flame_dungeon_01": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    742400,
+    614400
+   ],
+   "textureset": "textureset\\metin2_map_n_flame_dungeon_01.txt",
+   "environment": "metin2_map_n_flame_dungeon_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 254,
+   "distinct_property_crcs": 38,
+   "object_families": {
+    "zone/dungeon/flame_dungeon": 188,
+    "effect/background": 58,
+    "zone/devils_dragon_island/bone": 7,
+    "zone/b/obj": 1
+   },
+   "object_types": {
+    "Building": 195,
+    "Effect": 58,
+    "DungeonBlock": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_n_snow_dungeon_01": {
+   "size": [
+    4,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    512000,
+    153600
+   ],
+   "textureset": "textureset\\metin2_map_n_snow_dungeon_01.txt",
+   "environment": "metin2_map_n_snow_dungeon_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 12,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002",
+    "003000",
+    "003001",
+    "003002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    76800
+   ],
+   "object_count": 145,
+   "distinct_property_crcs": 24,
+   "object_families": {
+    "zone/dungeon/snow_dungeon": 73,
+    "effect/background": 55,
+    "zone/b/obj": 8,
+    "zone/n/obj/snow.m": 5,
+    "d:": 3,
+    "guild/building": 1
+   },
+   "object_types": {
+    "Building": 80,
+    "Effect": 55,
+    "DungeonBlock": 10
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_nusluck01": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    819200,
+    716800
+   ],
+   "textureset": "textureset\\metin2_wl_01.txt",
+   "environment": "milgyo.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "desert",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 322,
+   "distinct_property_crcs": 49,
+   "object_families": {
+    "tree": 142,
+    "zone/nusluck": 87,
+    "zone/b/obj": 53,
+    "zone/n/desert": 23,
+    "effect/background": 17
+   },
+   "object_types": {
+    "Building": 163,
+    "Tree": 142,
+    "Effect": 17
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_otherworld_01": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    1740800
+   ],
+   "textureset": "textureset\\metin2_map_otherworld_01.txt",
+   "environment": "metin2_map_otherworld_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 531,
+   "distinct_property_crcs": 24,
+   "object_families": {
+    "zone/otherworld": 505,
+    "effect/background": 12,
+    "zone/dungeon/flame_dungeon": 9,
+    "zone/dungeon/flame_dragon": 4,
+    "zone/dungeon/temple_dungeon": 1
+   },
+   "object_types": {
+    "DungeonBlock": 408,
+    "Building": 111,
+    "Effect": 12
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_otherworld_02": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    51200,
+    1740800
+   ],
+   "textureset": "textureset\\metin2_map_otherworld_02.txt",
+   "environment": "metin2_map_otherworld_02.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 415,
+   "distinct_property_crcs": 46,
+   "object_families": {
+    "zone/secretdungeon": 209,
+    "zone/otherworld": 114,
+    "tree": 60,
+    "zone/dungeon/temple_dungeon": 26,
+    "effect/background": 4,
+    "effect/etc/fall": 2
+   },
+   "object_types": {
+    "Building": 349,
+    "Tree": 60,
+    "Effect": 6
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_otherworld_03": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    128000,
+    1740800
+   ],
+   "textureset": "textureset\\metin2_map_otherworld_01.txt",
+   "environment": "metin2_map_otherworld_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_otherworld_01",
+   "terrain_source": "proxy:metin2_map_otherworld_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_otherworld_04": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    179200,
+    1740800
+   ],
+   "textureset": "textureset\\metin2_map_otherworld_01.txt",
+   "environment": "metin2_map_otherworld_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_otherworld_01",
+   "terrain_source": "proxy:metin2_map_otherworld_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_oxevent": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    870400,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_oxevent.txt",
+   "environment": "a1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "arena_pvp",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 442,
+   "distinct_property_crcs": 99,
+   "object_families": {
+    "zone/b/obj": 192,
+    "zone/b/building": 100,
+    "tree": 71,
+    "zone/duel": 35,
+    "zone/a/building": 23,
+    "zone/c/building": 13
+   },
+   "object_types": {
+    "Building": 369,
+    "Tree": 71,
+    "Effect": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_privateshop": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    358400
+   ],
+   "textureset": "textureset\\metin2_map_oxevent.txt",
+   "environment": "a1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "arena_pvp",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 87,
+   "distinct_property_crcs": 11,
+   "object_families": {
+    "zone/b/building": 80,
+    "tree": 4,
+    "zone/b/obj": 3
+   },
+   "object_types": {
+    "Building": 83,
+    "Tree": 4
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_pvp_arena": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    844800,
+    25600
+   ],
+   "textureset": "textureset\\metin2_duel.txt",
+   "environment": "A1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "arena_pvp",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 157,
+   "distinct_property_crcs": 18,
+   "object_families": {
+    "zone/duel": 72,
+    "zone/b/obj": 46,
+    "effect/background": 17,
+    "zone/a/building": 16,
+    "tree": 6
+   },
+   "object_types": {
+    "Building": 134,
+    "Effect": 17,
+    "Tree": 6
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_secretdungeon_01": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1049600,
+    921600
+   ],
+   "textureset": "textureset\\metin2_map_secretdungeon.txt",
+   "environment": "metin2_map_secretdungeon.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 582,
+   "distinct_property_crcs": 53,
+   "object_families": {
+    "zone/secretdungeon": 542,
+    "tree": 38,
+    "zone/b/building": 2
+   },
+   "object_types": {
+    "Building": 544,
+    "Tree": 38
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_skipia_dungeon_01": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    1203200
+   ],
+   "textureset": "textureset\\metin2_n_saguidungeon.txt",
+   "environment": "skipia_dungeon.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 3717,
+   "distinct_property_crcs": 17,
+   "object_families": {
+    "zone/dungeon/haven_dungeon": 3715,
+    "effect/background": 2
+   },
+   "object_types": {
+    "Effect": 3049,
+    "DungeonBlock": 344,
+    "Building": 324
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "skipia_dungeon.msenv"
+   ]
+  },
+  "metin2_map_skipia_dungeon_02": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    153600,
+    1203200
+   ],
+   "textureset": "textureset\\metin2_n_saguidungeon.txt",
+   "environment": "skipia_dungeon.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 3847,
+   "distinct_property_crcs": 22,
+   "object_families": {
+    "zone/dungeon/haven_dungeon": 3845,
+    "effect/background": 2
+   },
+   "object_types": {
+    "Effect": 3405,
+    "DungeonBlock": 442
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "skipia_dungeon.msenv"
+   ]
+  },
+  "metin2_map_skipia_dungeon_boss": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_n_saguidungeon.txt",
+   "environment": "skipia_dungeon.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 42,
+   "distinct_property_crcs": 4,
+   "object_families": {
+    "zone/dungeon/haven_dungeon": 42
+   },
+   "object_types": {
+    "Effect": 41,
+    "DungeonBlock": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "skipia_dungeon.msenv"
+   ]
+  },
+  "metin2_map_smhdungeon_01": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    921600,
+    614400
+   ],
+   "textureset": "textureset\\metin2_map_spiderd.txt",
+   "environment": "dark.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 2,
+   "distinct_property_crcs": 2,
+   "object_families": {
+    "effect/background": 1,
+    "zone/smh_tower": 1
+   },
+   "object_types": {
+    "Effect": 1,
+    "DungeonBlock": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_smhdungeon_02": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    947200,
+    614400
+   ],
+   "textureset": "textureset\\metin2_map_smhtower_d.txt",
+   "environment": "dark.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 1,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 6,
+   "distinct_property_crcs": 6,
+   "object_families": {
+    "zone/smh_tower": 4,
+    "effect/background": 2
+   },
+   "object_types": {
+    "DungeonBlock": 4,
+    "Effect": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_smhgate_a1": {
+   "size": [
+    4,
+    5
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    435200,
+    1817600
+   ],
+   "textureset": "textureset\\metin2_A1.txt",
+   "environment": "A1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 3,
+   "sectors": [
+    "000002",
+    "001000",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_a1",
+   "terrain_source": "partial:metin2_map_a1",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    128000
+   ],
+   "object_count": 318,
+   "distinct_property_crcs": 110,
+   "object_families": {
+    "zone/b/obj": 158,
+    "tree": 130,
+    "zone/a/building": 29,
+    "effect/background": 1
+   },
+   "object_types": {
+    "Building": 187,
+    "Tree": 130,
+    "Effect": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_smhgate_b1": {
+   "size": [
+    4,
+    5
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    537600,
+    1817600
+   ],
+   "textureset": "textureset\\metin2_B1.txt",
+   "environment": "B1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 3,
+   "sectors": [
+    "002002",
+    "003000",
+    "003004"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_b1",
+   "terrain_source": "partial:metin2_map_b1",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    128000
+   ],
+   "object_count": 349,
+   "distinct_property_crcs": 113,
+   "object_families": {
+    "zone/b/obj": 175,
+    "zone/b/building": 103,
+    "tree": 62,
+    "zone/°ø¿ë": 7,
+    "effect/background": 2
+   },
+   "object_types": {
+    "Building": 285,
+    "Tree": 62,
+    "Effect": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_smhgate_c1": {
+   "size": [
+    4,
+    5
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    640000,
+    1817600
+   ],
+   "textureset": "textureset\\metin2_C1.txt",
+   "environment": "C1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 3,
+   "sectors": [
+    "000000",
+    "000004",
+    "001002"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_c1",
+   "terrain_source": "partial:metin2_map_c1",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    128000
+   ],
+   "object_count": 228,
+   "distinct_property_crcs": 93,
+   "object_families": {
+    "zone/b/obj": 106,
+    "zone/c/building": 58,
+    "tree": 54,
+    "effect/background": 6,
+    "zone/°ø¿ë": 4
+   },
+   "object_types": {
+    "Building": 168,
+    "Tree": 54,
+    "Effect": 6
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_smhgate_dawnmist": {
+   "size": [
+    3,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    844800,
+    1843200
+   ],
+   "textureset": "textureset\\metin2_DawnMistWood_dungeon.txt",
+   "environment": "DawnMistWood_dungeon.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_dawnmist_dungeon_01",
+   "terrain_source": "proxy:metin2_map_dawnmist_dungeon_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    76800,
+    102400
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_smhgate_desert": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    588800,
+    1945600
+   ],
+   "textureset": "textureset\\metin2_n_desert1.txt",
+   "environment": "milgyo.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "desert",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_n_desert_01",
+   "terrain_source": "proxy:metin2_map_n_desert_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_smhgate_devils": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    742400,
+    1843200
+   ],
+   "textureset": "textureset\\metin2_map_devilsCatacomb.txt",
+   "environment": "map_devilsCatacomb.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 182,
+   "distinct_property_crcs": 39,
+   "object_families": {
+    "zone/c/building": 96,
+    "zone/b/obj": 41,
+    "tree": 41,
+    "zone/devilcave": 2,
+    "zone/sample0000": 2
+   },
+   "object_types": {
+    "Building": 141,
+    "Tree": 41
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_smhgate_flame": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    742400,
+    1945600
+   ],
+   "textureset": "textureset\\metin2_n_flame_01.txt",
+   "environment": "map_n_flame_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "flame_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "metin2_map_n_flame_01",
+   "terrain_source": "proxy:metin2_map_n_flame_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_smhgate_snow": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    896000,
+    1945600
+   ],
+   "textureset": "textureset\\metin2_N_snowm.txt",
+   "environment": "N-snowm01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "snow_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "map_n_snowm_01",
+   "terrain_source": "proxy:map_n_snowm_01",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_smhgate_threeway": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    435200,
+    1945600
+   ],
+   "textureset": "textureset\\metin2_A2.txt",
+   "environment": "A2.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 0,
+   "sectors": [],
+   "era": "modern",
+   "archetype": "field_valley",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": "map_a2",
+   "terrain_source": "proxy:map_a2",
+   "sector_file_profile": "proxy-no-sectors",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 0,
+   "distinct_property_crcs": 0,
+   "object_families": {},
+   "object_types": {},
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_snake_temple_01": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    1638400
+   ],
+   "textureset": "textureset\\metin2_map_snake_temple.txt",
+   "environment": "metin2_map_snake_temple.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "event_instance",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 570,
+   "distinct_property_crcs": 21,
+   "object_families": {
+    "zone/geuglagsa": 484,
+    "tree": 82,
+    "zone/b/building": 4
+   },
+   "object_types": {
+    "Building": 488,
+    "Tree": 82
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_snake_temple_02": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    76800,
+    1638400
+   ],
+   "textureset": "textureset\\metin2_map_smhtower_d.txt",
+   "environment": "dark.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 110,
+   "distinct_property_crcs": 28,
+   "object_families": {
+    "effect/background": 96,
+    "zone/geuglagsa": 14
+   },
+   "object_types": {
+    "Effect": 96,
+    "DungeonBlock": 14
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_snakevalley": {
+   "size": [
+    6,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    1408000
+   ],
+   "textureset": "textureset\\metin2_map_snakevalley.txt",
+   "environment": "snakevalley.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 18,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002",
+    "003000",
+    "003001",
+    "003002",
+    "004000",
+    "004001",
+    "004002",
+    "005000",
+    "005001",
+    "005002"
+   ],
+   "era": "modern",
+   "archetype": "ice_valley",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    76800
+   ],
+   "object_count": 591,
+   "distinct_property_crcs": 86,
+   "object_families": {
+    "zone/snakevalley": 329,
+    "tree": 152,
+    "zone/b/obj": 75,
+    "zone/eastplain": 19,
+    "zone/ydragon": 9,
+    "zone/devils_dragon_island/camp": 4
+   },
+   "object_types": {
+    "Building": 436,
+    "Tree": 152,
+    "Effect": 3
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_spiderdungeon": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    51200,
+    486400
+   ],
+   "textureset": "textureset\\metin2_map_spiderd.txt",
+   "environment": "dark.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 14,
+   "distinct_property_crcs": 7,
+   "object_families": {
+    "zone/dungeon/spider_dungeon": 11,
+    "effect/background": 3
+   },
+   "object_types": {
+    "DungeonBlock": 11,
+    "Effect": 3
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_spiderdungeon_02": {
+   "size": [
+    4,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    665600,
+    435200
+   ],
+   "textureset": "textureset\\metin2_n_saguidungeon.txt",
+   "environment": "skipia_dungeon.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 16,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "003000",
+    "003001",
+    "003002",
+    "003003"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    102400
+   ],
+   "object_count": 138,
+   "distinct_property_crcs": 7,
+   "object_families": {
+    "zone/b/obj": 109,
+    "zone/dungeon/spider_dungeon": 27,
+    "effect/background": 1,
+    "zone/devilcave": 1
+   },
+   "object_types": {
+    "Building": 110,
+    "DungeonBlock": 27,
+    "Effect": 1
+   },
+   "root_files": [
+    "boss.txt",
+    "mapproperty.txt",
+    "npc.txt",
+    "regen.txt",
+    "setting.txt",
+    "skipia_dungeon.msenv",
+    "town.txt"
+   ]
+  },
+  "metin2_map_spiderdungeon_03": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    51200,
+    563200
+   ],
+   "textureset": "textureset\\metin2_map_spiderd.txt",
+   "environment": "dark.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_block",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 62,
+   "distinct_property_crcs": 9,
+   "object_families": {
+    "zone/b/obj": 42,
+    "zone/dungeon/spider_dungeon": 19,
+    "effect/background": 1
+   },
+   "object_types": {
+    "Building": 42,
+    "DungeonBlock": 19,
+    "Effect": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    921600,
+    0
+   ],
+   "textureset": "textureset\\metin2_A1.txt",
+   "environment": "sungzi.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 3,
+   "distinct_property_crcs": 1,
+   "object_families": {
+    "zone/dungeon/spider_dungeon": 3
+   },
+   "object_types": {
+    "Building": 3
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi_desert_01": {
+   "size": [
+    4,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_n_desert1.txt",
+   "environment": "milgyo.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 16,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "003000",
+    "003001",
+    "003002",
+    "003003"
+   ],
+   "era": "modern",
+   "archetype": "desert",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    102400
+   ],
+   "object_count": 51,
+   "distinct_property_crcs": 11,
+   "object_families": {
+    "tree": 45,
+    "zone/n/obj/map_n_desert_01": 3,
+    "zone/n/desert": 3
+   },
+   "object_types": {
+    "Tree": 45,
+    "Building": 6
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi_desert_hill_01": {
+   "size": [
+    2,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_n_desert1.txt",
+   "environment": "milgyo.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 8,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003"
+   ],
+   "era": "modern",
+   "archetype": "desert",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    102400
+   ],
+   "object_count": 110,
+   "distinct_property_crcs": 53,
+   "object_families": {
+    "zone/b/obj": 68,
+    "tree": 33,
+    "zone/n/obj/map_n_desert_01": 5,
+    "effect/background": 4
+   },
+   "object_types": {
+    "Building": 73,
+    "Tree": 33,
+    "Effect": 4
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi_desert_hill_02": {
+   "size": [
+    2,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_n_desert1.txt",
+   "environment": "milgyo.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 8,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003"
+   ],
+   "era": "modern",
+   "archetype": "desert",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    102400
+   ],
+   "object_count": 110,
+   "distinct_property_crcs": 53,
+   "object_families": {
+    "zone/b/obj": 68,
+    "tree": 33,
+    "zone/n/obj/map_n_desert_01": 5,
+    "effect/background": 4
+   },
+   "object_types": {
+    "Building": 73,
+    "Tree": 33,
+    "Effect": 4
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi_desert_hill_03": {
+   "size": [
+    2,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_n_desert1.txt",
+   "environment": "milgyo.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 8,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003"
+   ],
+   "era": "modern",
+   "archetype": "desert",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    102400
+   ],
+   "object_count": 110,
+   "distinct_property_crcs": 53,
+   "object_families": {
+    "zone/b/obj": 68,
+    "tree": 33,
+    "zone/n/obj/map_n_desert_01": 5,
+    "effect/background": 4
+   },
+   "object_types": {
+    "Building": 73,
+    "Tree": 33,
+    "Effect": 4
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi_flame_hill_01": {
+   "size": [
+    2,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_n_flame_01.txt",
+   "environment": "map_n_flame_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 8,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003"
+   ],
+   "era": "modern",
+   "archetype": "flame_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    102400
+   ],
+   "object_count": 14,
+   "distinct_property_crcs": 5,
+   "object_families": {
+    "effect/background": 10,
+    "zone/b/obj": 4
+   },
+   "object_types": {
+    "Effect": 10,
+    "Building": 4
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi_flame_hill_02": {
+   "size": [
+    2,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_n_flame_01.txt",
+   "environment": "map_n_flame_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 8,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003"
+   ],
+   "era": "modern",
+   "archetype": "flame_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    102400
+   ],
+   "object_count": 14,
+   "distinct_property_crcs": 5,
+   "object_families": {
+    "effect/background": 10,
+    "zone/b/obj": 4
+   },
+   "object_types": {
+    "Effect": 10,
+    "Building": 4
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi_flame_hill_03": {
+   "size": [
+    2,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_n_flame_01.txt",
+   "environment": "map_n_flame_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 8,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003"
+   ],
+   "era": "modern",
+   "archetype": "flame_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    102400
+   ],
+   "object_count": 14,
+   "distinct_property_crcs": 5,
+   "object_families": {
+    "effect/background": 10,
+    "zone/b/obj": 4
+   },
+   "object_types": {
+    "Effect": 10,
+    "Building": 4
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi_snow": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_N_snowm.txt",
+   "environment": "N-snowm01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "snow_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 94,
+   "distinct_property_crcs": 28,
+   "object_families": {
+    "tree": 56,
+    "zone/n/obj/snow.m": 38
+   },
+   "object_types": {
+    "Tree": 56,
+    "Building": 38
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi_snow_pass01": {
+   "size": [
+    2,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_N_snowm.txt",
+   "environment": "N-snowm01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 8,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003"
+   ],
+   "era": "modern",
+   "archetype": "snow_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    102400
+   ],
+   "object_count": 119,
+   "distinct_property_crcs": 33,
+   "object_families": {
+    "tree": 73,
+    "zone/n/obj/snow.m": 46
+   },
+   "object_types": {
+    "Tree": 73,
+    "Building": 46
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi_snow_pass02": {
+   "size": [
+    2,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_N_snowm.txt",
+   "environment": "N-snowm01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 8,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003"
+   ],
+   "era": "modern",
+   "archetype": "snow_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    102400
+   ],
+   "object_count": 119,
+   "distinct_property_crcs": 33,
+   "object_families": {
+    "tree": 73,
+    "zone/n/obj/snow.m": 46
+   },
+   "object_types": {
+    "Tree": 73,
+    "Building": 46
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_sungzi_snow_pass03": {
+   "size": [
+    2,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_N_snowm.txt",
+   "environment": "N-snowm01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 8,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003"
+   ],
+   "era": "modern",
+   "archetype": "snow_field",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    102400
+   ],
+   "object_count": 119,
+   "distinct_property_crcs": 33,
+   "object_families": {
+    "tree": 73,
+    "zone/n/obj/snow.m": 46
+   },
+   "object_types": {
+    "Tree": 73,
+    "Building": 46
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_t1": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    0,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_t1.txt",
+   "environment": "t1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dev_stub",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 121,
+   "distinct_property_crcs": 24,
+   "object_families": {
+    "tree": 78,
+    "zone/b/obj": 38,
+    "effect/background": 5
+   },
+   "object_types": {
+    "Tree": 78,
+    "Building": 38,
+    "Effect": 5
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_t2": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    6400,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_t2.txt",
+   "environment": "t2.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "dev_stub",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 42,
+   "distinct_property_crcs": 15,
+   "object_families": {
+    "tree": 26,
+    "zone/b/obj": 16
+   },
+   "object_types": {
+    "Tree": 26,
+    "Building": 16
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_t3": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    32000,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_t3.txt",
+   "environment": "moonlight05.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "dev_stub",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 64,
+   "distinct_property_crcs": 15,
+   "object_families": {
+    "zone/b/obj": 53,
+    "effect/background": 8,
+    "tree": 3
+   },
+   "object_types": {
+    "Building": 53,
+    "Effect": 8,
+    "Tree": 3
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_t4": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    57600,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_t3.txt",
+   "environment": "moonlight05.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "dev_stub",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 32,
+   "distinct_property_crcs": 7,
+   "object_families": {
+    "zone/b/obj": 28,
+    "tree": 4
+   },
+   "object_types": {
+    "Building": 28,
+    "Tree": 4
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_treasure_hunt": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    512000,
+    1203200
+   ],
+   "textureset": "textureset\\metin2_map_treasure_hunt.txt",
+   "environment": "metin2_map_treasure_hunt.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "event_instance",
+   "view_radius": 512,
+   "terrain_visible": 1,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 288,
+   "distinct_property_crcs": 59,
+   "object_families": {
+    "zone/treasure_hunt": 150,
+    "tree": 95,
+    "zone/b/obj": 32,
+    "zone/devils_dragon_island": 11
+   },
+   "object_types": {
+    "Building": 193,
+    "Tree": 95
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_trent": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    281600,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_trent.txt",
+   "environment": "trent.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "trent_forest",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 195,
+   "distinct_property_crcs": 49,
+   "object_families": {
+    "tree": 115,
+    "zone/b/obj": 77,
+    "effect/background": 2,
+    "zone/dungeon/thief_dungeon": 1
+   },
+   "object_types": {
+    "Tree": 115,
+    "Building": 78,
+    "Effect": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_trent02": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1049600,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_trent.txt",
+   "environment": "trent02.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 16,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "003000",
+    "003001",
+    "003002",
+    "003003"
+   ],
+   "era": "modern",
+   "archetype": "trent_forest",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 413,
+   "distinct_property_crcs": 51,
+   "object_families": {
+    "tree": 265,
+    "zone/b/obj": 139,
+    "zone/n/milgyo": 6,
+    "zone/c/building": 2,
+    "effect/background": 1
+   },
+   "object_types": {
+    "Tree": 265,
+    "Building": 147,
+    "Effect": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_wedding_01": {
+   "size": [
+    1,
+    1
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    819200,
+    0
+   ],
+   "textureset": "textureset\\metin2_map_wedding_01.txt",
+   "environment": "A1.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 1,
+   "sectors": [
+    "000000"
+   ],
+   "era": "modern",
+   "archetype": "field_empire",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    25600,
+    25600
+   ],
+   "object_count": 65,
+   "distinct_property_crcs": 29,
+   "object_families": {
+    "zone/b/obj": 50,
+    "tree": 12,
+    "zone/n/milgyo": 2,
+    "zone/a/building": 1
+   },
+   "object_types": {
+    "Building": 53,
+    "Tree": 12
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_whitdragonvalley": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    128000,
+    1510400
+   ],
+   "textureset": "textureset\\metin2_map_whitdragonvalley.txt",
+   "environment": "metin2_map_whitdragonvalley.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "ice_valley",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 456,
+   "distinct_property_crcs": 53,
+   "object_families": {
+    "zone/n/obj/snow.m": 177,
+    "tree": 146,
+    "zone/b/obj": 103,
+    "zone/n/icemount/icebon": 27,
+    "zone/n/icemount/whitdragonvalley_gate": 1,
+    "effect/background": 1
+   },
+   "object_types": {
+    "Building": 309,
+    "Tree": 146,
+    "Effect": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_whitedragoncave_01": {
+   "size": [
+    6,
+    6
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    998400,
+    1203200
+   ],
+   "textureset": "textureset\\metin2_map_whitedragoncave_01.txt",
+   "environment": "metin2_map_whitedragoncave_01.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 36,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "000004",
+    "000005",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "001004",
+    "001005",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "002004",
+    "002005",
+    "003000",
+    "003001",
+    "003002",
+    "003003",
+    "003004",
+    "003005",
+    "004000",
+    "004001",
+    "004002",
+    "004003",
+    "004004",
+    "004005",
+    "005000",
+    "005001",
+    "005002",
+    "005003",
+    "005004",
+    "005005"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": 0,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    153600,
+    153600
+   ],
+   "object_count": 302,
+   "distinct_property_crcs": 16,
+   "object_families": {
+    "zone/whitedragoncave/whitedragoncave_01": 301,
+    "effect/background": 1
+   },
+   "object_types": {
+    "DungeonBlock": 301,
+    "Effect": 1
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_whitedragoncave_02": {
+   "size": [
+    3,
+    3
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1152000,
+    1203200
+   ],
+   "textureset": "textureset\\metin2_map_whitedragoncave_02.txt",
+   "environment": "metin2_map_whitedragoncave_02.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 9,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "001000",
+    "001001",
+    "001002",
+    "002000",
+    "002001",
+    "002002"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    76800,
+    76800
+   ],
+   "object_count": 96,
+   "distinct_property_crcs": 11,
+   "object_families": {
+    "zone/whitedragoncave/whitedragoncave_02": 74,
+    "effect/background": 22
+   },
+   "object_types": {
+    "DungeonBlock": 74,
+    "Effect": 22
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt",
+    "sungma_attr.txt"
+   ]
+  },
+  "metin2_map_whitedragoncave_boss": {
+   "size": [
+    2,
+    2
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1228800,
+    1203200
+   ],
+   "textureset": "textureset\\metin2_map_whitedragoncave_03.txt",
+   "environment": "metin2_map_whitedragoncave_boss.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 4,
+   "sectors": [
+    "000000",
+    "000001",
+    "001000",
+    "001001"
+   ],
+   "era": "modern",
+   "archetype": "dungeon_themed",
+   "view_radius": 256,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    51200,
+    51200
+   ],
+   "object_count": 5,
+   "distinct_property_crcs": 4,
+   "object_families": {
+    "effect/background": 3,
+    "zone/whitedragoncave/whitedragoncaveboss": 2
+   },
+   "object_types": {
+    "Effect": 3,
+    "DungeonBlock": 2
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "setting.txt"
+   ]
+  },
+  "metin2_map_wl_01": {
+   "size": [
+    4,
+    4
+   ],
+   "cell_scale": 200,
+   "height_scale": 0.5,
+   "base_position": [
+    1049600,
+    716800
+   ],
+   "textureset": "textureset\\metin2_wl_01.txt",
+   "environment": "milgyo.msenv",
+   "map_type": "Outdoor",
+   "sector_count": 16,
+   "sectors": [
+    "000000",
+    "000001",
+    "000002",
+    "000003",
+    "001000",
+    "001001",
+    "001002",
+    "001003",
+    "002000",
+    "002001",
+    "002002",
+    "002003",
+    "003000",
+    "003001",
+    "003002",
+    "003003"
+   ],
+   "era": "modern",
+   "archetype": "desert",
+   "view_radius": 128,
+   "terrain_visible": null,
+   "parent_map": null,
+   "terrain_source": "own",
+   "sector_file_profile": "full-modern",
+   "world_span_cm": [
+    102400,
+    102400
+   ],
+   "object_count": 1120,
+   "distinct_property_crcs": 173,
+   "object_families": {
+    "zone/b/obj": 573,
+    "tree": 451,
+    "zone/n/desert": 50,
+    "effect/background": 34,
+    "zone/a/building": 8,
+    "zone/n/obj/map_n_desert_01": 3
+   },
+   "object_types": {
+    "Building": 634,
+    "Tree": 451,
+    "Effect": 35
+   },
+   "root_files": [
+    "mapproperty.txt",
+    "regen.txt",
+    "setting.txt"
+   ]
+  }
+ }
+}

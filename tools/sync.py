@@ -45,11 +45,14 @@ CODEX_ROOT = ROOT / "plugins" / "m2map"
 CODEX_SKILL = CODEX_ROOT / "skills" / "m2map"
 CODEX_AGENTS = CODEX_ROOT / "agents"
 
-# Never copied into the generated trees.
-IGNORE = shutil.ignore_patterns(
-    "__pycache__", "*.pyc", "*.pyo", ".pytest_cache",
-    ".cache", "patches", "sheets", "*.npy",
-)
+# Never copied into the generated trees. Directory/file NAMES here are also
+# used verbatim by the equality check below, so keep the two in step: a name
+# that copytree skips but dircmp counts shows up as permanent phantom drift.
+IGNORE_NAMES = [
+    "__pycache__", ".pytest_cache", ".cache",
+    "patches", "sheets",
+]
+IGNORE = shutil.ignore_patterns(*IGNORE_NAMES, "*.pyc", "*.pyo", "*.npy")
 
 CURSOR_FRONTMATTER = """\
 ---
@@ -120,8 +123,10 @@ class Sync:
     def _trees_equal(self, src: Path, dest: Path) -> bool:
         if not dest.exists():
             return False
-        ignored = set(IGNORE(str(src), [p.name for p in src.iterdir()]))
-        cmp = filecmp.dircmp(src, dest, ignore=list(ignored))
+        # dircmp propagates `ignore` to subdirectories, so pass the static name
+        # list rather than one derived from the top-level listing -- otherwise a
+        # nested __pycache__ (which copytree skipped) reads as drift forever.
+        cmp = filecmp.dircmp(src, dest, ignore=IGNORE_NAMES)
         return self._dircmp_equal(cmp)
 
     def _dircmp_equal(self, cmp: filecmp.dircmp) -> bool:

@@ -38,15 +38,35 @@ TEXT_SUFFIXES = {
     ".ini", ".toml", ".js", ".mdc",
 }
 
-# Files that are allowed to contain real host paths: the gitignored local
-# config, its template, and this scrubber's own documentation of the problem.
+# Files allowed to contain literal host paths: the gitignored local config, its
+# template, this scrubber and the config loader (both of which document the
+# problem in their docstrings), and the scrubber's own test suite -- whose
+# fixtures MUST stay raw. Scrubbing the tests turns
+#   assert scrub("C:/Users/alice/x") == "<HOME>/x"
+# into the vacuous
+#   assert scrub("<HOME>/x") == "<HOME>/x"
+# which passes while testing nothing. Learned the hard way.
 ALLOWLIST = {
     "CLAUDE.local.md",
     "m2map.paths.json",
     "m2map.paths.example.json",
     "tools/scrub_paths.py",
     "skills/m2map/scripts/m2map/config.py",
+    "tests/test_scrub_paths.py",
 }
+
+# Trees that tools/sync.py regenerates wholesale from the source of truth.
+# Scrubbing them is wrong twice over: the edit is discarded on the next sync,
+# and until then it makes the copy differ from its (allowlisted) source, so
+# `sync.py --check` fails permanently. Clean the source; the mirror follows.
+GENERATED_PREFIXES = (
+    "plugins/m2map/",
+    ".cursor/",
+    ".windsurf/",
+    ".clinerules/",
+    ".agents/",
+    ".github/copilot-instructions.md",
+)
 
 # Catch-all for any user home dir we did not enumerate, on all three platforms.
 HOME_RE = re.compile(
@@ -109,7 +129,7 @@ def main() -> int:
 
     for path in candidate_files(only_tracked=not args.all):
         rel = path.relative_to(REPO_ROOT).as_posix()
-        if rel in ALLOWLIST:
+        if rel in ALLOWLIST or rel.startswith(GENERATED_PREFIXES):
             continue
         try:
             original = path.read_text(encoding="utf-8")
