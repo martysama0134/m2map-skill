@@ -1,0 +1,18 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "m2map",
+  "description": "Metin2 map generator skill — generate, improve, audit, merge and reskin maps from conventions mined out of the official map corpus.",
+  "owner": {
+    "name": "martysama0134",
+    "url": "https://github.com/martysama0134"
+  },
+  "plugins": [
+    {
+      "name": "m2map",
+      "description": "Metin2 map generator — generate, improve, audit, merge, reskin and populate maps using conventions distilled from the official map corpus",
+      "source": "./",
+      "category": "development",
+      "homepage": "https://github.com/martysama0134/m2map-skill"
+    }
+  ]
+}

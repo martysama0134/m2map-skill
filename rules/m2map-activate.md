@@ -1,0 +1,70 @@
+# m2map — Metin2 Map Generator
+
+Activate for any work on **Metin2 maps**: creating a new map, changing an existing
+one, checking one for problems, combining or expanding maps, rebiasing one to a
+different biome, or populating one with spawns. Also activate for anything
+touching the map file formats themselves.
+
+## Triggers
+
+**By intent** — the user wants to make, change, check, combine or populate a map:
+
+> "make me a snowy mountain map", "generate a 4x4 field map with a road",
+> "the north sector looks empty", "widen this road", "add undergrowth",
+> "why do my objects not show up", "players fall through the floor here",
+> "merge these two maps", "make a desert version of this map",
+> "add spawns to this map", "check this map for errors"
+
+**By file** — the user references any of these:
+
+`setting.txt` · `mapproperty.txt` · `areadata.txt` · `areaambiencedata.txt` ·
+`areaproperty.txt` · `height.raw` · `tile.raw` · `attr.atr` · `water.wtr` ·
+`shadowmap.raw` · `shadowmap.dds` · `minimap.dds` · `server_attr` ·
+`regen.txt` · `npc.txt` · `boss.txt` · `stone.txt` · `Town.txt` ·
+`monsterareainfo.txt` · `monsterarrange.txt` · a `textureset/*.txt` ·
+a `*.msenv` · a `*.prb` / `*.prt` / `*.pre` / `*.pra` / `*.prd` property file ·
+a sector folder named `XXXYYY` (six digits) · a folder named `metin2_map_*`
+
+**By keyword** — `m2map`, WorldEditor, WorldEditorRemix, MapForge, sectree,
+textureset, msenv, areadata, server_attr, heightmap + Metin2, attr flags.
+
+## What to do when activated
+
+Read these before writing anything, in this order:
+
+1. **`skills/m2map/SKILL.md`** — mode dispatch and the critical rules.
+2. **`skills/m2map/reference/mental-model.md`** — mandatory floor. The three
+   sampling grids, centimetre units, the negated `areadata` Y, sector-name
+   arithmetic, the positional-array text grammar, textureset slot 0, the YPRT
+   property container. Skipping this produces confidently wrong output.
+3. The mode file under `skills/m2map/modes/` that matches the task —
+   `generate`, `improve`, `audit`, `merge`, `reskin` or `server`.
+4. Whatever that mode tells you to load from `skills/m2map/reference/`.
+
+The byte-level format specification is vendored at
+`skills/m2map/reference/mapformat/` and is **ground truth**. Never guess a
+layout, offset, unit or coordinate space — read the doc for that file.
+
+## Non-negotiables
+
+- **A map is not self-contained.** `tile.raw` stores indices into an external
+  textureset; `areadata.txt` stores CRC numbers into an external property
+  database. An unregistered CRC makes the object vanish at load with no error,
+  no log and no placeholder — so validate every CRC you write against the
+  property DB, because the engine will not.
+- **`areadata` Y is stored negated.** Getting this wrong mirrors the whole
+  object layer about the X axis, which looks plausible and is completely wrong.
+- **Fixed file sizes are load-bearing.** The stored grid dimensions exceed the
+  logical ones (`height.raw` is 131×131, not 129×129; `tile.raw` is 258×258,
+  not 256×256) and the loaders `memcpy` blindly. Validate sizes on read and
+  after write.
+- **Never claim a map works without verifying it.** Render the 2D layer
+  previews and look at them. A map that parses is not a map that plays.
+- **`attr.atr` and `server_attr` must agree.** Editing one without regenerating
+  the other gives the player walls they can walk through, or invisible walls
+  they cannot.
+- **Do not invent asset paths or CRCs.** Every texture, model and property
+  reference must exist on disk or come from the mined catalog.
+
+Full detail lives in `skills/m2map/reference/`. These rules are the summary, not
+the specification.

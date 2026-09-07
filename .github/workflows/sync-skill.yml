@@ -1,0 +1,82 @@
+name: Sync agent variants
+
+# Regenerates every agent-specific copy of the skill from its single source of
+# truth (skills/m2map/, agents/, rules/m2map-activate.md).
+#
+# The sync itself lives in tools/sync.py, NOT inline here, so the identical
+# logic runs locally on a dev box with no rsync and no GitHub. CI only calls it.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - skills/m2map/**
+      - agents/**
+      - rules/m2map-activate.md
+      - tools/sync.py
+  pull_request:
+    paths:
+      - skills/m2map/**
+      - agents/**
+      - rules/m2map-activate.md
+      - tools/sync.py
+
+concurrency:
+  group: sync-skill-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  # On a PR we only verify. Pushing generated files onto a contributor's branch
+  # from CI is rude and breaks forks.
+  check:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify generated variants are up to date
+        run: python tools/sync.py --check
+
+  sync:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main
+
+      - name: Structural tests (pre-sync gate)
+        run: |
+          # A broken SKILL.md or reference doc must not propagate to the Codex,
+          # Cursor, Cline, Windsurf and Copilot variants.
+          bash tests/run-all.sh
+
+      - name: Regenerate agent variants
+        run: python tools/sync.py
+
+      - name: Commit and push if changed
+        run: |
+          git add -A \
+            plugins/m2map \
+            .agents/plugins/marketplace.json \
+            .clinerules \
+            .cursor/rules \
+            .windsurf/rules \
+            .github/copilot-instructions.md
+          git diff --staged --quiet && exit 0
+          git commit -m "chore: sync agent variants [skip ci]"
+          git push
