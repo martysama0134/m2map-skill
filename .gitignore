@@ -1,0 +1,29 @@
+# --- superpowers working artifacts (never committed) ---
+/docs/
+/CLAUDE.md
+/.claude/
+
+# --- python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# --- mined artifacts that are large and regenerable ---
+# JSON catalogs ARE committed (text, diffable, the actual distilled knowledge).
+# These are the heavy regenerable byproducts of `mine_corpus.py`.
+/skills/m2map/reference/catalog/patches/
+/skills/m2map/reference/catalog/sheets/
+/skills/m2map/reference/catalog/*.npy
+/skills/m2map/reference/catalog/.cache/
+
+# --- generated maps / previews / scratch ---
+/out/
+/scratch/
+*.preview.png
+
+# --- os / editor ---
+Thumbs.db
+.DS_Store

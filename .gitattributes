@@ -1,0 +1,44 @@
+# Normalize line endings for everything git detects as text.
+* text=auto eol=lf
+
+*.md    text eol=lf
+*.py    text eol=lf
+*.json  text eol=lf
+*.yaml  text eol=lf
+*.yml   text eol=lf
+*.sh    text eol=lf
+*.txt   text eol=lf
+
+# --- Metin2 client property containers ---
+# The .pr* container format mandates a literal CRLF at byte offset 4 and CRLF
+# line terminators in the text body (see reference/mapformat/client-global-refs.md).
+# Never let git normalize these, or every fixture becomes unloadable.
+*.prt   -text
+*.prb   -text
+*.pre   -text
+*.pra   -text
+*.prd   -text
+
+# --- Metin2 binary map layers ---
+*.raw   binary
+*.atr   binary
+*.wtr   binary
+*.dds   binary
+*.gr2   binary
+*.spt   binary
+*.mse   binary
+*.mdatr binary
+*.npy   binary
+server_attr binary
+
+# --- images ---
+*.png   binary
+*.jpg   binary
+*.tga   binary
+
+# Vendored format spec — excluded from language stats, still diffable.
+skills/m2map/reference/mapformat/** linguist-vendored
+
+# Mined catalogs are generated; keep them diffable but mark them so review
+# noise from a re-mine is obvious.
+skills/m2map/reference/catalog/*.json linguist-generated
