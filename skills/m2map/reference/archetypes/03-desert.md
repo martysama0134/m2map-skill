@@ -358,11 +358,18 @@ Assembly, in order:
    it. `align_to_slope` turns it to the fall line + 90°. One sheet: it renders
    ~40 m across, so two or three on the same wall overlap into a slab.
 
-   Anchor it a tile or two **in front** of the face rather than on the crest.
-   Anchored on the crest, the rock clips through the sheet; anchored at the foot
-   it stands clear, and `height_bias` puts the top back at the lip. On the
-   reference map the face runs 15,733 → 18,021 cm, the anchor at x=233 reads
-   16,578, and +1,443 lands the top exactly on the crest.
+   Anchor it a tile or two **in front** of the face rather than on the crest:
+   anchored on the crest the rock clips through the sheet, anchored at the foot
+   it stands clear, and `height_bias` then places it vertically.
+
+   **`fall_7` is about 18 m tall and its anchor is its TOP.** Measured on the
+   reference map: at bias +1,443 the top sat exactly on the 18,021 cm crest and
+   the base hung 12 m clear of the water; at +300 the base met the shoreline;
+   +150 puts it 1.5 m under. The wall is 29.6 m lip-to-pool, so one sheet cannot
+   span it — and when it cannot, **the base wins**. A fall ending in mid-air
+   reads as broken; one emerging from the rock partway up the face reads as a
+   spring, which is what 16% of the corpus placements are. Size the scarp drop
+   to ~18 m if you want it to span.
 
    Read that ground value from the **built terrain**, not from a cell profile:
    placement samples the tile grid and tiles map two to a cell, so the number at
