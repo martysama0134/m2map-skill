@@ -5,7 +5,9 @@ submerged masks, which the vector polygons alone cannot give them.
 
 The distinction that matters, and that a naive generator gets wrong:
 
-* **wet** -- a water cell exists here.
+* **wet** -- the AUTHORED basin: the polygon or channel the spec asked for.
+  This is what the shore texture and the object water-distance rules read, so it
+  stays the feature's own footprint rather than the drawn extent.
 * **submerged** -- a water cell exists here *and its surface is above the
   terrain*, i.e. the player would actually be in water.
 
@@ -29,6 +31,41 @@ from .spec import HEIGHT_SCALE, MapSpec, SECTOR_CELLS
 #: water.wtr is a 128x128 cell grid per sector; 0xFF means "no water here".
 CELLS = 128
 NO_WATER = 0xFF
+
+
+#: How far the drawn water plane runs past the authored basin, as a fraction of
+#: the basin's own radius. The corpus plane is far larger than its wet area --
+#: only 23% of `metin2_map_n_desert_01`'s water cells are actually submerged,
+#: 41% of `metin2_map_a1`'s, 58% over the six maps measured -- because the
+#: visible waterline is where the TERRAIN rises through the plane, not where the
+#: polygon ends. A plane that stops at the shoreline shows its own 2 m cell grid
+#: as a staircase.
+PLANE_OVERRUN = 0.45
+
+
+def _dilate_cells(mask: np.ndarray, steps: int) -> np.ndarray:
+    out = mask
+    for _ in range(int(steps)):
+        nxt = out.copy()
+        nxt[1:, :] |= out[:-1, :]
+        nxt[:-1, :] |= out[1:, :]
+        nxt[:, 1:] |= out[:, :-1]
+        nxt[:, :-1] |= out[:, 1:]
+        out = nxt
+    return out
+
+
+def _plane_mask(cell_mask: np.ndarray) -> np.ndarray:
+    """The cells the water plane is actually drawn on.
+
+    Wider than the basin by :data:`PLANE_OVERRUN` of its radius, so the terrain
+    around the shore hides the plane and draws a smooth waterline over it.
+    """
+    area = float(cell_mask.sum())
+    if area <= 0:
+        return cell_mask
+    radius = (area / np.pi) ** 0.5
+    return _dilate_cells(cell_mask, max(2, int(round(radius * PLANE_OVERRUN))))
 
 
 def _tiles_to_cells(mask: np.ndarray, ch: int, cw: int) -> np.ndarray:
@@ -73,8 +110,16 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
         if surface is None and is_lake:
             hv = height_cm[:ch, :cw][cell_mask]
             if len(heights) < wtr.MAX_WATER_NUM and hv.size:
-                heights.append(float(np.percentile(hv, 92)) + 60.0)
-                cells[cell_mask] = len(heights) - 1
+                # The 35th percentile of the BASIN, not the 92nd. Taking the
+                # high end put the plane above the rim of the bowl it was
+                # filling, so the water flooded outward to the polygon edge,
+                # left no beach, and showed its own cell grid as a staircase.
+                # Sitting it inside the bowl gives the corpus shape: a plane
+                # below the surrounding ground, with the shore drawn by the
+                # terrain that rises through it. Corpus median depth is
+                # 174-410 cm.
+                heights.append(float(np.percentile(hv, 35)) + 40.0)
+                cells[_plane_mask(cell_mask)] = len(heights) - 1
                 wet_tiles |= mask
             continue
 
@@ -82,7 +127,7 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
             if len(heights) >= wtr.MAX_WATER_NUM:
                 break
             heights.append(float(surface))
-            cells[cell_mask] = len(heights) - 1
+            cells[_plane_mask(cell_mask)] = len(heights) - 1
             wet_tiles |= mask
             continue
 
@@ -101,7 +146,11 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
             if len(heights) >= wtr.MAX_WATER_NUM:
                 break
             heights.append(level)
-            cells[band] = len(heights) - 1
+            # Each band's plane also runs past its own edge, for the same reason
+            # -- a channel that stops at its banks shows the cell grid along
+            # them. Bands overwrite in order, so the overrun of one is trimmed
+            # by the next and only the outer rim of the whole channel widens.
+            cells[_plane_mask(band)] = len(heights) - 1
         wet_tiles |= mask
 
     # submerged = wet AND surface above terrain

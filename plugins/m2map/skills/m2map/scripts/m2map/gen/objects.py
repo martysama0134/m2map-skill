@@ -78,8 +78,20 @@ def _sample_roll(rng, tier: ObjectTier) -> float:
     return float(rng.randrange(steps)) * ROLL_SNAP
 
 
+#: Quarter turn between the fall line and the roll that faces a sheet out of the
+#: cliff. Established by rendering four `fall_7` instances on one rim at
+#: downhill + 0/90/180/270 and looking: 0 and 180 present the sheet EDGE-ON --
+#: a thin ribbon with the lip curling sideways, which is the "flag hanging off
+#: the hill" look -- while 90 presents it face-on as a falling curtain. The
+#: prop's plane lies along its heading, so the heading has to run ACROSS the
+#: fall line, not down it.
+FACE_OUT_TURN = 90.0
+
+
 def _downhill_roll(height_t: np.ndarray, tx: int, ty: int) -> float:
-    """Compass heading of the fall line under a tile, snapped to 15 degrees.
+    """Roll that faces a prop out of the slope it stands on, snapped to 15 deg.
+
+    This is the fall line turned a quarter -- see :data:`FACE_OUT_TURN`.
 
     Used for props that have to read as attached to a face. `fall_7`'s roll is
     zero in only **13.6%** of its 44 corpus placements against 90.2% for Effects
@@ -99,7 +111,7 @@ def _downhill_roll(height_t: np.ndarray, tx: int, ty: int) -> float:
     dzdy = float(height_t[y1, tx] - height_t[y0, tx])
     if abs(dzdx) < 1e-6 and abs(dzdy) < 1e-6:
         return 0.0
-    deg = math.degrees(math.atan2(-dzdy, -dzdx)) % 360.0
+    deg = (math.degrees(math.atan2(-dzdy, -dzdx)) + FACE_OUT_TURN) % 360.0
     return float(round(deg / ROLL_SNAP) * ROLL_SNAP) % 360.0
 
 

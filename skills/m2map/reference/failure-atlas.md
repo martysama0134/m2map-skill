@@ -909,6 +909,64 @@ validates the boundary. `reference/we-api.md` has the working headless command.
 
 ---
 
+### The waterline is a staircase
+
+**Symptom.** The edge of a lake or river is a run of axis-aligned steps instead
+of a shoreline.
+
+**Cause.** The water plane stops at the polygon that defined it. `water.wtr`
+cells are 200 world units and axis-aligned, so wherever the polygon edge *is*
+the visible edge, the cell grid is what you see.
+
+**What the corpus does.** The plane runs well past the shore and the terrain
+occludes it, so the visible edge is a contour of the ground. Of the cells
+flagged as water, the share actually submerged:
+
+| map | submerged |
+|---|---|
+| `metin2_map_n_desert_01` | **23 %** |
+| `metin2_map_a1` | 41 % |
+| `metin2_map_c1` | 53 % |
+| `metin2_map_b1` | 57 % |
+| `metin2_map_eastplain_01` | 92 % |
+
+58 % over the six maps measured. A generator whose masks are ~100 % submerged
+has drawn the shoreline itself, and it will step.
+
+**Fix.** Dilate the drawn plane past the basin — `gen/water.py.PLANE_OVERRUN`,
+45 % of the basin radius — and leave the authored mask alone for the shore
+texture and the object water-distance rules.
+
+### The lake has no beach and floods to its polygon
+
+**Symptom.** Water meets the sand at a hard line with no shallows; the pool
+fills its polygon exactly.
+
+**Cause.** The surface sits above the rim of the basin. The auto-level took the
+**92nd** percentile of the terrain under the mask and added 60 cm, which is at
+or above the surrounding ground rather than inside the bowl.
+
+**Fix.** The 35th percentile plus 40 cm. Corpus median depth is 174-410 cm, so
+the plane belongs well inside the basin. Then the terrain that rises through it
+is the beach.
+
+### A waterfall hangs off the cliff like a flag
+
+**Symptom.** `fall_7` renders as a thin ribbon seen edge-on, with its lip
+curling sideways out of the rock.
+
+**Cause.** Its roll was set to the fall line. The prop's plane lies **along** its
+heading, so pointing the heading downhill presents the sheet edge-on.
+
+**Fix.** Turn it a quarter — `gen/objects.py.FACE_OUT_TURN`. Established by
+rendering four sheets on one rim at downhill + 0/90/180/270: 0 and 180 are
+edge-on, 90 is the falling curtain.
+
+Two more things about that prop, both measured over its 44 corpus placements:
+its `height_bias` band is **+78 / +288 / +1,378 cm** (p25/p50/p75) so it is
+raised, not sunk; and it renders about **40 m across**, so one sheet is a
+waterfall and three on a 30 m rim are a wall of water.
+
 ## 5. Water that is technically correct and visibly wrong
 
 Three faults in a row, all found by loading the map in WorldEditor, none
