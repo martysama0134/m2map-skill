@@ -14,7 +14,7 @@ Two styles, because the corpus has two and they share almost nothing:
     border, 2.5% footprint, 1.4% residual. The Youden-optimal slope cut is
     **20 degrees** (TPR 0.807, FPR 0.103).
 
-``painted_box`` (55 maps, interior)
+``painted_box`` (57 maps, interior)
     Paint everything blocked, then carve the walkable corridor. There is no
     slope rule at all -- fitting one to these maps produces meaningless
     thresholds like 9 or 10 degrees, which is an artefact of wholesale paint.

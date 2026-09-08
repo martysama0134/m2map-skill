@@ -3,7 +3,8 @@
 The placement grammar, as measured over all 48,774 shipped object records rather
 than assumed. The rules the corpus actually supports:
 
-* **Heading is roll, not yaw.** Yaw is zero in 89-99.7% of records; it and pitch
+* **Heading is roll, not yaw.** Yaw is zero in 96.4% of records corpus-wide
+  (1,767 non-zero of 48,774; 94.2-99.7% per property type); it and pitch
   are tilt channels used almost exclusively by debris (3.6% overall, concentrated
   in ``snakevalley`` spear rocks and ``devils_dragon_island`` bone).
 * **Everything snaps to 15 degrees.** Zero non-integer rolls in 48,774 records,

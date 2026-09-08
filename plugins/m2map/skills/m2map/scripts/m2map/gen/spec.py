@@ -158,7 +158,8 @@ class MapSpec:
 
     # --- attr policy ------------------------------------------------------
     #: slope_driven (outdoor: block above a threshold) or painted_box (interior:
-    #: paint everything, carve the walkable corridor). The corpus splits 59/55.
+    #: paint everything, carve the walkable corridor). The corpus splits 59/57
+    #: over the 116 maps that ship attr.atr (catalog/stats-attr.json).
     attr_style: str = "slope_driven"
     block_slope_deg: float = 20.0
     border_band_m: int = 4
