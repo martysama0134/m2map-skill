@@ -78,6 +78,31 @@ def _sample_roll(rng, tier: ObjectTier) -> float:
     return float(rng.randrange(steps)) * ROLL_SNAP
 
 
+def _downhill_roll(height_t: np.ndarray, tx: int, ty: int) -> float:
+    """Compass heading of the fall line under a tile, snapped to 15 degrees.
+
+    Used for props that have to read as attached to a face. `fall_7`'s roll is
+    zero in only **13.6%** of its 44 corpus placements against 90.2% for Effects
+    as a class, so it is deliberately turned; measured against the terrain
+    gradient the alignment is real but loose -- circular resultant **0.35**, and
+    **52%** of placements within +/-45 deg of the downhill bearing, with several
+    maps (`c3`, `eastplain_01`, `a3`) sitting within a few degrees of it.
+
+    So this is the right default for a waterfall, not a law the corpus obeys.
+    The alternative -- the 15 deg ladder every other prop uses -- puts the
+    visible face of the sheet into the rock about half the time.
+    """
+    h, w = height_t.shape
+    y0, y1 = max(0, ty - 1), min(h - 1, ty + 1)
+    x0, x1 = max(0, tx - 1), min(w - 1, tx + 1)
+    dzdx = float(height_t[ty, x1] - height_t[ty, x0])
+    dzdy = float(height_t[y1, tx] - height_t[y0, tx])
+    if abs(dzdx) < 1e-6 and abs(dzdy) < 1e-6:
+        return 0.0
+    deg = math.degrees(math.atan2(-dzdy, -dzdx)) % 360.0
+    return float(round(deg / ROLL_SNAP) * ROLL_SNAP) % 360.0
+
+
 def _candidate_mask(spec: MapSpec, lay: Layout, tier: ObjectTier,
                     tiles: np.ndarray, slope: np.ndarray,
                     submerged: np.ndarray, wet: np.ndarray = None) -> np.ndarray:
@@ -160,6 +185,25 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
     OVERLAP_M = 1.5
 
     for tier in spec.objects:
+        # Authored placements bypass every filter. See `ObjectTier.positions`:
+        # a landmark is put where the author wants it, and the candidate mask
+        # exists to scatter fillers, not to second-guess that.
+        if tier.positions:
+            for px, py in tier.positions:
+                tx = float(np.clip(px, 0, w - 1))
+                ty = float(np.clip(py, 0, h - 1))
+                gz = float(height_t[int(ty), int(tx)])
+                bias_lo, bias_hi = tier.height_bias
+                bias = (bias_lo if bias_hi <= bias_lo
+                        else rng.uniform(bias_lo, bias_hi))
+                records.append(ad.ObjectRecord(
+                    x=tx * 100.0, y=-(ty * 100.0), z=gz, crc=tier.crc,
+                    yaw=0.0, pitch=0.0,
+                    roll=(_downhill_roll(height_t, int(tx), int(ty))
+                          if tier.align_to_slope else _sample_roll(rng, tier)),
+                    height_bias=round(bias, 6)))
+            continue
+
         mask = _candidate_mask(spec, lay, tier, tiles, slope_t, submerged, wet)
         available = int(mask.sum())
         if available == 0:
@@ -231,7 +275,8 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
                 z=gz,
                 crc=tier.crc,
                 yaw=0.0, pitch=0.0,        # heading lives in roll
-                roll=_sample_roll(rng, tier),
+                roll=(_downhill_roll(height_t, int(tx), int(ty))
+                      if tier.align_to_slope else _sample_roll(rng, tier)),
                 height_bias=round(bias, 6),
             ))
             placed += 1

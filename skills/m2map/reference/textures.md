@@ -369,6 +369,24 @@ route.
 > it around massifs rather than over them. A road that climbs a blocked slope is
 > the single most visible tell of a generated map.
 
+**(k0) Rock is where the player cannot walk.** The cliff mask is not chosen by
+slope quantile or by palette weight — it is the unwalkable ground.
+P(blocked | cliff-painted) over eight maps: c1 0.99, `map_a2` 0.99, b1 0.98,
+a3 0.98, `n_desert_01` 0.97, a1 0.95, b3 0.95, `mt_thunder` 0.91. The converse
+runs 0.29–0.95, because block also covers object footprints, the border seal and
+steep grass, so the implication is one-directional. On `n_desert_01` the two
+masks have an **IoU of 0.93**.
+
+Drive the mask off the same `block_slope_deg` the attr stage uses and paint and
+collision agree by construction. Grass or sand covers everything walkable that
+is not road.
+
+**And the interior is a single texture** — share held by the commonest slot:
+`n_desert_01` **100 %**, `map_a2` **100 %**, `mt_thunder` 94 %, c1 88 %, b1 75 %,
+a3 64 %, a1 59 %. Mixing happens at the rim only: the dominant slot goes from
+4–17 % one tile outside the massif to 63–99 % at the boundary, then stays flat
+inward. One texture, mixed only in the corner before the switch.
+
 **(k) The cliff is region fill, and (c) does not apply to it.** Rule (c) — the
 ground is a dither, not regions — is the most important thing on this page and
 it is about **ground**. Rock is the exception. Share of cliff paint surviving a

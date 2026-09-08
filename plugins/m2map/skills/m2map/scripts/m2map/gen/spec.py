@@ -99,6 +99,26 @@ class ObjectTier:
     on_tiles: List[int] = field(default_factory=list)
     #: maximum ground slope in degrees
     max_slope: float = 25.0
+    #: Exact placements, in map-local tile coordinates (1 tile = 1 m, y-down).
+    #: When set, the prop is placed HERE and every candidate filter above is
+    #: skipped -- slope, water distance, road clearance, spacing.
+    #:
+    #: Landmarks are authored, not scattered, and a waterfall is the clearest
+    #: case: it has to hang at the lip of the basin that feeds it, and no
+    #: combination of "steep" and "near water" can say WHICH water. Constrained
+    #: placement put one at the foot of the drop, beside the lower pool, 23 m
+    #: below the tarn it was supposed to fall from.
+    positions: List[Tuple[float, float]] = field(default_factory=list)
+    #: Turn the prop to face down the slope it stands on, instead of taking a
+    #: heading from the 15 deg ladder. For anything that has to read as attached
+    #: to a face -- a waterfall above all -- a random heading puts the visible
+    #: side into the rock. `fall_7`'s roll is zero in only **13.6%** of its 44
+    #: placements against 90.2% for Effects as a class, so it IS deliberately
+    #: turned; measured against the terrain gradient underneath it the alignment
+    #: is real but loose (circular resultant 0.35, 52% within +/-45 deg of the
+    #: downhill bearing, and several maps sit within a few degrees of it). So
+    #: this is the right default for such a prop, not a law.
+    align_to_slope: bool = False
     #: MINIMUM ground slope in degrees. Rarely useful and occasionally
     #: essential: a handful of props only make sense on a face. `fall_7`, the
     #: waterfall, measures slope p50 71.4 deg with 26 of its 44 placements above
@@ -337,6 +357,12 @@ class MapSpec:
             if len(w.waypoints) < (3 if w.lake else 2):
                 out.append("water feature has too few waypoints")
         span_tiles = (self.width_tiles, self.height_tiles)
+        for o in self.objects:
+            for px, py in o.positions:
+                if not (0 <= px < span_tiles[0] and 0 <= py < span_tiles[1]):
+                    out.append("object %s has a position (%.0f, %.0f) outside "
+                               "the %dx%d m map"
+                               % (o.name or o.crc, px, py, *span_tiles))
         for pz in self.plazas:
             if not 0 <= pz.tile_index <= n:
                 out.append("plaza tile_index %d outside the palette (0..%d)"
@@ -358,9 +384,9 @@ class MapSpec:
         # letting the shortfall report explain it after the build.
         span_m = min(self.size) * SECTOR_TILES
         for o in self.objects:
-            if o.density <= 0 and o.count <= 0:
-                out.append("object %s (%d) has neither density nor count"
-                           % (o.name or "?", o.crc))
+            if o.density <= 0 and o.count <= 0 and not o.positions:
+                out.append("object %s (%d) has neither density, count nor "
+                           "positions" % (o.name or "?", o.crc))
             for t in o.on_tiles:
                 if not 0 <= t <= n:
                     out.append("object %s references tile %d outside the palette"

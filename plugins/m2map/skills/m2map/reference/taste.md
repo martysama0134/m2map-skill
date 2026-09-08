@@ -356,7 +356,57 @@ Only the disc itself is guaranteed clear.
 
 Build it with `PlazaSpec`. `textures.md` §4g–4h.
 
-### 1.10 The cliff is region fill — the one exception to §1.5
+### 1.10 Rock is exactly where the player cannot walk, and it is one texture
+
+The rule is not about slope numbers or palette weights. **If the player cannot
+walk there it is mountain, and mountain is stone.** Measured as
+P(blocked | cliff-painted) over eight maps:
+
+| map | P(blk ∣ cliff) | P(cliff ∣ blk) | IoU |
+|---|---|---|---|
+| `metin2_map_c1` | **0.99** | 0.48 | 0.48 |
+| `map_a2` | **0.99** | 0.29 | 0.29 |
+| `metin2_map_b1` | **0.98** | 0.50 | 0.50 |
+| `metin2_map_a3` | **0.98** | 0.60 | 0.59 |
+| `metin2_map_n_desert_01` | **0.97** | 0.95 | **0.93** |
+| `metin2_map_a1` | **0.95** | 0.63 | 0.61 |
+| `metin2_map_b3` | **0.95** | 0.30 | 0.30 |
+| `metin2_map_mt_thunder` | **0.91** | 0.33 | 0.32 |
+
+Stone is a **subset** of unwalkable ground on every map: 0.91–0.99. The converse
+is looser (0.29–0.95) because block also covers object footprints, the border
+seal and steep grass — so the rule runs one way only. On
+`metin2_map_n_desert_01`, the desert archetype's own reference, the two masks
+very nearly coincide: **IoU 0.93**. The rock skin *is* the block map there.
+
+> **Rule:** drive the cliff mask off the same slope threshold the attr stage
+> uses (`block_slope_deg`), not off a share target. Paint and collision then
+> agree by construction. Everything walkable and off the road gets grass or
+> sand.
+
+**And the face is ONE texture.** Share of the massif interior held by its
+commonest slot:
+
+| map | dominant | second |
+|---|---|---|
+| `metin2_map_n_desert_01` | **100 %** | — |
+| `map_a2` | **100 %** | — |
+| `metin2_map_mt_thunder` | 94 % | 6 % |
+| `metin2_map_c1` | 88 % | 12 % |
+| `metin2_map_b1` | 75 % | 19 % |
+| `metin2_map_a3` | 64 % | 31 % |
+| `metin2_map_a1` | 59 % | 36 % |
+
+An earlier version of the generator dithered the cliff slots against each other
+inside the massif. The corpus does not: the mixing lives at the **rim**, where
+the dominant slot's share goes from 4–17 % one tile outside the massif to
+63–99 % at the boundary and stays flat inward. One texture, mixed only in the
+corner before the switch.
+
+The cliff is still region fill rather than stipple — massif ÷ raw is 0.86–0.99,
+the table below — and §1.5 still does not apply to it.
+
+### 1.10a The cliff is region fill — the one exception to §1.5
 
 §1.5 says ground is a per-tile stipple and not region fill. That is a statement
 about **ground**. The rock skin is the exception, and it is the most visible

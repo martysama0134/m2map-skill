@@ -225,15 +225,8 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     if cliff_slots:
         massif = cliff_massif(spec, slope, rng)
         if massif.any():
-            sub = np.zeros((len(cliff_slots), h, w))
-            for j, i in enumerate(cliff_slots):
-                sub[j] = np.maximum(scores[i - 1], 1e-9)
-            sub /= sub.sum(axis=0)
-            cum = np.cumsum(sub, axis=0)
-            pick = (draw[None, :, :] > cum).sum(axis=0)
-            pick = np.clip(pick, 0, len(cliff_slots) - 1)
-            chosen = np.take(np.array(cliff_slots, np.uint8), pick)
-            tiles = np.where(massif, chosen, tiles)
+            # ONE texture, flat across the whole face. See `dominant_cliff`.
+            tiles = np.where(massif, np.uint8(dominant_cliff(spec)), tiles)
             # Ground must not survive inside the massif, and rock must not be
             # left scattered outside it -- the feather below puts back exactly
             # as much as the corpus measures.
@@ -535,74 +528,87 @@ def base_carpet(spec: MapSpec, scores: np.ndarray, rng) -> np.ndarray:
 
 
 def cliff_massif(spec: MapSpec, slope: np.ndarray, rng) -> np.ndarray:
-    """Where the rock skin covers the ground, as a SOLID region.
+    """Where the rock skin covers the ground: **everywhere the player cannot
+    walk**.
 
-    ``taste.md`` sec 1.5 -- ground is a per-tile stipple, not region fill -- is a
-    statement about ground. The cliff is the exception and it is the most
-    visible thing in a landscape shot. Measured over eight corpus maps, the
-    share of cliff paint surviving a 5x5 opening (massif / raw) is **0.86 to
-    0.99**: a1 0.98, b1 0.98, c1 0.97, n_desert_01 0.99, a3 0.98, b3 0.92,
-    capedragonhead 0.94, mt_thunder 0.86. Sampling cliff per tile the way the
-    ground is sampled gives 0.02, which is pepper.
+    This is a walkability rule, not a share rule, and tying it to the same
+    threshold the attr stage uses makes paint and collision agree by
+    construction. Measured P(blocked | cliff-painted) over eight corpus maps:
+    c1 0.99, map_a2 0.99, b1 0.98, a3 0.98, n_desert_01 0.97, a1 0.95, b3 0.95,
+    mt_thunder 0.91. Stone is a subset of unwalkable ground on every one.
 
-    P(cliff | slope) is a monotone ramp, and where it turns is a per-map
-    decision rather than a constant:
+    The converse is looser -- P(cliff | blocked) runs 0.29 to 0.95 -- because
+    block also covers object footprints, the border seal and steep grass. So the
+    rule only runs one way, and `metin2_map_n_desert_01` is where the two masks
+    very nearly coincide: IoU **0.93**.
 
-    | slope band | 0-5 | 15-20 | 25-30 | 40-50 | 60+ |
-    |---|---|---|---|---|---|
-    | `metin2_map_a1` | 7% | 34% | 64% | 83% | 92% |
-    | `metin2_map_n_desert_01` | 5% | 12% | 27% | 79% | 98% |
-    | `metin2_map_mt_thunder` | 7% | 26% | 32% | 34% | 40% |
+    An earlier version ranked tiles by slope and took as many as the palette
+    weights asked for. That produced rock in roughly the right places for the
+    wrong reason, and it drifted off the block mask whenever the weights and the
+    terrain disagreed -- stone on ground the player could walk, sand on cliffs
+    they could not.
 
-    So the ramp is not hard-coded. The slot weights already say how much of the
-    map should be rock; this ranks every tile by slope, jitters that ranking
-    with a smooth field so the boundary is organic rather than a terrain
-    contour, and takes the top N. The result hits the requested share by
-    construction, follows slope, and is spatially coherent -- which is what
-    makes it survive the opening.
+    `taste.md` 1.5 -- ground is a per-tile stipple -- does not apply here.
     """
     cliff = [i for i, sl in enumerate(spec.textures, start=1) if sl.role == "cliff"]
     if not cliff:
         return np.zeros(slope.shape, bool)
-    share = sum(max(0.0, spec.textures[i - 1].weight) for i in cliff)
-    total = sum(max(0.0, sl.weight) for sl in spec.textures
-                if sl.role not in ("path",)) or 1.0
-    frac = float(np.clip(share / total, 0.0, 0.9))
-    if frac <= 0.001:
-        return np.zeros(slope.shape, bool)
 
-    from .terrain import fbm                # local import: terrain has no dep here
+    from .terrain import fbm
     h, w = slope.shape
-    hi = max(1.0, float(np.percentile(slope, 99)))
-    score = np.clip(slope / hi, 0.0, 1.0)
-    score = score + MASSIF_JITTER * (fbm(rng, h, w, octaves=3, base_cells=32,
-                                         gain=0.55) - 0.5)
-    cut = float(np.quantile(score, 1.0 - frac))
-    mask = score >= cut
 
-    # Smooth the boundary at the 5x5 scale. Without this the rim is ragged at
-    # one-tile resolution, a 5x5 opening eats a whole ring of genuinely solid
-    # rock, and the massif/raw ratio measures 0.67 against the corpus's
-    # 0.86-0.99 -- the map looks right and the statistic says it is pepper.
-    # Large-scale shape is unaffected: that comes from the fbm at base_cells 32,
-    # far above the filter's reach.
+    if spec.attr_style == "slope_driven":
+        # The attr stage's own threshold. A jittered band around it, rather than
+        # a hard contour, so the rock line reads as geology and not as a
+        # topographic map -- the width of the band is a quarter of the threshold,
+        # which on a 25 deg cut lets rock start at 19 and be certain by 31.
+        cut = float(spec.block_slope_deg)
+        band = max(2.0, cut * 0.25)
+        jitter = (fbm(rng, h, w, octaves=3, base_cells=32, gain=0.55) - 0.5) * 2.0
+        mask = slope >= (cut + band * jitter)
+    else:
+        # Interiors and painted_box maps have no slope rule to borrow, so fall
+        # back to the palette's own weights: rank by slope, take the top share.
+        share = sum(max(0.0, spec.textures[i - 1].weight) for i in cliff)
+        total = sum(max(0.0, sl.weight) for sl in spec.textures
+                    if sl.role != "path") or 1.0
+        frac = float(np.clip(share / total, 0.0, 0.9))
+        if frac <= 0.001:
+            return np.zeros(slope.shape, bool)
+        hi = max(1.0, float(np.percentile(slope, 99)))
+        score = np.clip(slope / hi, 0.0, 1.0)
+        score = score + MASSIF_JITTER * (fbm(rng, h, w, octaves=3, base_cells=32,
+                                             gain=0.55) - 0.5)
+        mask = score >= float(np.quantile(score, 1.0 - frac))
+
     for _ in range(2):
         mask = _majority(mask)
 
-    # Then give the massif a minimum THICKNESS. This is the step that actually
-    # matters, and it took a measurement to find: with only the majority filter
-    # the ratio sat at 0.78 with 2.4% of the map's rock stranded in the far
-    # field, and no amount of tuning the feather moved either number. The cause
-    # was thin arms -- ridges two or three tiles wide, which survive a 3x3
-    # majority and die under the 5x5 opening the statistic is measured with, so
-    # they counted as raw cliff with no massif behind them.
-    #
-    # Opening at the same 5x5 the measurement uses makes the output
-    # opening-stable by construction: ratio 0.94, far field 0.00%, against the
-    # corpus's 0.86-0.99 and 0.00-0.06%.
+    # Minimum thickness, at the same 5x5 the massif/raw statistic is measured
+    # with. Without it, ridges two or three tiles wide survive the smoothing and
+    # die under the opening, which pinned the ratio at 0.78 with 2.4% of the
+    # map's rock stranded in open field -- and no amount of tuning the feather
+    # moved either number, because the feather was never the cause.
     mask = _dilate(_erode(mask, 2), 2)
-    mask = _erode(_dilate(mask, 2), 2)          # close interior pinholes
+    mask = _erode(_dilate(mask, 2), 2)
     return _drop_islands(mask)
+
+
+def dominant_cliff(spec: MapSpec) -> int:
+    """The single texture the massif interior is painted with, 1-based.
+
+    The corpus does not dither the rock face. Share of the massif interior held
+    by its commonest slot: `n_desert_01` **100%**, `map_a2` **100%**,
+    `mt_thunder` 94%, `c1` 88%, `b1` 75%, `a3` 64%, `a1` 59%. Where a second
+    slot appears at all it is a partner over the same face rather than a
+    separate feature, and the rim is where the mixing happens -- the dominant
+    slot goes from 4-17% one tile outside the massif to 63-99% at the rim.
+    """
+    best, best_w = 0, -1.0
+    for i, sl in enumerate(spec.textures, start=1):
+        if sl.role == "cliff" and sl.weight > best_w:
+            best, best_w = i, sl.weight
+    return best
 
 
 #: Rock share in the first tile outside the massif, and its per-tile decay.
@@ -659,7 +665,7 @@ def _feather_massif(tiles: np.ndarray, spec: MapSpec, rng) -> np.ndarray:
             # The lowest cliff index, not a random one: a multi-slot rock
             # palette should not scatter its rarest variant as far as its
             # commonest, and in the corpus the tail is the massif's own skin.
-            out = np.where(pick, np.uint8(cliff[0]), out)
+            out = np.where(pick, np.uint8(dominant_cliff(spec)), out)
     return out
 
 

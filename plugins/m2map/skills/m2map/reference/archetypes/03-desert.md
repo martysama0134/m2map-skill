@@ -311,6 +311,27 @@ the middle of the map.** All four constraints hold at once, and any one of them
 alone lets it be placed somewhere it will look broken — floating off a cliff
 with no water under it, or standing in a pond on flat ground.
 
+**The two-level form needs a plateau.** `metin2_map_n_desert_01` is 6x6 and has
+room for one. On a 1x1 map walled by a 40 m border ridge there is nowhere to put
+the upper basin: measured on a generated 1x1, the rim is a continuous 25-54 deg
+ramp with no shelf, and the crest above 18,900 cm is only **6-9 cells (12-18 m)
+wide per side**. A lake polygon placed there floods the outer slope instead of
+filling a bowl, and the editor shows water running down the hillside in sheets.
+On a small map, drop the upper basin and let the fall emerge from the rock face
+as a spring -- `fall_7` is on water in 84 % of its placements, which leaves 16 %
+that are not.
+
+**Place the waterfall by hand.** "Steep and near water" cannot express *which*
+water: constrained placement puts every sheet at the foot of the drop beside the
+lower pool, tens of metres below the basin that feeds it. Use
+`ObjectTier.positions`, and set `align_to_slope` so each sheet faces the fall
+line -- `fall_7`'s roll is zero in only 13.6 % of corpus placements against
+90.2 % for Effects as a class, and the 15 deg ladder every other prop uses puts
+the visible face into the rock about half the time.
+
+**Raise it.** `height_bias` p25 **+78 cm**, p50 **+288**, p75 **+1,378**,
+p95 **+3,692**. A negative bias sinks the sheet into the ground.
+
 Assembly, in order:
 
 1. **Cut the upper basin** into the massif — a `WaterSpec` lake with its own
