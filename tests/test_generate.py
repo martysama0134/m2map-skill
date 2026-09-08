@@ -23,8 +23,10 @@ sys.path.insert(0, str(REPO_ROOT / "skills" / "m2map" / "scripts"))
 from m2map.audit import rules                                    # noqa: E402
 from m2map.codec import areadata, attr, height, server_attr, textureset, tile  # noqa: E402
 from m2map.gen import pipeline                                   # noqa: E402
-from m2map.gen.spec import (MapSpec, ObjectTier, RegionSpec,     # noqa: E402
-                            RoadSpec, SpecError, TextureSlot, WaterSpec)
+from m2map.gen import texture as texture_stage                  # noqa: E402
+from m2map.gen.spec import (MapSpec, ObjectTier, PlazaSpec,      # noqa: E402
+                            RegionSpec, RoadSpec, SpecError, TextureSlot,
+                            WaterSpec)
 
 
 def make_spec(**over) -> MapSpec:
@@ -41,6 +43,7 @@ def make_spec(**over) -> MapSpec:
             TextureSlot("d:/ymir work/terrainmaps/b/grass/grass 01.dds", role="base", weight=0.55),
             TextureSlot("d:/ymir work/terrainmaps/b/field/field 03.dds", role="mid", weight=0.30),
             TextureSlot("d:/ymir work/terrainmaps/b/stone/stone01.dds", role="cliff", weight=0.15),
+            TextureSlot("d:/ymir work/terrainmaps/b/tile/tile01.dds", role="path"),
         ],
         roads=[RoadSpec(waypoints=[(30, 0), (120, 120), (200, 255)], width_m=6.0,
                         tile_index=1)],
@@ -55,6 +58,7 @@ def make_spec(**over) -> MapSpec:
         slope_p50=4.5, slope_p95=23.0, flat_fraction=0.40,
         attr_style="slope_driven", block_slope_deg=20.0, border_band_m=4,
         safezone_regions=["settlement"],
+        plazas=[PlazaSpec(centre=(195.0, 55.0), radius_m=18.0, tile_index=5)],
     )
     for k, v in over.items():
         setattr(spec, k, v)
@@ -509,3 +513,217 @@ def test_box_style_never_gets_a_ridge():
                      border_ridge_cm=0.0)
     b = pipeline.run(spec)
     assert float(b.height_cm.std()) == 0.0
+
+
+# --- ground painting conventions (reference/textures.md sec 4f-4k) --------
+#
+# Every rule below was measured on the corpus before it was coded; the numbers
+# quoted in the assertions are the corpus figures, and the tolerances are wide
+# enough that only a real regression trips them.
+
+
+@pytest.mark.parametrize("path,expect", [
+    ("d:/ymir work/terrainmaps/b/field/field 01.dds", "field"),
+    ("d:/ymir work/terrainmaps/a/beach/beach sand 01.dds", "sand"),
+    ("d:/ymir work/terrainmaps/n/desert/sand/sand01.dds", "sand"),
+    ("d:/ymir work/terrainmaps/b/stone/stone02.dds", "stone"),
+    ("d:/ymir work/terrainmaps/b/tile/tile01.dds", "tile"),
+    ("capedragonhead/capedragon_cliff002.dds", "cliff"),
+    ("d:/ymir work/terrainmaps/b/grass/grass 01.dds", "grass"),
+    ("something_unrecognised.dds", ""),
+])
+def test_motif_reads_the_ymir_naming_convention(path, expect):
+    """`beach sand` must beat `sand`, and an unknown name must stay unknown.
+
+    The motif is only ever a prior -- it picks a road's dither partner and
+    nothing else -- but a wrong answer here silently pairs a road with a cliff.
+    """
+    assert texture_stage.motif_of(path) == expect
+
+
+def test_road_rim_dithers_with_a_sibling_of_its_own_motif(built):
+    """map_a2 paints `field 01` and enriches `field 02` at the rim 23.9x.
+
+    The reference palette is slot 1 `field 01` (the road) and slot 3
+    `field 03`, so the partner must resolve to 3 -- not to the grass base, and
+    not to the stone cliff, which the corpus DEPLETES at the rim (0.52x).
+    """
+    spec = make_spec()
+    assert texture_stage._fringe_partner(spec, 1) == 3
+
+    tiles = built.tiles
+    rim = np.zeros(tiles.shape, bool)
+    for corr in built.layout.corridors:
+        rim |= corr.fringe & ~corr.core
+    assert rim.any()
+    on_rim = tiles[rim]
+    # Both the road surface and its sibling live in the blend band.
+    assert (on_rim == 1).sum() > 0, "no road colour in the rim"
+    assert (on_rim == 3).sum() > 0, "no motif sibling in the rim"
+    # ...and the cliff slot is not what the rim is made of.
+    assert (on_rim == 4).mean() < (tiles == 4).mean() + 0.05
+
+
+def test_cliff_is_a_solid_skin_not_a_dither(built):
+    """massif / raw over the corpus: 0.86 (mt_thunder) to 0.99 (n_desert_01).
+
+    `taste.md` §1.5 -- ground is a per-tile stipple, not region fill -- is a
+    statement about GROUND. The cliff is the exception, and sampling it per tile
+    like the ground gave a ratio of **0.02**: rock as pepper, no rock face
+    anywhere on the map. That is the most visible possible error in a landscape
+    screenshot and every automated check passed while it was true.
+    """
+    tiles = built.tiles
+    mask = tiles == 4                                     # the cliff slot
+    assert mask.any(), "no cliff painted at all"
+    massif = texture_stage._dilate(texture_stage._erode(mask, 2), 2)
+    ratio = massif.sum() / float(mask.sum())
+    assert ratio >= 0.85, \
+        "cliff survives opening at %.2f -- the corpus measures 0.86-0.99" % ratio
+
+
+def test_cliff_share_rises_with_slope(built):
+    """P(cliff | slope) is monotone in the corpus: a1 7% at 0-5 deg, 92% at 60+.
+
+    Where the ramp turns is a per-map decision (n_desert_01 is still at 12% by
+    15-20 deg where a1 is at 34%), so this only asserts the direction.
+    """
+    tiles, slope = built.tiles, built.slope_deg
+    h, w = slope.shape
+    ys, xs = np.mgrid[:tiles.shape[0], :tiles.shape[1]]
+    sl = slope[np.clip(ys // 2, 0, h - 1), np.clip(xs // 2, 0, w - 1)]
+    mask = tiles == 4
+    bands = [(0, 10), (10, 20), (20, 30), (30, 90)]
+    shares = []
+    for lo, hi in bands:
+        sel = (sl >= lo) & (sl < hi)
+        if sel.sum() > 500:
+            shares.append(float(mask[sel].mean()))
+    assert len(shares) >= 3, "not enough slope range to measure"
+    assert shares[-1] > shares[0], \
+        "cliff share does not rise with slope: %r" % [round(x, 3) for x in shares]
+
+
+def test_rock_feathers_out_of_the_massif_and_then_stops(built):
+    """Corpus tail: a1 9.6 -> 6.8 -> 3.6 -> 2.1 -> 1.3 -> 0.9%, far field 0.00%.
+
+    Both halves are the rule. A generator that only reproduces the decay and
+    keeps sprinkling rock across open ground turns the map into gravel.
+    """
+    tiles = built.tiles
+    cliff = 4
+    mask = tiles == cliff
+    if not mask.any():
+        pytest.skip("no cliff painted on this seed")
+    massif = texture_stage._dilate(texture_stage._erode(mask, 2), 2)
+    if not massif.any():
+        pytest.skip("no massif survives opening on this seed")
+
+    shares, prev = [], massif
+    for step in range(1, 7):
+        cur = texture_stage._dilate(massif, step)
+        ring = cur & ~prev
+        prev = cur
+        if ring.sum() < 50:
+            break
+        shares.append(float(mask[ring].mean()))
+
+    assert len(shares) >= 4, "no measurable rim"
+    assert shares[0] > 0.01, "no feather at all: rock stops at a hard line"
+    # Monotone-ish decay -- allow one non-decreasing step, as metin2_map_b1 has
+    # one (16.2 -> 16.4) in the corpus.
+    rises = sum(1 for a, b in zip(shares, shares[1:]) if b > a + 1e-9)
+    assert rises <= 1, "feather does not decay: %r" % shares
+    assert shares[-1] < shares[0], "feather does not thin: %r" % shares
+
+    far = ~texture_stage._dilate(massif, 20)
+    if far.sum() > 500:
+        assert float(mask[far].mean()) < 0.02, \
+            "rock is sprinkled over the far field; the corpus measures 0.00%"
+
+
+def test_plaza_is_painted_unmixed(built):
+    """Corpus discs measure solid 0.84-0.87; a road in the same palette 0.36-0.56.
+
+    The plaza is the one place on an outdoor map where the stipple is off, and
+    that is what makes it read as built rather than grown.
+    """
+    tiles = built.tiles
+    assert built.layout.plazas, "the reference spec declares a plaza"
+    pz = built.layout.plazas[0]
+    inside = tiles[pz.mask]
+    assert (inside == pz.tile_index).all(), \
+        "plaza is dithered: %d of %d tiles are not the plaza slot" % (
+            int((inside != pz.tile_index).sum()), inside.size)
+    # And it does not leak: the slot must not appear as field noise.
+    assert (tiles == pz.tile_index).sum() == int(pz.mask.sum())
+
+
+def test_plaza_disc_is_circular_and_the_right_size(built):
+    """fill = area / bbox: pi/4 = 0.785 for a circle, 1.0 for a square."""
+    pz = built.layout.plazas[0]
+    ys, xs = np.nonzero(pz.mask)
+    bh = ys.max() - ys.min() + 1
+    bw = xs.max() - xs.min() + 1
+    fill = pz.mask.sum() / float(bh * bw)
+    aspect = max(bh, bw) / float(min(bh, bw))
+    assert 0.70 <= fill <= 0.85, "fill %.3f outside the corpus band" % fill
+    assert aspect <= 1.10, "aspect %.3f -- not a disc" % aspect
+    radius = np.sqrt(pz.mask.sum() / np.pi)
+    assert 8.0 <= radius <= 25.0, "radius %.1f m outside the shipped 8-25 m" % radius
+
+
+def test_plaza_is_safe_and_walkable(built):
+    """Corpus: 100% ATTR_SAFEZONE inside the disc against a 0.2% baseline.
+
+    Cleared of block too -- unlike a safe-zone REGION, which overlaps block in
+    72% of the corpus's safe cells because it is painted over a whole town.
+    """
+    pz = built.layout.plazas[0]
+    cells = built.attr_cells
+    assert ((cells[pz.mask] & attr.ATTR_SAFEZONE) > 0).all(), \
+        "plaza is not flagged safe"
+    assert not ((cells[pz.mask] & attr.ATTR_BLOCK) > 0).any(), \
+        "plaza is flagged safe but the player cannot stand on it"
+
+
+def test_plaza_is_flat(built):
+    """Measured slope under the shipped discs is 0.0-1.9 deg.
+
+    Slope, not height span: a 36 m disc laid over a gentle rise spans a few
+    metres of height at well under a degree, and the corpus figure is the
+    gradient. The first version of this test asserted on the span and failed a
+    disc measuring 0.6 deg, which is inside the corpus band.
+    """
+    pz = built.layout.plazas[0]
+    h, w = built.slope_deg.shape
+    ys, xs = np.nonzero(pz.mask)
+    cy = np.clip(ys // 2, 0, h - 1)
+    cx = np.clip(xs // 2, 0, w - 1)
+    slope = built.slope_deg[cy, cx]
+    assert float(slope.mean()) < 3.0, \
+        "plaza mean slope %.2f deg -- the corpus measures 0.0-1.9" % slope.mean()
+
+
+@pytest.mark.parametrize("plaza,fragment", [
+    (PlazaSpec(centre=(120.0, 120.0), radius_m=60.0, tile_index=5), "outside the corpus band"),
+    (PlazaSpec(centre=(120.0, 120.0), radius_m=2.0, tile_index=5), "outside the corpus band"),
+    (PlazaSpec(centre=(5.0, 120.0), radius_m=18.0, tile_index=5), "runs off"),
+    (PlazaSpec(centre=(120.0, 120.0), radius_m=18.0, tile_index=99), "outside the palette"),
+])
+def test_bad_plaza_is_caught_before_building(plaza, fragment):
+    spec = make_spec(plazas=[plaza])
+    problems = " ".join(spec.validate())
+    assert fragment in problems, problems
+
+
+def test_plaza_survives_a_spec_round_trip(tmp_path):
+    """A mapspec that cannot be reloaded is not a contract."""
+    spec = make_spec()
+    path = tmp_path / "spec.yaml"
+    spec.dump(path)
+    back = MapSpec.load(path)
+    assert len(back.plazas) == 1
+    assert back.plazas[0].radius_m == spec.plazas[0].radius_m
+    assert back.plazas[0].tile_index == spec.plazas[0].tile_index
+    assert back.plazas[0].safezone is True

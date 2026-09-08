@@ -151,6 +151,41 @@ class RegionSpec:
 
 
 @dataclass
+class PlazaSpec:
+    """A safe-zone disc -- the town-square / duel-ring stamp.
+
+    Measured, not invented. Isolating every `tile*` component in the corpus and
+    scoring area against its own bounding box turns up 27 near-circular ones at
+    fill 0.70-0.85 (a filled circle scores pi/4 = 0.785; a filled square scores
+    1.0) and aspect 1.00-1.10, at radii 8, 10, 14, 18, 20, 22 and 25 m. The same
+    areas recur verbatim across unrelated maps -- 1,264 tiles in
+    ``metin2_map_a1``, ``metin2_map_smhgate_a1`` and
+    ``metin2_map_capedragonhead``; 316 in ``metin2_map_a3``, ``metin2_map_c1``,
+    ``metin2_map_smhgate_c1`` and ``metin2_map_guild_battle`` -- so these are
+    copy-pasted stamps, not hand-painted shapes.
+
+    On every map that uses the safe-zone flag at all the disc is **100%**
+    ``ATTR_SAFEZONE`` against a map baseline of 0.2%. The maps that measure 0%
+    (``metin2_map_smhgate_*``, ``metin2_map_t1``) have a map baseline of 0.0%:
+    they are paint-only clones that never wrote attr, not counter-examples.
+
+    The disc is painted UNMIXED. Its slot measures solid 0.84-0.87 -- nearly
+    every tile has all eight neighbours the same -- against 0.36-0.56 for a
+    dirt road in the same palette. It is the one place on an outdoor map where
+    the dither is switched off, which is exactly what makes it read as built
+    rather than grown.
+    """
+
+    #: Map-local metres. 1 tile = 1 m, so this is also tile coordinates.
+    centre: Tuple[float, float]
+    radius_m: float = 20.0
+    #: Palette slot to paint solid; 0 leaves the ground alone and the disc is
+    #: an attr feature only.
+    tile_index: int = 0
+    safezone: bool = True
+
+
+@dataclass
 class MapSpec:
     """Everything needed to build a map, and nothing that can be derived."""
 
@@ -171,6 +206,7 @@ class MapSpec:
     roads: List[RoadSpec] = field(default_factory=list)
     water: List[WaterSpec] = field(default_factory=list)
     regions: List[RegionSpec] = field(default_factory=list)
+    plazas: List[PlazaSpec] = field(default_factory=list)
     objects: List[ObjectTier] = field(default_factory=list)
 
     # --- terrain shaping, clamped to the archetype's mined statistics ------
@@ -294,6 +330,22 @@ class MapSpec:
         for w in self.water:
             if len(w.waypoints) < (3 if w.lake else 2):
                 out.append("water feature has too few waypoints")
+        span_tiles = (self.width_tiles, self.height_tiles)
+        for pz in self.plazas:
+            if not 0 <= pz.tile_index <= n:
+                out.append("plaza tile_index %d outside the palette (0..%d)"
+                           % (pz.tile_index, n))
+            # The shipped stamps run 8 to 25 m. Outside that band the disc stops
+            # reading as a plaza: under 6 m it is smaller than the buildings that
+            # ring it, over 40 m it is a field with a hard edge.
+            if not 4.0 <= pz.radius_m <= 40.0:
+                out.append("plaza radius %.1f m outside the corpus band "
+                           "(8-25 m measured, 4-40 tolerated)" % pz.radius_m)
+            cx, cy = pz.centre
+            if not (pz.radius_m <= cx <= span_tiles[0] - pz.radius_m and
+                    pz.radius_m <= cy <= span_tiles[1] - pz.radius_m):
+                out.append("plaza at (%.0f, %.0f) r=%.0f runs off the %dx%d m map"
+                           % (cx, cy, pz.radius_m, span_tiles[0], span_tiles[1]))
         # Archetype tables state distances measured on 2x4 to 6x6 maps. Copied
         # onto a small map they exclude the whole surface, and the failure is
         # silent -- the tier simply places nothing. Catch it here rather than
@@ -353,6 +405,7 @@ class MapSpec:
         d["roads"] = [RoadSpec(**r) for r in d.get("roads", [])]
         d["water"] = [WaterSpec(**w) for w in d.get("water", [])]
         d["regions"] = [RegionSpec(**r) for r in d.get("regions", [])]
+        d["plazas"] = [PlazaSpec(**p) for p in d.get("plazas", [])]
         d["objects"] = [ObjectTier(**o) for o in d.get("objects", [])]
         for k in ("size", "base_position", "height_range_cm"):
             if k in d and d[k] is not None:

@@ -163,18 +163,80 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     idx = (draw[None, :, :] > cum).sum(axis=0)
     tiles = np.clip(idx, 0, len(spec.textures) - 1).astype(np.uint8) + 1
 
+    # The rock skin is region fill, not stipple -- see `cliff_massif`. Inside
+    # the massif the cliff slots still dither AMONG THEMSELVES, which is how the
+    # corpus reads: metin2_a2's stone01/stone02 pair is 45% / 20% of the same
+    # rock face. So this only decides rock-versus-ground; which rock is still
+    # the sampler's answer, re-drawn over the cliff slots alone.
+    cliff_slots = [i for i, sl in enumerate(spec.textures, start=1)
+                   if sl.role == "cliff"]
+    if cliff_slots:
+        massif = cliff_massif(spec, slope, rng)
+        if massif.any():
+            sub = np.zeros((len(cliff_slots), h, w))
+            for j, i in enumerate(cliff_slots):
+                sub[j] = np.maximum(scores[i - 1], 1e-9)
+            sub /= sub.sum(axis=0)
+            cum = np.cumsum(sub, axis=0)
+            pick = (draw[None, :, :] > cum).sum(axis=0)
+            pick = np.clip(pick, 0, len(cliff_slots) - 1)
+            chosen = np.take(np.array(cliff_slots, np.uint8), pick)
+            tiles = np.where(massif, chosen, tiles)
+            # Ground must not survive inside the massif, and rock must not be
+            # left scattered outside it -- the feather below puts back exactly
+            # as much as the corpus measures.
+            stray = np.isin(tiles, cliff_slots) & ~massif
+            if stray.any():
+                fallback = _dominant_non_cliff(spec)
+                tiles = np.where(stray, np.uint8(fallback), tiles)
+
+    # Feather before the solid features, so the rock tail never lands on a road
+    # or inside a plaza. In the corpus it never does.
+    tiles = _feather_massif(tiles, spec, rng)
+
     # Solid features last so they overwrite the field rather than dither with it.
     for corr in lay.corridors:
         band = np.clip(corr.tile_index, 1, len(spec.textures))
         tiles[corr.core] = band
         # The fringe dithers between corridor and surroundings, which is how the
         # corpus transitions: a hard edge reads as a decal laid on the ground.
+        # Measured blend band over the 37 confirmed road maps: median 3 m,
+        # p25 1 m, p75 7 m, and `hard_edge` false on every one of them.
         fr = corr.fringe & ~corr.core
         if fr.any():
             coin = rng.random((h, w)) < 0.45
             tiles[fr & coin] = band
+            # ...and a sibling of the road's own motif takes a smaller share of
+            # the rim. This is the `field 01` core / `field 02` edge pairing
+            # that `map_a2` enriches 23.9x. See `_fringe_partner`.
+            partner = _fringe_partner(spec, int(band))
+            if partner:
+                coin2 = rng.random((h, w)) < 0.18
+                tiles[fr & coin2 & ~coin] = partner
+
+    # Plazas are the one place on an outdoor map where the dither is switched
+    # off. Corpus discs measure solid 0.84-0.87 against 0.36-0.56 for a dirt
+    # road in the same palette, so this is a flat fill with no coin toss in it.
+    for pz in lay.plazas:
+        if pz.tile_index:
+            tiles[pz.mask] = np.clip(pz.tile_index, 1, len(spec.textures))
 
     return tiles
+
+
+def _dominant_non_cliff(spec: MapSpec) -> int:
+    """The slot stray rock is replaced with: the heaviest non-cliff ground.
+
+    Not slot 1 -- slot 1 is frequently the road in a corpus-ordered palette, and
+    replacing rock with road would carve tracks across the hillside.
+    """
+    best, best_w = 1, -1.0
+    for i, sl in enumerate(spec.textures, start=1):
+        if sl.role in ("cliff", "path"):
+            continue
+        if sl.weight > best_w:
+            best, best_w = i, sl.weight
+    return best
 
 
 def _fit_shares(scores: np.ndarray, spec: MapSpec, iterations: int = 40
@@ -212,6 +274,290 @@ def _fit_shares(scores: np.ndarray, spec: MapSpec, iterations: int = 40
             break
         gain *= np.clip(ratio, 0.5, 2.0) ** 0.5     # damped, or it oscillates
     return scores * gain[:, None, None]
+
+
+#: Filename motifs, longest first so ``beach sand`` wins over ``sand``.
+#: Ymir names ground art by motif, and the motif carries a strong role prior.
+#: Measured over the outdoor corpus, P(motif | role):
+#:
+#:   cliff  n=94   stone 62%  cliff 11%  other 9%  grass 4%  rock 4%
+#:   path   n=28   tile 64%   field 18%  other 7%  sand 4%   grass 4%
+#:   shore  n=20   sand 55%   field 15%  other 15% grass 15%
+#:   mid    n=130  grass 35%  field 34%  tile 9%   sand 8%   stone 6%
+#:
+#: This is a PRIOR for picking a slot, not a classifier: what a slot actually
+#: does is measured per (textureset, slot), and the same ``stone01.dds`` is
+#: `base` in ``metin2_guild_war4`` and `cliff` in ``metin2_a1``.
+#: See reference/textures.md sec 3 and sec 4f.
+_MOTIFS = ("beach sand", "sand", "field", "grass", "stone", "cliff", "rock",
+           "tile", "snow", "valcano", "lava", "ice", "water", "dirt")
+
+
+def motif_of(path: str) -> str:
+    """The art motif a texture filename claims, or ``""``.
+
+    Used for choosing which slot a road dithers WITH, and for reporting. Never
+    for deciding a slot's role -- the spec says that.
+    """
+    base = path.replace("\\", "/").rsplit("/", 1)[-1].lower()
+    for m in _MOTIFS:
+        if base.startswith(m):
+            return "sand" if m == "beach sand" else m
+    for m in _MOTIFS:
+        if m in base:
+            return "sand" if m == "beach sand" else m
+    return ""
+
+
+def _fringe_partner(spec: MapSpec, band: int) -> int:
+    """The second texture a road rim dithers with, 1-based, or 0 for none.
+
+    A corpus road is one texture down the middle and two at the rim. Ring-1
+    share against the far field, over the 37 confirmed road maps:
+
+    | motif at the rim | n | median enrichment |
+    |---|---|---|
+    | `tile` | 8 | 66.96 |
+    | `field` | 24 | 2.23 |
+    | `grass` | 46 | 2.16 |
+    | `sand` | 10 | 0.74 |
+    | `stone` | 32 | **0.52** |
+    | `cliff` | 7 | **0.49** |
+
+    Sharpest where the partner shares the road's own motif: ``map_a2`` paints
+    ``a/field/field 01`` and enriches ``field 02`` at the rim **23.9x**;
+    ``metin2_map_a1`` paints ``b/field/field 01`` and enriches ``field 04``
+    4.8x. The cliff motifs are pushed AWAY (0.30-0.41) -- the same fact as
+    "roads do not climb mountains", seen from the paint side.
+
+    Prefer a sibling of the road's own motif; fall back to none, in which case
+    the caller dithers the road colour into whatever ground is already there,
+    which is the corpus's second-commonest rim (grass at 2.16x).
+    """
+    if not (1 <= band <= len(spec.textures)):
+        return 0
+    want = motif_of(spec.textures[band - 1].path)
+    if not want:
+        return 0
+    for i, slot in enumerate(spec.textures, start=1):
+        if i == band or slot.role == "path":
+            continue
+        if motif_of(slot.path) == want:
+            return i
+    return 0
+
+
+def _dilate(mask: np.ndarray, steps: int = 1) -> np.ndarray:
+    out = mask
+    for _ in range(steps):
+        nxt = out.copy()
+        nxt[1:, :] |= out[:-1, :]
+        nxt[:-1, :] |= out[1:, :]
+        nxt[:, 1:] |= out[:, :-1]
+        nxt[:, :-1] |= out[:, 1:]
+        out = nxt
+    return out
+
+
+def _erode(mask: np.ndarray, steps: int = 1) -> np.ndarray:
+    return ~_dilate(~mask, steps)
+
+
+def _drop_islands(mask: np.ndarray, coarse: int = 4, min_blocks: int = 4
+                  ) -> np.ndarray:
+    """Remove massif fragments too small to read as rock.
+
+    A 20-tile outcrop stranded in open field is the pepper artefact this whole
+    stage exists to avoid, and it also wrecks the statistic: those fragments
+    vanish under a 5x5 opening, so they count as raw cliff with no massif behind
+    them and drag massif/raw from 0.86 down to 0.77.
+
+    The corpus miner drops components under 30 tiles before measuring anything
+    (``roads.json.method.constants.MIN_CORE_COMPONENT``); this is the same idea
+    at the same scale -- 4 blocks of 4x4 is 64 tiles.
+
+    Labelled on a ``coarse``-downsampled grid so a whole-map flood fill stays
+    cheap on a 6x6 map (1,536^2 tiles becomes 384^2 blocks).
+    """
+    h, w = mask.shape
+    ch, cw = (h + coarse - 1) // coarse, (w + coarse - 1) // coarse
+    pad = np.zeros((ch * coarse, cw * coarse), bool)
+    pad[:h, :w] = mask
+    blocks = pad.reshape(ch, coarse, cw, coarse).any(axis=(1, 3))
+
+    keep = np.zeros_like(blocks)
+    seen = np.zeros_like(blocks)
+    for sy, sx in zip(*np.nonzero(blocks)):
+        if seen[sy, sx]:
+            continue
+        stack = [(sy, sx)]
+        seen[sy, sx] = True
+        comp = []
+        while stack:
+            y, x = stack.pop()
+            comp.append((y, x))
+            for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                ny, nx = y + dy, x + dx
+                if 0 <= ny < ch and 0 <= nx < cw and blocks[ny, nx] \
+                        and not seen[ny, nx]:
+                    seen[ny, nx] = True
+                    stack.append((ny, nx))
+        if len(comp) >= min_blocks:
+            for y, x in comp:
+                keep[y, x] = True
+
+    up = np.repeat(np.repeat(keep, coarse, axis=0), coarse, axis=1)[:h, :w]
+    return mask & up
+
+
+def _majority(mask: np.ndarray) -> np.ndarray:
+    """Set each cell to the majority of its 3x3 neighbourhood.
+
+    Cheaper and gentler than an open-then-close pair: it removes single-tile
+    noise on a boundary without pulling the boundary inward, which erosion does
+    and which would shrink every massif by a tile per pass.
+    """
+    a = mask.astype(np.uint8)
+    acc = np.zeros(a.shape, np.uint8)
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            acc += np.roll(np.roll(a, dy, axis=0), dx, axis=1)
+    return acc >= 5
+
+
+#: How much spatial noise is mixed into the slope score that decides the
+#: massif. 0 would make the rock line a contour of the terrain, which reads as
+#: machine-made; too much dissolves the massif back into pepper.
+MASSIF_JITTER = 0.35
+
+
+def cliff_massif(spec: MapSpec, slope: np.ndarray, rng) -> np.ndarray:
+    """Where the rock skin covers the ground, as a SOLID region.
+
+    ``taste.md`` sec 1.5 -- ground is a per-tile stipple, not region fill -- is a
+    statement about ground. The cliff is the exception and it is the most
+    visible thing in a landscape shot. Measured over eight corpus maps, the
+    share of cliff paint surviving a 5x5 opening (massif / raw) is **0.86 to
+    0.99**: a1 0.98, b1 0.98, c1 0.97, n_desert_01 0.99, a3 0.98, b3 0.92,
+    capedragonhead 0.94, mt_thunder 0.86. Sampling cliff per tile the way the
+    ground is sampled gives 0.02, which is pepper.
+
+    P(cliff | slope) is a monotone ramp, and where it turns is a per-map
+    decision rather than a constant:
+
+    | slope band | 0-5 | 15-20 | 25-30 | 40-50 | 60+ |
+    |---|---|---|---|---|---|
+    | `metin2_map_a1` | 7% | 34% | 64% | 83% | 92% |
+    | `metin2_map_n_desert_01` | 5% | 12% | 27% | 79% | 98% |
+    | `metin2_map_mt_thunder` | 7% | 26% | 32% | 34% | 40% |
+
+    So the ramp is not hard-coded. The slot weights already say how much of the
+    map should be rock; this ranks every tile by slope, jitters that ranking
+    with a smooth field so the boundary is organic rather than a terrain
+    contour, and takes the top N. The result hits the requested share by
+    construction, follows slope, and is spatially coherent -- which is what
+    makes it survive the opening.
+    """
+    cliff = [i for i, sl in enumerate(spec.textures, start=1) if sl.role == "cliff"]
+    if not cliff:
+        return np.zeros(slope.shape, bool)
+    share = sum(max(0.0, spec.textures[i - 1].weight) for i in cliff)
+    total = sum(max(0.0, sl.weight) for sl in spec.textures
+                if sl.role not in ("path",)) or 1.0
+    frac = float(np.clip(share / total, 0.0, 0.9))
+    if frac <= 0.001:
+        return np.zeros(slope.shape, bool)
+
+    from .terrain import fbm                # local import: terrain has no dep here
+    h, w = slope.shape
+    hi = max(1.0, float(np.percentile(slope, 99)))
+    score = np.clip(slope / hi, 0.0, 1.0)
+    score = score + MASSIF_JITTER * (fbm(rng, h, w, octaves=3, base_cells=32,
+                                         gain=0.55) - 0.5)
+    cut = float(np.quantile(score, 1.0 - frac))
+    mask = score >= cut
+
+    # Smooth the boundary at the 5x5 scale. Without this the rim is ragged at
+    # one-tile resolution, a 5x5 opening eats a whole ring of genuinely solid
+    # rock, and the massif/raw ratio measures 0.67 against the corpus's
+    # 0.86-0.99 -- the map looks right and the statistic says it is pepper.
+    # Large-scale shape is unaffected: that comes from the fbm at base_cells 32,
+    # far above the filter's reach.
+    for _ in range(2):
+        mask = _majority(mask)
+
+    # Then give the massif a minimum THICKNESS. This is the step that actually
+    # matters, and it took a measurement to find: with only the majority filter
+    # the ratio sat at 0.78 with 2.4% of the map's rock stranded in the far
+    # field, and no amount of tuning the feather moved either number. The cause
+    # was thin arms -- ridges two or three tiles wide, which survive a 3x3
+    # majority and die under the 5x5 opening the statistic is measured with, so
+    # they counted as raw cliff with no massif behind them.
+    #
+    # Opening at the same 5x5 the measurement uses makes the output
+    # opening-stable by construction: ratio 0.94, far field 0.00%, against the
+    # corpus's 0.86-0.99 and 0.00-0.06%.
+    mask = _dilate(_erode(mask, 2), 2)
+    mask = _erode(_dilate(mask, 2), 2)          # close interior pinholes
+    return _drop_islands(mask)
+
+
+#: Rock share in the first tile outside the massif, and its per-tile decay.
+#: Fitted to the corpus tail in :func:`_feather_massif`, at the gentle end of
+#: the measured range so the feather reads as grit and not as a second biome.
+FEATHER_HEAD = 0.10
+FEATHER_DECAY = 0.62
+FEATHER_REACH = 8
+
+
+def _feather_massif(tiles: np.ndarray, spec: MapSpec, rng) -> np.ndarray:
+    """Speckle the rock texture out past the rim of the rock massif.
+
+    Ymir's cliffs do not stop at a line. Opening the cliff mask with a 5x5 box
+    to recover the massif -- so the measurement is not circular, which a first
+    attempt binning distance from the cliff tiles themselves was -- and then
+    reading the raw cliff share outward from that rim gives a decaying tail:
+
+    | map | +1 m | +2 | +3 | +4 | +5 | +6 | far field |
+    |---|---|---|---|---|---|---|---|
+    | `metin2_map_a1` | 9.6% | 6.8 | 3.6 | 2.1 | 1.3 | 0.9 | **0.00%** |
+    | `metin2_map_n_desert_01` | 4.9% | 3.4 | 2.7 | 1.9 | 1.4 | 1.2 | **0.06%** |
+    | `metin2_map_b1` | 16.2% | 16.4 | 10.6 | 7.2 | 4.8 | 2.7 | **0.00%** |
+
+    Two facts matter equally. The tail is real -- roughly geometric, five to
+    seven tiles long. And it STOPS: the far field is 0.00%, so rock is never
+    sprinkled over open ground as generic noise. A generator that dithers rock
+    globally gets the first fact right and the second one badly wrong.
+
+    ``map_a2`` is the instructive exception. Its cliff slot survives opening at
+    only 0.2%, because ``a/stone/stone02.dds`` there is not a massif skin but a
+    dither partner spread over the whole ``stone01`` base -- 40% near rock and
+    17.9% in the far field. Where a palette works that way there is no massif
+    to feather and this function correctly does almost nothing.
+    """
+    cliff = [i for i, sl in enumerate(spec.textures, start=1) if sl.role == "cliff"]
+    if not cliff:
+        return tiles
+    mask = np.isin(tiles, cliff)
+    massif = _dilate(_erode(mask, 2), 2)
+    if not massif.any():
+        return tiles
+    out = tiles
+    prev = massif
+    for step in range(1, FEATHER_REACH + 1):
+        cur = _dilate(massif, step)
+        ring = cur & ~prev
+        prev = cur
+        if not ring.any():
+            break
+        p = FEATHER_HEAD * (FEATHER_DECAY ** (step - 1))
+        pick = ring & (rng.random(tiles.shape) < p)
+        if pick.any():
+            # The lowest cliff index, not a random one: a multi-slot rock
+            # palette should not scatter its rarest variant as far as its
+            # commonest, and in the corpus the tail is the massif's own skin.
+            out = np.where(pick, np.uint8(cliff[0]), out)
+    return out
 
 
 def _soften(draw: np.ndarray, weight: float = 0.5) -> np.ndarray:

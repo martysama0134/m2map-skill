@@ -126,6 +126,13 @@ Filename motif and measured role agree only loosely. Same file, opposite jobs:
 Roles in `textures.json` are therefore stored **per `(textureset, slot)`**, with a
 `dominant_role` rolled up per texture by tiles painted.
 
+That is the whole of the caveat, and it is narrower than it looks. The filename
+is a weak *classifier* and a strong *prior*: knowing a slot is called `stone02`
+does not tell you it is the cliff in this map, but if you need a cliff, `stone*`
+is what you reach for 62% of the time. Sec 4f measures the prior in both
+directions — it is the table to use when composing a new palette, and sec 3's
+table is the one to use when reading an existing one.
+
 ---
 
 ## 4. Cross-cutting composition rules
@@ -207,6 +214,215 @@ UV scales in 734 of 818 slots. Every texture is remapped onto the small
 
 That table is the artists' own motif classification, and it is directly reusable
 for re-skinning a generated palette.
+
+**(f) The filename motif is a strong prior on the job.** Sec 3 warns that the
+name is not the role, and that is true per slot. Pooled, the naming convention
+is real and usable. Two directions, both measured over the **outdoor** corpus
+(interiors excluded: dungeon black-fill is filed under `field*` and swamps the
+tile-weighted counts).
+
+*Given a role, what is it called* — P(motif | role), one vote per painted slot:
+
+| role | n | 1st | 2nd | 3rd |
+|---|---|---|---|---|
+| `cliff` | 94 | **stone 62%** | cliff 11% | other 9% |
+| `path` | 28 | **tile 64%** | field 18% | other 7% |
+| `shore` | 20 | **sand 55%** | field 15% | other 15% |
+| `mid` | 130 | grass 35% | field 34% | tile 9% |
+| `base` | 53 | field 25% | grass 19% | stone 15% |
+| `accent` | 86 | field 38% | tile 20% | grass 20% |
+
+*Given a name, what does it do* — P(role | motif), one vote per painted slot:
+
+| motif | n | `base` | `mid` | `cliff` | `path` | `shore` | `accent` |
+|---|---|---|---|---|---|---|---|
+| `stone*` | 105 | 17% | 10% | **67%** | 0% | 0% | 7% |
+| `grass*` | 118 | 14% | **53%** | 9% | 2% | 4% | 20% |
+| `field*` | 156 | 10% | **42%** | 2% | 5% | 5% | 27% |
+| `sand*` | 48 | 15% | 23% | 8% | 4% | **27%** | 23% |
+| `tile*` | 83 | 6% | 23% | 2% | **34%** | 1% | **34%** |
+| `cliff*` | 23 | 44% | 0% | **52%** | 0% | 0% | 4% |
+| `rock*` | 13 | 31% | 0% | **54%** | 0% | 0% | 15% |
+
+Physical character, tile-weighted, over the whole corpus:
+
+| motif | slots | mean share | clump8 | solid | mean slope |
+|---|---|---|---|---|---|
+| `stone*` | 105 | 29.4% | 6.23 | 51.5% | **41.7°** |
+| `cliff*` | 23 | 35.4% | 6.83 | 63.8% | **39.1°** |
+| `rock*` | 13 | 38.5% | 7.34 | 78.7% | 28.7° |
+| `grass*` | 118 | 23.7% | 5.57 | 36.5% | 14.9° |
+| `sand*` | 48 | 25.6% | 6.22 | 52.9% | 11.2° |
+| `tile*` | 83 | 9.3% | 6.50 | 58.0% | **6.4°** |
+| `field*` | 156 | 70.5% | 7.28 | 80.2% | **5.7°** |
+
+> **Rule:** compose a palette by motif — `stone*` for the massifs, `field*` for
+> ground and roads, `grass*` for green cover, `sand*` for shore and riverbed,
+> `tile*` for the paved disc. Then set `role` from the job you intend, not from
+> the name, because the generator reads `role` and nothing else.
+
+**(g) `path` is two different features wearing one label.** The tables above
+disagree with themselves: `path` slots are 64% `tile*`, yet the most-painted
+`path` file in the corpus is `b/field/field 01.dds`. Both are true, because two
+unrelated features share the role. Splitting the 28 outdoor `path` slots by
+motif:
+
+| | slots | total tiles | median tiles/slot | median half-width | solid |
+|---|---|---|---|---|---|
+| `field*` roads | 5 | 315,289 | 41,301 | 9 tiles | **0.36–0.56** |
+| `tile*` discs | 18 | 272,106 | 4,648 | 13 tiles | **0.84–0.87** |
+
+`solid` is the discriminator, and it is not subtle. A road is a dithered ribbon
+— barely half its tiles have all eight neighbours the same. A disc is a **flat
+fill**: 86% of its tiles are pure interior. It is the one place on an outdoor
+map where the stipple is switched off, and that is exactly what makes it read as
+*built* rather than *grown*.
+
+**(h) The paved disc is a copy-pasted stamp, and it is the safe zone.** Scoring
+every `tile*` connected component by area against its own bounding box (a filled
+circle scores π/4 = 0.785, a filled square 1.0) finds 27 at fill **0.70–0.85**
+and aspect **1.00–1.10**:
+
+| radius | area (tiles) | maps |
+|---|---|---|
+| 8.0–8.1 m | 200, 208 | `b1`, `b3`, `smhgate_b1` |
+| 9.8–10.0 m | 303, 310, 311, 316 | `a3`, `c1`, `smhgate_c1`, `guild_battle` |
+| 14.0 m | 616 | `b3` |
+| 17.9–18.0 m | 1,007, 1,020 | `wedding_01`, `c3` |
+| 19.6–20.3 m | 1,205, 1,250, 1,264, 1,297 | `a1`, `smhgate_a1`, `capedragonhead`, `guild_war2`, `t1` |
+| 21.3–22.1 m | 1,422, 1,528 | `a3`, `b1`, `smhgate_b1` |
+| 25.1 m | 1,980 | `c1`, `smhgate_c1` |
+
+The areas recur **verbatim** across unrelated maps — 1,264 tiles in
+`metin2_map_a1`, `metin2_map_smhgate_a1` and `metin2_map_capedragonhead`; 316 in
+four more — so these are stamps, not hand-painted shapes. Ground under them is
+flat (slope 0.0–1.9°).
+
+And they are the safe zone, not merely a decoration of one. Reading `attr.atr`
+under each disc:
+
+| | ATTR_SAFEZONE inside the disc | map baseline |
+|---|---|---|
+| `a1`, `a3`, `b1`, `b3`, `c3`, `guild_war2`, `wedding_01` | **100%** | 0.2–10.9% |
+| `c1` | 90.9% | 0.4% |
+| `smhgate_a1/b1/c1`, `t1`, `guild_battle`, `capedragonhead` | 0% | **0.0%** |
+
+The zeroes are not counter-examples: those maps have a baseline of 0.0% because
+they never wrote the flag at all — `smhgate_*` are paint-only clones of `a1`,
+`b1` and `c1`. Where the flag is used, the disc carries it completely.
+
+> **Rule:** a paved disc is a `PlazaSpec` — flat ground, one `tile*` slot filled
+> solid with no dither, `ATTR_SAFEZONE` set and `ATTR_BLOCK` cleared, radius 8
+> to 25 m. Square rings exist for duels but are rare: only 1 of 138 components
+> scored as a filled square.
+
+**Do not "fix" safe-zone cells that also carry block.** Across the 37 maps that
+use the flag, **923,325 of 1,282,946** safe-zone cells (72%) are also blocked,
+because Ymir paints the safe *area* over a whole town — walls, buildings and
+scenery included — and only the disc itself is guaranteed walkable. An audit
+rule that flags the overlap fires on almost every shipped map.
+
+**(i) The road rim dithers with a sibling of the road's own motif.** Over the 37
+confirmed road maps the blend band is median **3 m** (p25 1, p75 7) and
+`hard_edge` is false on every one. What sits in that band is specific — ring-1
+share against the far field:
+
+| motif at the rim | n | median enrichment |
+|---|---|---|
+| `tile` | 8 | 66.96 |
+| `field` | 24 | 2.23 |
+| `grass` | 46 | 2.16 |
+| `sand` | 10 | 0.74 |
+| `stone` | 32 | **0.52** |
+| `cliff` | 7 | **0.49** |
+
+Worked examples:
+
+| map | road surface | enriched at the rim | depleted at the rim |
+|---|---|---|---|
+| `map_a2` | `a/field/field 01` | **`field 02` 23.9×**, `grass 01` 2.8× | `stone02` 0.41× |
+| `metin2_map_a1` | `b/field/field 01` | `field 04` 4.8×, `grass 02` 2.5×, `grass 01` 2.3× | `stone01` 0.30×, `stone02` 0.32× |
+| `metin2_map_n_desert_01` | `sand03` + `field 01` | `grass 02` 4.1× | `stone03` 0.58×, `sand01` 0.80× |
+
+So the road is **one texture down the middle and two at the rim**: its own motif
+sibling plus the local ground. The rock motifs are pushed *away* from the rim —
+which is the same fact as "roads do not climb mountains", seen from the paint
+side rather than the attr side.
+
+**(j) Roads do not cross blocked mountain.** The ratio in `roads.json`
+(`block_rate_ratio_inside_over_control`, median 0.49) understates this badly,
+because it is a ratio and the surroundings are not uniformly blocked. The
+absolute rates, over the same 37 maps:
+
+| | median | p90 |
+|---|---|---|
+| block rate **inside** the corridor | **5.9%** | 35.5% |
+| block rate in the control band | **69.4%** | — |
+
+The land a road crosses is 70% impassable; the road itself is 6%. 27 of 37
+corridors are under 15% blocked, 17 of 37 under 5%. The high outliers are
+`metin2_map_eastplain_02/03` (38–40%) and `metin2_guild_war1` (45%), all three
+maps whose "roads" are mostly plaza and courtyard rather than open-country
+route.
+
+> **Rule:** clear the corridor of `ATTR_BLOCK` for its whole length, and route
+> it around massifs rather than over them. A road that climbs a blocked slope is
+> the single most visible tell of a generated map.
+
+**(k) The cliff is region fill, and (c) does not apply to it.** Rule (c) — the
+ground is a dither, not regions — is the most important thing on this page and
+it is about **ground**. Rock is the exception. Share of cliff paint surviving a
+5×5 opening:
+
+| map | raw | massif | massif ÷ raw |
+|---|---|---|---|
+| `metin2_map_n_desert_01` | 26.4 % | 26.2 % | 0.99 |
+| `metin2_map_a1` | 32.9 % | 32.3 % | 0.98 |
+| `metin2_map_a3` | 33.8 % | 33.0 % | 0.98 |
+| `metin2_map_b1` | 27.0 % | 26.5 % | 0.98 |
+| `metin2_map_c1` | 28.4 % | 27.7 % | 0.97 |
+| `metin2_map_capedragonhead` | 3.5 % | 3.3 % | 0.94 |
+| `metin2_map_b3` | 17.2 % | 15.8 % | 0.92 |
+| `metin2_map_mt_thunder` | 23.5 % | 20.1 % | 0.86 |
+
+`P(cliff | slope)` is a monotone ramp whose turn is per-map — `metin2_map_a1`
+reaches 34 % by 15–20°, `metin2_map_n_desert_01` only 12 %, and
+`metin2_map_mt_thunder` plateaus at 40 % and never goes higher. Rank by slope,
+jitter the ranking so the rock line is not a contour, take what the weights ask
+for.
+
+Two consequences that are easy to get wrong:
+
+* **Inside the massif, cliff slots still dither among themselves** — (c)'s
+  `metin2_a2` table is one rock face split 45 % `stone01` / 20 % `stone02`.
+  Solid means rock-versus-ground.
+* **The massif needs minimum thickness.** A ridge two or three tiles wide
+  survives a 3×3 smoothing and dies under the 5×5 opening this ratio is measured
+  with. Left in, it counts as raw cliff with no massif behind it and pins the
+  ratio at 0.78 with 2.4 % of the map's rock stranded more than 20 m from any
+  rock face.
+
+**(l) The rock massif has a feathered rim, and then it stops.** Opening the
+cliff mask with a 5×5 box recovers the massif independently of the individual
+tiles; the raw cliff share measured *outward* from that rim is a decaying tail,
+not a step:
+
+| map | +1 m | +2 | +3 | +4 | +5 | +6 | far field (>20 m) |
+|---|---|---|---|---|---|---|---|
+| `metin2_map_a1` | 9.6% | 6.8 | 3.6 | 2.1 | 1.3 | 0.9 | **0.00%** |
+| `metin2_map_n_desert_01` | 4.9% | 3.4 | 2.7 | 1.9 | 1.4 | 1.2 | **0.06%** |
+| `metin2_map_b1` | 16.2% | 16.4 | 10.6 | 7.2 | 4.8 | 2.7 | **0.00%** |
+
+Both halves matter. The tail is real — roughly geometric, five to seven tiles
+long, so the rock grit is still visible a few paces out onto the sand. And it
+**stops**: the far field is 0.00%. Rock is never sprinkled over open ground as
+generic noise, which is what a globally-dithered palette would do.
+
+`map_a2` is the instructive exception: its cliff slot survives opening at only
+0.2% of the ground, because `a/stone/stone02.dds` there is not a massif skin at
+all but a dither partner spread over the whole `stone01` base — 40% near rock,
+17.9% in the far field. Sec 4c already showed that pair from the share side;
+this is the same fact from the shape side.
 
 ---
 

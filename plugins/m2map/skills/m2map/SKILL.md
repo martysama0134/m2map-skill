@@ -87,7 +87,7 @@ All modes, all generated output. Reference files cite these by number — number
 8. **Slot 0 is the eraser.** `TextureCount` excludes it; blocks are 1-based `%03d`; a `tile.raw` byte of 0 means blank. Cap 255 usable.
 9. **Heading is `roll`, not `yaw`**, snapped to 15°. Yaw and pitch are tilt channels used almost exclusively by debris. Trees are unrotated ~2/3 of the time.
 10. **There is no road texture.** Roads are ordinary field textures painted in a corridor.
-11. **Ground is a 1 m per-tile stipple**, not region fill: median run length 2 tiles, half of all components a single tile.
+11. **Ground is a 1 m per-tile stipple**, not region fill: median run length 2 tiles, half of all components a single tile. **Ground only** — see rule 19.
 12. **Water flags follow *submerged*, not *wet*.** A water plane below the terrain is invisible and correctly unflagged; 452 of 1343 shipped sectors have one.
 13. **Proxy maps own no terrain.** 26 of 142 maps have zero sectors and a `ParentMapName`; 3 have no `setting.txt`. Resolve before assuming.
 14. **Regenerate `server_attr` whenever `attr.atr` changes**, or client and server disagree about collision.
@@ -99,6 +99,11 @@ All modes, all generated output. Reference files cite these by number — number
 18. <EXTREMELY-IMPORTANT>
     **Five unit conventions live in one map. Convert at the write boundary, and verify by reading back.** `water.wtr` heights are RAW (`worldZ = value * HeightScale`), `height.raw` is RAW, `areadata` is map-local centimetres with Y NEGATED, regen/Town are units of 100, and `ViewRadius` is DOUBLED by the engine on load. A byte round-trip cannot catch a unit error -- it preserves the wrong unit perfectly in both directions -- and neither can an in-memory assertion, because the model is right. The only check that works crosses the boundary and comes back: write, re-read, and assert something that depends on the unit ("the water is above the terrain", "the object is inside the map"). See `reference/failure-atlas.md` section 4.
     </EXTREMELY-IMPORTANT>
+19. <EXTREMELY-IMPORTANT>
+    **Three features are painted SOLID and rule 11 does not apply to them.** The **cliff** is a region-filled skin on steep ground — measured massif÷raw 0.86–0.99 across eight maps, against 0.02 when it was sampled per tile like the ground, which made every mountain read as pepper. Its rim feathers out over 5–7 tiles and then stops dead (far field 0.00%). The **road surface** is solid, dithered only in a ~3 m rim, and the rim's partner is a sibling of the road's own motif (`field 01` core, `field 02` edge). The **plaza disc** has no dither anywhere: solid 0.84–0.87, an 8–25 m circle, 100% `ATTR_SAFEZONE` with block cleared. See `reference/taste.md` §1.8–1.11.
+    </EXTREMELY-IMPORTANT>
+20. **`stone*` is the mountain, `tile*` is the plaza, `field*` is the road and the ground, `sand*` is the shore, `grass*` is the green.** The filename motif is a strong prior for *composing* a palette (`cliff` slots are `stone*` 62% of the time; `path` slots `tile*` 64%) and a weak classifier for *reading* one — the same `stone01.dds` is `base` in one map and `cliff` in another. Set `TextureSlot.role` from the job you intend; the generator reads `role`, never the filename. `reference/textures.md` §4f.
+21. **Roads do not cross blocked mountain.** Block rate inside a corridor: median 5.9% against 69.4% in the control band beside it. Clear the corridor for its whole length and route around massifs, not over them.
 
 ## Verification — not optional
 

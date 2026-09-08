@@ -104,11 +104,27 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
         disc = (xs - fx) ** 2 + (ys - fy) ** 2 <= radius * radius
         cells[y0:y1, x0:x1][disc] |= attr_codec.ATTR_BLOCK
 
+    # Named regions declared safe. Note that these are NOT cleared of block:
+    # safe-zone and block overlap freely in the corpus -- 923,325 of the
+    # 1,282,946 safe-zone cells across the 37 maps that use the flag also carry
+    # block (72%), because Ymir paints the safe area over a town wholesale,
+    # walls and scenery included. Only the walkable disc below is cleared.
     for kind in spec.safezone_regions:
         mask = lay.regions.get(kind)
         if mask is not None:
             cells[mask] |= attr_codec.ATTR_SAFEZONE
-            cells[mask] &= np.uint8(~attr_codec.ATTR_BLOCK & 0xFF)
+
+    # Plaza discs. Unlike a region, the disc IS the floor the player stands on,
+    # so it is cleared of block: measured 100% safe-flagged and walkable in
+    # metin2_map_a1, a3, b1, b3, c1, c3, guild_war2 and wedding_01, against a
+    # map baseline of 0.2%. (The discs that measure 0% -- smhgate_*, t1 -- sit
+    # on maps whose baseline is also 0.0%: paint-only clones that never wrote
+    # attr, not counter-examples.)
+    for pz in lay.plazas:
+        if not pz.safezone:
+            continue
+        cells[pz.mask] |= attr_codec.ATTR_SAFEZONE
+        cells[pz.mask] &= np.uint8(~attr_codec.ATTR_BLOCK & 0xFF)
 
     return cells
 

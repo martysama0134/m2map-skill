@@ -285,6 +285,57 @@ slope p50 0.92 deg, p75 9.77 deg, p95 29.45 deg.
 
 ---
 
+## The oasis, built
+
+The archetype notes say an oasis is a prop arrangement, which is right about the
+planting and wrong about the water: the shipped desert oasis is a **two-level
+water feature with a waterfall between the levels**, and it is the one place a
+desert map uses `water.wtr` in earnest.
+
+The waterfall is `property/b/eff/fall_7.pre`, **crc 780392666** — an Effect, 44
+placements across 19 maps. Its measured context is unusually tight for an
+effect:
+
+| measure | value |
+|---|---|
+| ground class under it | **rock 72.7 %**, field 13.6 %, grass 6.8 %, sand 4.5 % |
+| never on | lava, snow, tile, `(none)`, other |
+| slope beneath | p50 **71.4°**, p75 86.6°, 26 of 44 above 45° |
+| `on_water_share` | **0.841** |
+| distance to water | p50 **0 cm**, p75 0 cm |
+| distance to map edge | p50 18,700 cm |
+| top textures under it | `b/stone/stone01_01` 18 %, `dawnmistwood_rock001` 11 %, `b/stone/stone01` 9 %, `b/stone/stone04` 9 % |
+
+Read together: **`fall_7` stands in the water, on a near-vertical rock face, in
+the middle of the map.** All four constraints hold at once, and any one of them
+alone lets it be placed somewhere it will look broken — floating off a cliff
+with no water under it, or standing in a pond on flat ground.
+
+Assembly, in order:
+
+1. **Cut the upper basin** into the massif — a `WaterSpec` lake with its own
+   surface, sitting inside the rock, not on the sand.
+2. **Cut the lower pool** at the foot of the same massif, at the oasis floor
+   level. Two separate water bodies with different surfaces, not one banded
+   river: `gen/water.py` gives a lake one plane, which is what each basin needs.
+3. **Leave a vertical rock face between them.** The 71° median slope is the
+   whole illusion; on a graded slope the effect reads as spray on a hill.
+4. **Place `fall_7` on that face, at the waterline of the upper basin**, roll
+   set so the sheet faces out. Roll is 90.2 % zero for Effects
+   (`stats-objects.json.by_type`), so leave it at 0 unless the face does not
+   run along an axis.
+5. **Green the rim of the lower pool only.** `grass 01/02` against the sand is
+   the desert's own oasis signal — `metin2_map_n_desert_01` enriches `grass 02`
+   4.1× at its road rims for the same reason. Keep the green inside a few metres
+   of the water; the archetype's ground affinity is 64 % sand and a green
+   surround at any scale stops reading as desert.
+6. **Decorate with props, not with the archetype's flora.** `tree/n2` sits a
+   median 200 m from water corpus-wide; the JoshuaTrees 350–390 m. Palms
+   (`DatePalm_RT_02`, `CoconutPalm_RT_01/02`) are the exception that belongs at
+   the waterline — they are the only desert species that measurably tolerate it.
+
+---
+
 ## Attr policy
 
 **Mixed, and the split matters**: `slope_driven` on `metin2_map_n_desert_01`,

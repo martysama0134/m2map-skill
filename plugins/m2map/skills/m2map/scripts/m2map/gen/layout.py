@@ -159,6 +159,18 @@ class Corridor:
 
 
 @dataclass
+class Plaza:
+    """A rasterised safe-zone disc. See :class:`spec.PlazaSpec` for the shape
+    evidence -- this is only the mask."""
+
+    mask: np.ndarray
+    tile_index: int
+    safezone: bool
+    centre: Point
+    radius_m: float
+
+
+@dataclass
 class Layout:
     """Everything stage 2 produces, in tile space."""
 
@@ -170,6 +182,7 @@ class Layout:
     #: not by height value -- see gen/water.py.
     water_lines: List[List[Point]] = field(default_factory=list)
     regions: Dict[str, np.ndarray] = field(default_factory=dict)
+    plazas: List[Plaza] = field(default_factory=list)
     flatten: np.ndarray | None = None            # tile-space flatten request
     #: Depth in cm to cut out of the terrain under each water body, graded to 0
     #: at the shoreline. Without a carved bed the water renders as a flat slab
@@ -219,6 +232,25 @@ class Layout:
         out[:h // 2, :w // 2] = block.any(axis=(1, 3))
         return out
 
+    def pad_masks_cells(self) -> List[np.ndarray]:
+        """Plaza discs on the terrain vertex grid, one mask each.
+
+        Separate from ``flatten_mask_cells`` because the two want different
+        treatment: a road is SMOOTHED so it follows the ground, a plaza is
+        LEVELLED so it does not. Sharing one mask gave a disc of mean slope
+        9.0 deg where the corpus measures 0.0-1.9.
+        """
+        h, w = self.shape
+        ch, cw = h // 2 + 1, w // 2 + 1
+        out: List[np.ndarray] = []
+        for pz in self.plazas:
+            m = np.zeros((ch, cw), bool)
+            block = pz.mask[:(h // 2) * 2, :(w // 2) * 2].reshape(h // 2, 2, w // 2, 2)
+            m[:h // 2, :w // 2] = block.any(axis=(1, 3))
+            if m.any():
+                out.append(m)
+        return out
+
 
 def build(spec: MapSpec) -> Layout:
     shape = (spec.height_tiles, spec.width_tiles)
@@ -234,9 +266,10 @@ def build(spec: MapSpec) -> Layout:
         lay.corridors.append(Corridor(centreline=line, core=core, fringe=fringe,
                                       distance=dist, tile_index=road.tile_index,
                                       width_m=road.width_m))
-        # Flatten a little wider than the surface so the road does not sit in a
-        # trench with abrupt shoulders.
-        flatten |= dist <= (half + 2.0)
+        # Flatten wider than the surface so the road does not sit in a trench
+        # with abrupt shoulders. The corpus blend band is median 3 m, so a
+        # shoulder of about that width is what the paint expects to find.
+        flatten |= dist <= (half + 3.0)
 
     carve = np.zeros(shape, np.float64)
     lakes = np.zeros(shape, bool)
@@ -277,6 +310,21 @@ def build(spec: MapSpec) -> Layout:
         reach = max(6.0, wat.width_m * 1.6)
         d = _distance_to(mask)
         gap = np.maximum(gap, np.clip(1.0 - d / reach, 0.0, 1.0))
+
+    # Roads need a pass through the wall for the same reason water needs a
+    # gorge. Corpus roads run off the map edge -- that is how a route continues
+    # onto the neighbouring map -- and without this the ridge is added after the
+    # corridor is levelled and simply buries it: measured road slope 14.9 deg
+    # against 6.4 deg for the same corridor on the map interior.
+    #
+    # Only PARTIAL suppression, unlike water. A river must reach the edge at bed
+    # level or it runs uphill; a road only has to be passable, and the corpus
+    # keeps its horizon walled (taste.md sec "Every map occludes its horizon").
+    # 0.65 opens a saddle in the wall rather than a hole through it.
+    for corr in lay.corridors:
+        reach = max(12.0, corr.width_m * 2.5)
+        gap = np.maximum(gap, 0.65 * np.clip(1.0 - corr.distance / reach, 0.0, 1.0))
+
     lay.ridge_gap = gap
 
     for reg in spec.regions:
@@ -285,6 +333,22 @@ def build(spec: MapSpec) -> Layout:
         lay.regions[reg.kind] = mask if prev is None else (prev | mask)
         if reg.flatten:
             flatten |= mask
+
+    # Plazas last, so a disc laid over a road wins: the corpus paints the
+    # junction disc on top of the road web, never the other way round.
+    for pz in spec.plazas:
+        cx, cy = pz.centre
+        ys, xs = np.ogrid[:shape[0], :shape[1]]
+        mask = (xs - cx) ** 2 + (ys - cy) ** 2 <= pz.radius_m ** 2
+        if not mask.any():
+            continue
+        lay.plazas.append(Plaza(mask=mask, tile_index=pz.tile_index,
+                                safezone=pz.safezone, centre=(cx, cy),
+                                radius_m=pz.radius_m))
+        # Flat, and flat past the rim -- measured slope under the shipped discs
+        # is 0.0-1.9 deg, and a disc on a slope reads as a decal.
+        flatten |= ((xs - cx) ** 2 + (ys - cy) ** 2
+                    <= (pz.radius_m + 3.0) ** 2)
 
     lay.flatten = flatten
     return lay

@@ -16,11 +16,19 @@ contain objects; 116 have `attr.atr`; 28 are terrain-less proxies or empty.
 
 ---
 
-## 1. The six universal rules
+## 1. The universal rules
 
 The design brief that preceded this corpus proposed six "universal" rules. **Mining
-contradicted five of them.** These are the measured versions. They are the highest-value
-rules in this document: break any one and the map reads as machine-made.
+contradicted five of them.** 1.1-1.6 are the measured versions of those six.
+1.7-1.11 were added later, from ground-truth screenshots of `metin2_map_a1`,
+`map_a2` and `metin2_map_n_desert_01` that named conventions the first mining
+pass had measured but not connected: what the art filenames mean, what a road
+does that nothing else does, why a plaza is the one undithered thing on an
+outdoor map, and — the one that had shipped as a real defect — that the rock
+skin is region fill and §1.5 does not apply to it.
+
+These are the highest-value rules in this document: break any one and the map
+reads as machine-made.
 
 ---
 
@@ -146,6 +154,11 @@ T 36.7 % / Y 35.8 % / X-skew 13.1 % / star5 5.5 %.
 
 This is the single most important thing to reproduce, and the easiest to get backwards.
 
+**It is about ground.** Three features are painted solid and are *not* stipple:
+the **cliff** (§1.10), the **road surface** (§1.8, dithered only at its rim) and
+the **plaza disc** (§1.9, no dither at all). Applying this rule to the rock skin
+turns every mountain into pepper — measured, and it happened.
+
 Measured over the 114 maps with terrain, 87.9 M painted tiles
 (`catalog/stats-tiles.json`, `textures.md` sec 4c):
 
@@ -239,6 +252,154 @@ expect 60-75 % of the block to end up edge-connected.
 > **Rule:** `attr_style: "slope_driven"` -> `block_slope_deg = 20` (or the archetype's own
 > fitted value), then water, then the object halo, then patch the residual edge cells.
 > `attr_style: "painted_box"` -> no slope rule at all.
+
+---
+
+### 1.7 The art's filenames are a usable palette vocabulary
+
+§1.4 establishes that Ymir ships **no road texture** and §1.5 that ground is a
+per-tile stipple. Neither means the filenames are noise. Pooled over the outdoor
+corpus, the motif in a `.dds` name is a strong prior on the job it is given:
+
+| you need | reach for | share of that role's slots |
+|---|---|---|
+| a cliff / mountain skin | `stone*` | **62 %** (+ `cliff*` 11 %, `rock*` 4 %) |
+| a paved plaza or ring | `tile*` | **64 %** |
+| a shore, riverbed or beach | `sand*`, `beach sand*` | **55 %** |
+| green ground cover | `grass*` | 35 % of `mid` |
+| a road, and general ground | `field*` | 34 % of `mid`, and the most-painted `path` file in the corpus |
+
+`n = 53–130` slots per role, interiors excluded. The inverse holds too:
+`stone*` slots are `cliff` 67 % of the time and sit on 41.7° mean ground;
+`field*` slots sit on 5.7°.
+
+This is a prior for **composing** a palette. It is not a classifier: the same
+`b/stone/stone01.dds` is the `base` of `metin2_guild_war4` (77.5 % cover) and
+the `cliff` of `metin2_a1` (16.7 %). Set `TextureSlot.role` from the job you
+intend — the generator reads `role` and never the filename.
+
+Full tables, both directions, in `textures.md` §4f.
+
+### 1.8 Three things a road does that nothing else does
+
+Measured over the 37 maps whose corridors pass the road verdict (`roads.json`):
+
+1. **It is cleared of block.** Block rate inside the corridor median **5.9 %**
+   against **69.4 %** in the control band beside it — the land is 70 %
+   impassable and the road is 6 %. 27 of 37 under 15 %.
+2. **It is flattened.** Slope ratio inside over control, median **0.21**
+   (p25 0.13, p75 0.38, worst confirmed road 0.56).
+
+   **The generator only gets part of the way there, and knows it.** That figure
+   is route selection *and* earthworks: Ymir laid roads along ground that was
+   already gentle. `gen/` levels whatever line the spec names — corridor
+   levelling is implemented, route-finding is not. Three bugs found while
+   measuring this, all now fixed, all of which looked like "the flattener is too
+   weak":
+
+   - the corridor was smoothed against its **off-road** neighbours, so every
+     pass dragged the road back up the hillside — 3 passes and 40 passes both
+     landed at 0.90;
+   - the border ridge was raised **after** the corridor was levelled, burying a
+     road that runs to the map edge (road slope 14.9° whole-map against 6.4°
+     on the interior);
+   - `ridge_gap` opened a saddle for water but not for roads, though corpus
+     roads leave the map — that is how a route continues onto the next one.
+
+   With all three fixed the desert reference spec measures **0.58**, level with
+   the corpus's worst confirmed road. Every build now prints its own ratio; if
+   it reads above about 0.5, **move the waypoints** — the generator is levelling
+   correctly and the route is the problem.
+3. **Its rim dithers with a sibling of its own motif.** Blend band median 3 m,
+   `hard_edge` false on all 37. `map_a2` paints `field 01` and enriches
+   `field 02` at the rim **23.9×**; `metin2_map_a1` paints `field 01` and
+   enriches `field 04` 4.8×. Meanwhile `stone*` is *depleted* at the rim
+   (median 0.52×) and `cliff*` more so (0.49×) — the paint-side statement of
+   "roads do not climb mountains".
+
+`textures.md` §4i–4j.
+
+### 1.9 The safe zone is an unmixed disc, and it is a stamp
+
+Every other feature on an outdoor map is dithered. The plaza is not: its slot
+measures **solid 0.84–0.87** against 0.36–0.56 for a dirt road in the same
+palette. 27 corpus components score fill 0.70–0.85 (a filled circle is
+π/4 = 0.785) at aspect 1.00–1.10, radius **8–25 m**, on ground of slope
+0.0–1.9° — and identical areas recur verbatim across unrelated maps (1,264
+tiles in `metin2_map_a1`, `smhgate_a1` and `capedragonhead`). These are
+copy-pasted stamps.
+
+On every map that writes the safe-zone flag at all, the disc is **100 %
+`ATTR_SAFEZONE`** against a map baseline of 0.2 %.
+
+But do **not** infer that safe-zone implies walkable in general: 923,325 of the
+1,282,946 safe-zone cells across the 37 maps that use the flag (**72 %**) also
+carry block, because the flag is painted over a whole town including its walls.
+Only the disc itself is guaranteed clear.
+
+Build it with `PlazaSpec`. `textures.md` §4g–4h.
+
+### 1.10 The cliff is region fill — the one exception to §1.5
+
+§1.5 says ground is a per-tile stipple and not region fill. That is a statement
+about **ground**. The rock skin is the exception, and it is the most visible
+thing in a landscape screenshot. Share of cliff paint surviving a 5×5 opening
+(massif ÷ raw):
+
+| map | raw | massif | ratio |
+|---|---|---|---|
+| `metin2_map_n_desert_01` | 26.4 % | 26.2 % | **0.99** |
+| `metin2_map_a1` | 32.9 % | 32.3 % | **0.98** |
+| `metin2_map_a3` | 33.8 % | 33.0 % | **0.98** |
+| `metin2_map_b1` | 27.0 % | 26.5 % | **0.98** |
+| `metin2_map_c1` | 28.4 % | 27.7 % | **0.97** |
+| `metin2_map_capedragonhead` | 3.5 % | 3.3 % | **0.94** |
+| `metin2_map_b3` | 17.2 % | 15.8 % | **0.92** |
+| `metin2_map_mt_thunder` | 23.5 % | 20.1 % | **0.86** |
+
+Eight maps, 0.86 to 0.99, including one whose cliff covers only 3.5 % of the
+ground. The rock is a **solid skin on steep terrain**, not a slot in the
+stipple.
+
+This was found the expensive way. The generator sampled cliff per tile exactly
+like the ground and scored **0.02** on that ratio — rock as pepper, no rock face
+anywhere — while every audit rule and every test passed. It took building the
+desert reference spec and measuring the same statistic on the output to see it.
+
+`P(cliff | slope)` is a monotone ramp, and where it turns is a per-map decision,
+not a constant:
+
+| slope | 0–5° | 15–20° | 25–30° | 40–50° | 60°+ |
+|---|---|---|---|---|---|
+| `metin2_map_a1` | 7 % | 34 % | 64 % | 83 % | 92 % |
+| `metin2_map_n_desert_01` | 5 % | 12 % | 27 % | 79 % | 98 % |
+| `metin2_map_mt_thunder` | 7 % | 26 % | 32 % | 34 % | 40 % |
+
+So do not hard-code a slope threshold. Rank tiles by slope, jitter the ranking
+with a smooth field so the rock line is organic rather than a terrain contour,
+and take as many as the palette weights ask for. `gen/texture.py.cliff_massif`.
+
+**Inside the massif the cliff slots still dither among themselves.** §4c's
+`metin2_a2` example is the same rock face split 45 % `stone01` / 20 % `stone02`.
+Solid means *rock versus ground*, not one texture.
+
+> **Trap:** the massif must be thick enough to survive the opening it is
+> measured with. A ridge two or three tiles wide passes a 3×3 smoothing and
+> vanishes under a 5×5 opening, which put the generator at ratio 0.78 with 2.4 %
+> of its rock stranded in open field — and no amount of tuning the feather moved
+> either number, because the feather was never the cause.
+
+### 1.11 Rock has a feathered rim, and open ground has none
+
+The cliff texture does not stop at a line. Measuring the raw cliff share outward
+from the *opened* massif rim — so the measurement is not circular — gives a
+decaying tail about five to seven tiles long: `metin2_map_a1` 9.6 → 6.8 → 3.6 →
+2.1 → 1.3 → 0.9 %; `metin2_map_b1` 16.2 → 16.4 → 10.6 → 7.2 → 4.8 → 2.7 %.
+
+And then it stops: rock share in the far field, more than 20 m out, is
+**0.00 %** on both (0.06 % on `metin2_map_n_desert_01`). A generator that
+dithers rock globally reproduces the tail and destroys the stop, and the map
+reads as gravel scattered over sand. `textures.md` §4l.
 
 ---
 

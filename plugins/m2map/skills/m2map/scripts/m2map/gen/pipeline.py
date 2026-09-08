@@ -53,6 +53,44 @@ class Build:
         self.log.append(msg)
 
 
+def _note_road_gradient(b: "Build") -> None:
+    """Report how much flatter the corridor is than the ground beside it.
+
+    The corpus figure is `slope_ratio_inside_over_control`, measured against a
+    [6, 24] m control band: median **0.21** over the 37 confirmed road maps,
+    p25 0.13, p75 0.38, worst 0.56.
+
+    This is reported rather than asserted because the generator can only get
+    part of the way there. Levelling the corridor is implemented; **choosing a
+    gentle route is not**. Ymir's roads follow ground that was already easy, so
+    the corpus figure is route selection and earthworks combined, while the
+    generator levels whatever line the spec names. The desert reference spec
+    measures 0.58 -- level with the corpus's worst confirmed road -- and a spec
+    whose waypoints cut straight over a massif will measure worse. If this line
+    reads above about 0.5, move the waypoints before touching the generator.
+    """
+    if b.layout is None or b.slope_deg is None or not b.layout.corridors:
+        return
+    core = np.zeros(b.layout.shape, bool)
+    for c in b.layout.corridors:
+        core |= c.core
+    d = b.layout.road_distance
+    ctrl = (d >= 6.0) & (d <= 24.0)
+    if core.sum() < 50 or ctrl.sum() < 50:
+        return
+    h, w = b.slope_deg.shape
+    ys, xs = np.mgrid[:core.shape[0], :core.shape[1]]
+    sl = b.slope_deg[np.clip(ys // 2, 0, h - 1), np.clip(xs // 2, 0, w - 1)]
+    inside, control = float(sl[core].mean()), float(sl[ctrl].mean())
+    if control <= 1e-6:
+        return
+    ratio = inside / control
+    b.note("road: slope %.1f deg vs %.1f deg beside it, ratio %.2f "
+           "(corpus median 0.21, worst confirmed road 0.56)%s"
+           % (inside, control, ratio,
+              "  <-- route crosses steep ground" if ratio > 0.5 else ""))
+
+
 def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
         stages: Tuple[str, ...] = STAGES, build: Optional[Build] = None,
         progress: Optional[Callable[[str], None]] = None) -> Build:
@@ -77,8 +115,9 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
         flat = b.layout.flatten_mask_cells() if b.layout else None
         carve = b.layout.carve_cm if b.layout else None
         gap = b.layout.ridge_gap if b.layout else None
+        pads = b.layout.pad_masks_cells() if b.layout else None
         b.height_cm = terrain.build(spec, flatten_mask=flat,
-                                    carve_cm=carve, ridge_gap=gap)
+                                    carve_cm=carve, ridge_gap=gap, pads=pads)
         b.slope_deg = terrain.slope_degrees(b.height_cm)
         # Report the PLAYABLE interior, not the whole grid. The border ridge is
         # a 40 deg wall by design, and including it pushed the reported slope
@@ -90,6 +129,7 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
             m = int(max(4, spec.border_ridge_width_m / 2.0)) + 2
             if min(inner.shape) > 2 * m + 8:
                 inner = inner[m:-m, m:-m]
+        _note_road_gradient(b)
         s = terrain.stats(inner)
         scope = "interior" if inner is not b.height_cm else "map"
         b.note("terrain (%s): slope p50 %.1f / p95 %.1f deg, flat %.0f%%"
