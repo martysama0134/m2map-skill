@@ -84,6 +84,23 @@ from m2map.codec.areadata import AreaData
 from m2map.codec.property import PropertyFile
 from m2map.codec.setting import Setting
 
+# --- host locations -------------------------------------------------------
+# Resolved through m2map.config, never hardcoded. A literal path here is both
+# wrong for every other machine and a scrub_paths.py failure; the scrubber used
+# to rewrite it to a "<CORPUS>" string that no longer resolved at runtime.
+from m2map.config import paths as _paths
+
+
+def _cfg(key, *parts):
+    """Configured path (or None when unset), so --flags stay overridable."""
+    base = getattr(_paths(), key, None)
+    if base is None:
+        return None
+    for p in parts:
+        base = base / p
+    return str(base)
+
+
 # --------------------------------------------------------------------------
 # constants
 # --------------------------------------------------------------------------
@@ -1579,7 +1596,7 @@ def _report(acc: Accum) -> dict:
 
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--corpus", default="<CORPUS>")
+    ap.add_argument("--corpus", default=_cfg("corpus"), required=_cfg("corpus") is None)
     ap.add_argument("--taxonomy", default=None)
     ap.add_argument("--property-root", default=None)
     ap.add_argument("--crc-cache", default=None)

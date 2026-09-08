@@ -99,6 +99,23 @@ if str(_HERE.parents[2]) not in sys.path:                  # .../scripts
 
 from m2map.codec.property import scan_property_dir          # noqa: E402
 
+# --- host locations -------------------------------------------------------
+# Resolved through m2map.config, never hardcoded. A literal path here is both
+# wrong for every other machine and a scrub_paths.py failure; the scrubber used
+# to rewrite it to a "<CORPUS>" string that no longer resolved at runtime.
+from m2map.config import paths as _paths
+
+
+def _cfg(key, *parts):
+    """Configured path (or None when unset), so --flags stay overridable."""
+    base = getattr(_paths(), key, None)
+    if base is None:
+        return None
+    for p in parts:
+        base = base / p
+    return str(base)
+
+
 __all__ = [
     "DEFAULTS", "Gr2Error", "Gr2File", "read_gr2", "read_mdatr", "read_spt",
     "resolve_art_path", "scan", "shape_envelope", "main",
@@ -107,9 +124,9 @@ __all__ = [
 SKILL_ROOT = _HERE.parents[3]                              # .../skills/m2map
 
 DEFAULTS = {
-    "property": r"<CLIENT_PACK>/property/property",
-    "art": r"D:/ymir work",
-    "grn": r"<OPENGRANNY>/target/release/grn-preprocessor.exe",
+    "property": _cfg("client_pack", "property", "property"),
+    "art": _cfg("ymir_work"),
+    "grn": _cfg("opengranny", "target", "release", "grn-preprocessor.exe"),
     "out": str(SKILL_ROOT / "reference" / "catalog"),
 }
 

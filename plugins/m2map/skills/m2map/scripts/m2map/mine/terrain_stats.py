@@ -68,6 +68,23 @@ from m2map.codec import attr as attr_codec               # noqa: E402
 from m2map.codec import height as height_codec           # noqa: E402
 from m2map.codec import water as water_codec             # noqa: E402
 
+# --- host locations -------------------------------------------------------
+# Resolved through m2map.config, never hardcoded. A literal path here is both
+# wrong for every other machine and a scrub_paths.py failure; the scrubber used
+# to rewrite it to a "<CORPUS>" string that no longer resolved at runtime.
+from m2map.config import paths as _paths
+
+
+def _cfg(key, *parts):
+    """Configured path (or None when unset), so --flags stay overridable."""
+    base = getattr(_paths(), key, None)
+    if base is None:
+        return None
+    for p in parts:
+        base = base / p
+    return str(base)
+
+
 __all__ = [
     "CELL_SCALE", "HEIGHT_SCALE", "SECTOR_CELLS", "PATCH_CELLS",
     "Hist", "slope_grid", "load_map_heights", "build_mosaic",
@@ -1307,7 +1324,7 @@ def run(maps_root, taxonomy_path, out_path, patch_dir, only=None, no_patches=Fal
 def main(argv=None):
     root = os.path.abspath(os.path.join(_PKG_PARENT, "..", "reference", "catalog"))
     ap = argparse.ArgumentParser(description="mine height.raw terrain statistics")
-    ap.add_argument("--maps", default="<CORPUS>")
+    ap.add_argument("--maps", default=_cfg("corpus"), required=_cfg("corpus") is None)
     ap.add_argument("--taxonomy", default=os.path.join(root, "map-taxonomy.json"))
     ap.add_argument("--out", default=os.path.join(root, "stats-terrain.json"))
     ap.add_argument("--patch-dir", default=os.path.join(root, "patches"))

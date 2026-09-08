@@ -68,11 +68,30 @@ GENERATED_PREFIXES = (
     ".github/copilot-instructions.md",
 )
 
+# In-game asset references. These are part of the Metin2 file format -- the
+# engine resolves them against its own pack -- and they appear verbatim in every
+# shipped map. They are masked out before substitution and restored afterwards,
+# so no host-path rule can reach inside one. Without this, a corpus configured
+# as "D:/" rewrites d:/ymir work/... to <CORPUS>/ymir work/..., and a model path
+# containing a /home/ or /Users/ component gets a <HOME> spliced into its middle.
+IN_GAME_RE = re.compile(r"[A-Za-z]:[\\/]{1,2}ymir[ _]work[\\/][^\"'\s<>|]*",
+                        re.IGNORECASE)
+
 # Catch-all for any user home dir we did not enumerate, on all three platforms.
+#
+# Anchored: the lookbehind stops it matching a /home/ or /Users/ component in
+# the MIDDLE of a longer path. The username class excludes only characters that
+# cannot appear in a path component, so names with spaces ("Alice Smith") are
+# consumed whole instead of leaving a "<HOME> Smith" remnant.
 HOME_RE = re.compile(
-    r"(?:[A-Za-z]:)?[/\\]{1,2}(?:Users|home)[/\\]{1,2}[A-Za-z0-9._-]+",
+    r"(?<![A-Za-z0-9._\-])"
+    r"(?:[A-Za-z]:)?[/\\]{1,2}(?:Users|home)[/\\]{1,2}"
+    r"[^\\/:*?\"<>|\r\n]+?(?=[/\\]|$)",
     re.IGNORECASE,
 )
+
+#: Source files must never be silently rewritten -- see scrub_text().
+SOURCE_SUFFIXES = {".py"}
 
 
 def tracked_files() -> list[Path]:
@@ -94,21 +113,63 @@ def candidate_files(only_tracked: bool) -> list[Path]:
     return [p for p in files if p.suffix.lower() in TEXT_SUFFIXES]
 
 
-def build_patterns() -> list[tuple[re.Pattern, str]]:
-    """Regexes matching each configured host root, separator-agnostic."""
+def build_patterns(placeholder_map: dict[str, str] | None = None) -> list[tuple[re.Pattern, str]]:
+    """Regexes matching each configured host root, separator-agnostic.
+
+    ``placeholder_map`` (host path -> token) defaults to this machine's config.
+    Tests MUST pass synthetic maps: a suite that only ever exercises the local
+    config proves nothing about anyone else's, which is how the ``D:/``-as-corpus
+    and username-with-spaces breakages went unnoticed.
+
+    Each is anchored on both ends at a path-component boundary: a root must not
+    match starting mid-component, and must be followed by a separator or the end
+    of the path. Without the leading anchor a configured root that is a prefix of
+    another string matches inside it; without the trailing one, a root like
+    ``D:/map`` would match ``D:/maps``.
+    """
+    if placeholder_map is None:
+        placeholder_map = paths().placeholder_map()
     patterns = []
-    for host, token in paths().placeholder_map().items():
-        # Match the path with any mix of / and \ (and doubled \\ from JSON).
-        parts = re.split(r"[/\\]+", host.replace("\\", "/"))
-        body = r"[/\\]{1,2}".join(re.escape(part) for part in parts if part)
-        patterns.append((re.compile(body, re.IGNORECASE), token))
+    for host, token in placeholder_map.items():
+        norm = host.replace("\\", "/")
+        parts = [p for p in re.split(r"[/\\]+", norm) if p]
+        if not parts:
+            continue
+        body = r"[/\\]{1,2}".join(re.escape(part) for part in parts)
+        # A POSIX absolute root ("/srv/maps") must keep its leading separator,
+        # or it both leaves a stray "/" in the output and matches the same names
+        # appearing as a RELATIVE path ("vendor/srv/maps").
+        if norm.startswith("/"):
+            body = r"[/\\]" + body
+        # Both ends anchored at a path-component boundary. "/" and "\" are in the
+        # lookbehind class so a root cannot match part-way along a longer path.
+        rx = re.compile(r"(?<![A-Za-z0-9._\-/\\])" + body + r"(?![A-Za-z0-9._\-])",
+                        re.IGNORECASE)
+        patterns.append((rx, token))
     return patterns
 
 
 def scrub_text(text: str, patterns: list[tuple[re.Pattern, str]]) -> str:
+    """Replace host paths with placeholders, leaving in-game refs untouched.
+
+    In-game asset references are masked out first with a sentinel that contains
+    no path characters, so no host rule can match inside one, then restored.
+    """
+    shelf: list[str] = []
+
+    def stash(m: re.Match) -> str:
+        shelf.append(m.group(0))
+        return "\x00INGAME%d\x00" % (len(shelf) - 1)
+
+    text = IN_GAME_RE.sub(stash, text)
+
     for rx, token in patterns:
         text = rx.sub(token, text)
-    return HOME_RE.sub("<HOME>", text)
+    text = HOME_RE.sub("<HOME>", text)
+
+    for i, original in enumerate(shelf):
+        text = text.replace("\x00INGAME%d\x00" % i, original)
+    return text
 
 
 def main() -> int:
@@ -126,6 +187,7 @@ def main() -> int:
 
     hits: list[tuple[str, int]] = []
     changed: list[str] = []
+    source_hits: list[tuple[str, int]] = []
 
     for path in candidate_files(only_tracked=not args.all):
         rel = path.relative_to(REPO_ROOT).as_posix()
@@ -144,29 +206,51 @@ def main() -> int:
             1 for line in original.splitlines()
             if scrub_text(line, patterns) != line
         )
+
+        # NEVER rewrite source. A host path in a .py file means the module
+        # hardcoded a location instead of resolving it through m2map.config;
+        # substituting a placeholder produces a literal "<CORPUS>" string that
+        # no longer resolves at runtime, converting a visible wrong default into
+        # an invisible broken one. This is exactly how all five miners and both
+        # codec test modules were silently broken. Report, do not patch.
+        if path.suffix.lower() in SOURCE_SUFFIXES:
+            source_hits.append((rel, leaked))
+            continue
+
         if args.check:
             hits.append((rel, leaked))
         else:
             path.write_text(scrubbed, encoding="utf-8", newline="\n")
             changed.append(f"{rel} ({leaked} lines)")
 
+    if source_hits:
+        print("scrub: HOST PATHS IN PYTHON SOURCE -- fix these by hand:")
+        for rel, n in source_hits:
+            print(f"  {rel}  ({n} lines)")
+        print("\n  Resolve the location through m2map.config instead of hardcoding it:")
+        print("      from m2map.config import paths")
+        print("      DEFAULT_MAPS = paths().corpus")
+        print("  Do NOT substitute a placeholder here -- '<CORPUS>' is not a path,")
+        print("  and baking it into source turns a wrong default into a broken one.")
+
     if args.check:
-        if not hits:
+        if not hits and not source_hits:
             print("scrub: clean -- no host paths in tracked files")
             return 0
-        print("scrub: HOST PATHS LEAKED into tracked files:")
-        for rel, n in hits:
-            print(f"  {rel}  ({n} lines)")
-        print("\nRun `python tools/scrub_paths.py --all` to fix.")
+        if hits:
+            print("scrub: HOST PATHS LEAKED into tracked files:")
+            for rel, n in hits:
+                print(f"  {rel}  ({n} lines)")
+            print("\nRun `python tools/scrub_paths.py --all` to fix.")
         return 1
 
     if not changed:
         print("scrub: clean -- nothing to rewrite")
-        return 0
+        return 1 if source_hits else 0
     print("scrub: rewrote host paths to placeholders")
     for line in changed:
         print(f"  {line}")
-    return 0
+    return 1 if source_hits else 0
 
 
 if __name__ == "__main__":

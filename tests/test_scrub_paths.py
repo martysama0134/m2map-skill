@@ -138,3 +138,78 @@ def test_mixed_document(patterns):
     assert "<CLIENT_PACK>/textureset/textureset" in out
     assert "<CORPUS>/metin2_map_a1/000000/areadata.txt" in out
     assert '"d:/ymir work/terrainmaps/b/field/field 01.dds"' in out
+
+
+# ---------------------------------------------------------------------------
+# Synthetic configs.
+#
+# Everything above runs against THIS machine's m2map.paths.json, which is why it
+# passed while the scrubber was broken in both directions. These cases pin the
+# behaviour against configs this machine does not have.
+# ---------------------------------------------------------------------------
+
+# A pathological but legal config: the corpus is a bare drive root, so its
+# pattern is a prefix of every path on that drive -- including in-game refs.
+HOSTILE = {
+    "D:/": "<CORPUS>",
+    "C:/Users/bob/pack": "<CLIENT_PACK>",
+}
+
+FOREIGN = {
+    "/srv/metin2/maps": "<CORPUS>",
+    "/opt/m2/pack": "<CLIENT_PACK>",
+}
+
+
+@pytest.mark.parametrize("asset", IN_GAME)
+def test_in_game_survives_a_drive_root_corpus(asset):
+    """corpus='D:/' must not eat d:/ymir work/... ."""
+    out = scrub_text(asset, build_patterns(HOSTILE))
+    assert out == asset, f"in-game ref rewritten under a D:/ corpus: {out}"
+
+
+def test_hostile_config_still_abstracts_real_host_paths():
+    pats = build_patterns(HOSTILE)
+    assert scrub_text("D:/maps/metin2_map_a1", pats).startswith("<CORPUS>")
+    assert "bob" not in scrub_text("C:/Users/bob/pack/textureset", pats)
+
+
+@pytest.mark.parametrize("asset", IN_GAME)
+def test_in_game_survives_posix_config(asset):
+    assert scrub_text(asset, build_patterns(FOREIGN)) == asset
+
+
+def test_posix_root_keeps_its_leading_separator():
+    """A configured POSIX root must not lose its anchor and match relative paths."""
+    pats = build_patterns(FOREIGN)
+    assert scrub_text("/srv/metin2/maps/a1", pats) == "<CORPUS>/a1"
+    # a same-named relative path is NOT the configured root
+    assert scrub_text("vendor/srv/metin2/maps/a1", pats) == "vendor/srv/metin2/maps/a1"
+
+
+@pytest.mark.parametrize("path,leaked", [
+    ("C:/Users/Alice Smith/Documents/a", "Smith"),
+    ("C:\\Users\\Alice Smith\\Documents", "Smith"),
+    ("C:/Users/jean-luc picard/x", "picard"),
+    ("/home/mary jane/maps", "jane"),
+])
+def test_usernames_with_spaces_are_fully_consumed(path, leaked):
+    out = scrub_text(path, build_patterns({}))
+    assert leaked not in out, f"partial username survived: {out}"
+    assert "<HOME>" in out
+
+
+@pytest.mark.parametrize("text", [
+    "d:/ymir work/zone/home/foo/a.gr2",
+    "d:/ymir work/zone/Users/bob/a.gr2",
+    "d:/ymir work/tree/home/b1_baobab_rt.spt",
+])
+def test_home_component_inside_an_asset_path_is_not_spliced(text):
+    """/home/ mid-path is a directory name, not a user home."""
+    assert scrub_text(text, build_patterns({})) == text
+
+
+def test_source_files_are_reported_not_rewritten():
+    """A host path in .py means 'wire up config', never 'substitute a token'."""
+    from tools.scrub_paths import SOURCE_SUFFIXES
+    assert ".py" in SOURCE_SUFFIXES

@@ -65,6 +65,23 @@ from m2map.codec.textureset import TextureSet              # noqa: E402
 from m2map.codec.tile import TileMap                       # noqa: E402
 from m2map.codec.water import WaterMap                     # noqa: E402
 
+# --- host locations -------------------------------------------------------
+# Resolved through m2map.config, never hardcoded. A literal path here is both
+# wrong for every other machine and a scrub_paths.py failure; the scrubber used
+# to rewrite it to a "<CORPUS>" string that no longer resolved at runtime.
+from m2map.config import paths as _paths
+
+
+def _cfg(key, *parts):
+    """Configured path (or None when unset), so --flags stay overridable."""
+    base = getattr(_paths(), key, None)
+    if base is None:
+        return None
+    for p in parts:
+        base = base / p
+    return str(base)
+
+
 __all__ = [
     "DEFAULTS", "PropInfo", "build_property_index", "terrain_class",
     "TextureSetCache", "chamfer_distance", "scan_corpus", "build_reports",
@@ -78,9 +95,9 @@ __all__ = [
 SKILL_ROOT = _HERE.parents[3]                              # .../skills/m2map
 
 DEFAULTS = {
-    "maps": r"<CORPUS>",
-    "property": r"<CLIENT_PACK>/property/property",
-    "textureset": r"<CLIENT_PACK>/textureset/textureset",
+    "maps": _cfg("corpus"),
+    "property": _cfg("client_pack", "property", "property"),
+    "textureset": _cfg("client_pack", "textureset", "textureset"),
     "taxonomy": str(SKILL_ROOT / "reference" / "catalog" / "map-taxonomy.json"),
     "out": str(SKILL_ROOT / "reference" / "catalog"),
 }

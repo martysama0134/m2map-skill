@@ -45,6 +45,23 @@ from ..codec.setting import Setting
 from ..codec.textureset import TextureSet
 from ..codec.tile import ERASER, TILE_SCALE, TILE_SIZE, TileMap
 
+# --- host locations -------------------------------------------------------
+# Resolved through m2map.config, never hardcoded. A literal path here is both
+# wrong for every other machine and a scrub_paths.py failure; the scrubber used
+# to rewrite it to a "<CORPUS>" string that no longer resolved at runtime.
+from m2map.config import paths as _paths
+
+
+def _cfg(key, *parts):
+    """Configured path (or None when unset), so --flags stay overridable."""
+    base = getattr(_paths(), key, None)
+    if base is None:
+        return None
+    for p in parts:
+        base = base / p
+    return str(base)
+
+
 __all__ = [
     "DEFAULT_MAPS_DIR", "DEFAULT_PACK_DIR", "SECTOR_TILES", "SECTOR_UNITS",
     "SECTOR_RE", "MapTiles", "load_map", "iter_maps", "resolve_textureset",
@@ -53,10 +70,10 @@ __all__ = [
     "out_of_range_report", "map_report", "main",
 ]
 
-DEFAULT_MAPS_DIR = pathlib.Path("<CORPUS>")
-DEFAULT_PACK_DIR = pathlib.Path(
-    r"<CLIENT_PACK>")
-DEFAULT_ART_ROOT = pathlib.Path("D:/")
+_corpus, _pack, _art = _cfg("corpus"), _cfg("client_pack"), _cfg("ymir_work")
+DEFAULT_MAPS_DIR = pathlib.Path(_corpus) if _corpus else None
+DEFAULT_PACK_DIR = pathlib.Path(_pack) if _pack else None
+DEFAULT_ART_ROOT = pathlib.Path(_art) if _art else None
 
 SECTOR_TILES = TILE_SIZE                # 256 usable tiles per sector axis
 SECTOR_UNITS = SECTOR_TILES * TILE_SCALE  # 25,600 world units
