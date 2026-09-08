@@ -105,9 +105,20 @@ class Sync:
         dest.write_text(content, encoding="utf-8", newline="\n")
 
     def mirror_tree(self, src: Path, dest: Path) -> None:
-        """Make dest an exact copy of src (deleting anything extra)."""
+        """Make dest an exact copy of src (deleting anything extra).
+
+        A missing source is treated as an empty tree, not an error: git does not
+        track empty directories, so a source dir that is currently empty (agents/
+        before its first agent lands) simply does not exist in a fresh clone.
+        Raising there made `sync.py --check` fail in every clone -- i.e. in CI --
+        before it compared anything.
+        """
         if not src.exists():
-            raise SystemExit(f"source tree missing: {self._rel(src)}")
+            if dest.exists() and any(dest.iterdir()):
+                self.stale.append(self._rel(dest) + "/ (source is empty)")
+                if not self.check_only:
+                    shutil.rmtree(dest)
+            return
 
         if self._trees_equal(src, dest):
             return

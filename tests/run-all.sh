@@ -54,6 +54,12 @@ run "no host paths leaked"     python tools/scrub_paths.py --check
 if command -v python >/dev/null 2>&1; then
   if python -c "import pytest" >/dev/null 2>&1; then
     run "pytest" python -m pytest tests -q
+  elif [ -n "${CI:-}" ]; then
+    # In CI a missing pytest is a broken workflow, not a local convenience.
+    # This gate silently printed SKIP and exited 0, so CI never ran a single
+    # unit test while appearing green.
+    printf '%-44s%s\n' "pytest" "FAIL (pytest not installed; CI must install it)"
+    fail=$((fail + 1))
   else
     printf '%-44s%s\n' "pytest" "SKIP (pytest not installed)"
   fi

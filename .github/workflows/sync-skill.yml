@@ -13,13 +13,15 @@ on:
       - skills/m2map/**
       - agents/**
       - rules/m2map-activate.md
-      - tools/sync.py
+      - tools/**
+      - tests/**
   pull_request:
     paths:
       - skills/m2map/**
       - agents/**
       - rules/m2map-activate.md
-      - tools/sync.py
+      - tools/**
+      - tests/**
 
 concurrency:
   group: sync-skill-${{ github.ref }}
@@ -36,8 +38,16 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Verify generated variants are up to date
-        run: python tools/sync.py --check
+
+      # setup-python does not ship pytest. Without this the gate printed
+      # "pytest SKIP" and exited 0, so CI ran no unit tests while looking green.
+      - name: Install test dependencies
+        run: pip install pytest numpy pillow
+
+      # The full gate, not just the sync check: this also runs
+      # scrub_paths.py --check (the host-path leak gate) and the unit tests.
+      - name: Full gate
+        run: bash tests/run-all.sh
 
   sync:
     if: github.event_name == 'push'
@@ -53,20 +63,24 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Install test dependencies
+        run: pip install pytest numpy pillow
+
       - name: Configure git identity
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git pull --rebase origin main
 
-      - name: Structural tests (pre-sync gate)
-        run: |
-          # A broken SKILL.md or reference doc must not propagate to the Codex,
-          # Cursor, Cline, Windsurf and Copilot variants.
-          bash tests/run-all.sh
-
+      # Regenerate FIRST. run-all.sh includes `sync.py --check`, so running it
+      # before the sync meant the gate failed in exactly the case this job
+      # exists to handle -- a source change the contributor did not sync -- and
+      # the auto-sync could never fire.
       - name: Regenerate agent variants
         run: python tools/sync.py
+
+      - name: Full gate (verifies the regenerated tree)
+        run: bash tests/run-all.sh
 
       - name: Commit and push if changed
         run: |
