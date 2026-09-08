@@ -1169,11 +1169,33 @@ def _num(vals):
             "p90": round(float(np.quantile(a, 0.9)), 4)}
 
 
-def aggregate(recs, key):
+def aggregate(recs, key, confirmed_only=True):
+    """Group per-map road records for per-archetype statistics.
+
+    ``has_roads`` alone is not enough. The miner classifies each map's ribbons
+    into road / terrain_ribbon / ambiguous, and the corpus splits 37 / 29 / 7 --
+    so grouping on ``has_roads`` pooled the width, tortuosity, curvature and
+    junction statistics of 36 maps whose ribbons this very module decided were
+    NOT roads (snow fields, desert flats and similar large soft-edged regions).
+
+    ``confirmed_only`` keeps only verdict == "road". Pass False to reproduce the
+    older, wider grouping.
+    """
     groups = collections.defaultdict(list)
+    skipped = collections.Counter()
     for r in recs:
-        if r.get("has_roads"):
-            groups[r.get(key) or "unclassified"].append(r)
+        if not r.get("has_roads"):
+            continue
+        verdict = (r.get("road_verdict") or {}).get("verdict")
+        if confirmed_only and verdict != "road":
+            skipped[verdict or "unknown"] += 1
+            continue
+        groups[r.get(key) or "unclassified"].append(r)
+    if skipped:
+        # Never let a coverage cap pass silently as "we measured everything".
+        print("  aggregate(%s): excluded %d non-road maps (%s)"
+              % (key, sum(skipped.values()),
+                 ", ".join("%s=%d" % kv for kv in sorted(skipped.items()))))
     out = {}
     for name, rs in sorted(groups.items()):
         jt = collections.Counter()

@@ -170,12 +170,24 @@ four more. The server uses 32 bits per cell.
 
 ## 9. Optional means optional
 
-Old-beta maps (`metin2_map_c1` among them) have only five files per sector — no
-`areadata.txt`, no `areaambiencedata.txt`, no `shadowmap`, no `minimap`. The
-loaders treat all of those as optional and non-fatal.
+The loaders treat `areadata.txt`, `areaambiencedata.txt`, `shadowmap` and
+`minimap` as optional and non-fatal, so **"file missing" is not an error
+condition by itself**. A reader that requires all ten files is wrong.
 
-So "file missing" is not an error condition by itself. The modern format is a
-superset, and a reader that requires all ten files rejects shipped maps.
+But do not expect to meet a five-file sector: **there are no beta-era maps in
+the corpus.** All 1,343 sector folders carry the full modern ten-file set — the
+vendored spec's claim that `metin2_map_c1` is a five-file beta map is false, and
+`ls` on `metin2_map_c1/000000/` returns all ten. The real partial sectors are
+three specific exceptions: `boss_awaken_skipia` and `boss_crack_skipia` each
+have one sector holding only `attr.atr` (a collision override), and
+`smhdungeon_02`'s sectors have no `minimap.dds`.
+
+The shape you *will* meet instead is the **proxy map**: 26 of 142 maps have no
+sector folders at all, shipping only `setting.txt` + `mapproperty.txt` with a
+`ParentMapName` and reusing the parent's terrain. Three of those
+(`metin2_guild_village_01/02/03`) have no `setting.txt` either — only
+`mapproperty.txt`. Any tool that assumes a map owns terrain breaks on 18% of the
+corpus. See `corpus-overview.md`.
 
 ## 10. What the client loads at once
 

@@ -333,6 +333,11 @@ class Environment(SourcePreserving):
         add("Group Fog")
         add("{")
         add("    Enable        %d" % self.fog_enable)
+        # Read into fog_is_density but never written back, so a canonical
+        # re-render silently dropped it. The engine still parses the key
+        # (MapUtil.cpp), so preserve it when the source carried one.
+        if self.fog_is_density is not None:
+            add("    IsDensity     %d" % self.fog_is_density)
         add("    NearDistance  %f" % self.fog_near_distance)
         add("    FarDistance   %f" % self.fog_far_distance)
         add("    Color         %s" % _fl(self.fog_color))

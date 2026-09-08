@@ -265,3 +265,83 @@ def test_areadata_untouched_corpus_file_stays_clean():
             assert doc.to_bytes() == f.read_bytes()
             checked += 1
     assert checked >= 4
+
+
+# ---------------------------------------------------------------------------
+# Write-path losses: data the reader understands but the writer drops.
+# ---------------------------------------------------------------------------
+
+def test_msenv_preserves_fog_is_density():
+    """Read into fog_is_density, never written back -- silently lost on rewrite.
+
+    The canonical-output test could not see this: it compared the first
+    canonical render against the second, and the key was already gone from both.
+    """
+    src = (
+        "ScriptType         EnvrionmentData\r\n"
+        "ScriptVersion      1.0000\r\n"
+        "\r\n"
+        "Group Fog\r\n"
+        "{\r\n"
+        "    Enable        1\r\n"
+        "    IsDensity     1\r\n"
+        "    NearDistance  5000.000000\r\n"
+        "    FarDistance   20000.000000\r\n"
+        "    Color         0.690196 0.741176 0.839216 1.000000\r\n"
+        "}\r\n"
+    )
+    e = me.Environment.parse(src.encode("latin-1"))
+    assert e.fog_is_density == 1
+    out = e.render_canonical()
+    assert "IsDensity" in out, "fog IsDensity dropped by the canonical writer"
+    assert me.Environment.parse(out.encode("latin-1")).fog_is_density == 1
+
+
+def test_msenv_omits_is_density_when_source_had_none():
+    """Absent stays absent -- do not invent a key the file never carried."""
+    src = ("ScriptType EnvrionmentData\r\n\r\nGroup Fog\r\n{\r\n"
+           "    Enable        1\r\n    NearDistance  1.000000\r\n"
+           "    FarDistance   2.000000\r\n"
+           "    Color         0.0 0.0 0.0 1.0\r\n}\r\n")
+    e = me.Environment.parse(src.encode("latin-1"))
+    assert e.fog_is_density is None
+    assert "IsDensity" not in e.render_canonical()
+
+
+def test_dds_set_rgba_regenerates_the_whole_mip_chain():
+    """Editing mip 0 must not leave levels 1..N holding the old picture.
+
+    1328 shipped shadowmap.dds carry 9 levels; a stale chain renders the OLD
+    bake at distance while looking correct in a viewer.
+    """
+    import numpy as np
+    from m2map.codec import dds
+
+    base = np.zeros((64, 64, 4), np.uint8)
+    base[..., 3] = 255
+    base[..., 0] = 200                                   # red
+    d = dds.DDS.from_rgba(base, dds.X8R8G8B8, mipmaps=0)
+    assert d.mip_count > 1
+
+    new = np.zeros((64, 64, 4), np.uint8)
+    new[..., 3] = 255
+    new[..., 1] = 200                                    # green
+    d.set_rgba(new)
+
+    for lvl in range(d.mip_count):
+        px = d.to_rgba(lvl)
+        assert px[..., 1].mean() > 150, f"level {lvl} was not regenerated"
+        assert px[..., 0].mean() < 50, f"level {lvl} still holds the old image"
+
+
+def test_dds_set_rgba_can_opt_out_of_mip_regeneration():
+    import numpy as np
+    from m2map.codec import dds
+
+    base = np.zeros((32, 32, 4), np.uint8)
+    base[..., 3] = 255
+    d = dds.DDS.from_rgba(base, dds.X8R8G8B8, mipmaps=0)
+    new = np.full((32, 32, 4), 255, np.uint8)
+    d.set_rgba(new, regenerate_mips=False)
+    assert d.to_rgba(0)[..., 0].mean() > 200
+    assert d.to_rgba(1)[..., 0].mean() < 50, "opt-out should leave level 1 alone"

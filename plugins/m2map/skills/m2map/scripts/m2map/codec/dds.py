@@ -361,6 +361,20 @@ def encode_uncompressed(rgba, bpp, rmask, gmask, bmask, amask):
 # ---------------------------------------------------------------------------
 # container
 # ---------------------------------------------------------------------------
+def _box_downsample(rgba):
+    """Halve an ``(h, w, 4)`` image with a box filter (never below 1x1).
+
+    Shared by ``DDS.from_rgba`` and ``DDS.set_rgba`` so a regenerated mip chain
+    is bit-identical to one built from scratch.
+    """
+    h, w = rgba.shape[:2]
+    if h == 1 and w == 1:
+        return rgba
+    ch, cw = max(1, h // 2), max(1, w // 2)
+    out = rgba.reshape(ch, h // ch, cw, w // cw, rgba.shape[2])
+    return out.mean(axis=(1, 3)).round().astype(np.uint8)
+
+
 class DDS:
     """A DDS file: fully parsed header + verbatim payload (all mip levels)."""
 
@@ -427,8 +441,18 @@ class DDS:
         return decode_uncompressed(chunk, w, h, self.bpp,
                                    self.rmask, self.gmask, self.bmask, self.amask)
 
-    def set_rgba(self, rgba, level=0):
-        """Replace mip ``level`` with encoded pixels (same format, same size)."""
+    def set_rgba(self, rgba, level=0, regenerate_mips=True):
+        """Replace mip ``level`` with encoded pixels (same format, same size).
+
+        When ``level`` is 0 and the file carries a mip chain, levels 1..N are
+        rebuilt from the new image by default. Without that, a shadow re-bake or
+        minimap repaint leaves mip 0 new and every smaller level holding the OLD
+        picture -- which the GPU shows at distance and oblique angles, so the
+        file looks correct in a viewer and wrong in game. 1328 of 1332 shipped
+        shadowmap.dds and 62 minimap.dds carry 9 levels, so this is the norm.
+
+        Pass ``regenerate_mips=False`` to write a single level deliberately.
+        """
         rgba = np.asarray(rgba, dtype=np.uint8)
         w = max(1, self.width >> level)
         h = max(1, self.height >> level)
@@ -446,6 +470,12 @@ class DDS:
         if len(blob) != size:
             raise ValueError("encoded %d bytes, level holds %d" % (len(blob), size))
         self.data = self.data[:off] + blob + self.data[off + size:]
+
+        if level == 0 and regenerate_mips and self.mip_count > 1:
+            src = rgba
+            for lvl in range(1, self.mip_count):
+                src = _box_downsample(src)
+                self.set_rgba(src, lvl, regenerate_mips=False)
 
     # --- serialisation -----------------------------------------------------
     @classmethod
@@ -505,11 +535,9 @@ class DDS:
         n = mipmaps if mipmaps else 64
         for i in range(n):
             levels.append(cur)
-            cw, ch = max(1, cur.shape[1] // 2), max(1, cur.shape[0] // 2)
             if cur.shape[0] == 1 and cur.shape[1] == 1:
                 break
-            cur = cur.reshape(ch, cur.shape[0] // ch, cw, cur.shape[1] // cw, 4)
-            cur = cur.mean(axis=(1, 3)).round().astype(np.uint8)
+            cur = _box_downsample(cur)
         payload = bytearray()
         for lv in levels:
             if pf_flags & DDPF_FOURCC:

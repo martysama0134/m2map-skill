@@ -35,7 +35,7 @@
  },
  "coordinates": {
   "tile_to_world_cm": "x_cm = BasePosition.x + tile_x * 100, y_cm = BasePosition.y + tile_y * 100; tile (0,0) is the NW corner of sector 000000, X grows east and Y grows south",
-  "caveat": "areadata.txt stores object Y negated (see reference/mapformat/areadata-txt.md); the world_cm values here are NOT negated -- negate Y before writing a centreline vertex into an areadata record",
+  "caveat": "areadata.txt stores object positions in MAP-LOCAL centimetres with Y NEGATED. The world_cm values here are absolute (they include BasePosition) and are NOT negated. To place a centreline vertex as an object you must therefore do BOTH steps: local_x = world_cm.x - BasePosition.x ; local_y = -(world_cm.y - BasePosition.y). Subtracting the base is not optional -- skipping it puts every object outside the map on any map whose BasePosition is non-zero, which is most of the corpus. See reference/mapformat/areadata-txt.md.",
   "sector_of_tile": "sector folder = printf('%03d%03d', tile_x//256, tile_y//256)"
  },
  "texture_role_vocabulary": {
@@ -165657,5 +165657,6 @@
     ]
    }
   }
- }
+ },
+ "by_archetype_caveat": "WARNING: these aggregates were produced before the road_verdict filter existed and pool all maps with has_roads, including the 29 terrain_ribbon and 7 ambiguous ones the miner itself rejected as non-roads (corpus.road_verdict_counts: road 37, terrain_ribbon 29, ambiguous 7). Half the maps feeding the width/tortuosity/junction statistics are not roads. mine/roads.py now filters on road_verdict.verdict == 'road'; re-run it to regenerate these blocks. Until then treat by_archetype road grammar as indicative, not measured."
 }
