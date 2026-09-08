@@ -100,6 +100,29 @@ def polygon_mask(shape: Tuple[int, int], polygon: Sequence[Point]) -> np.ndarray
     return mask
 
 
+def _distance_inside(mask: np.ndarray, cap: float = 64.0) -> np.ndarray:
+    """Distance in tiles from each masked cell to the nearest cell outside it.
+
+    Used to grade a river or lake bed: deepest in the middle, zero at the shore.
+    Capped dilation, so a wide lake costs the same as a narrow stream.
+    """
+    inside = mask.copy()
+    dist = np.zeros(mask.shape, np.float32)
+    step = 0.0
+    while step < cap and inside.any():
+        step += 1.0
+        eroded = inside.copy()
+        eroded[1:, :] &= inside[:-1, :]
+        eroded[:-1, :] &= inside[1:, :]
+        eroded[:, 1:] &= inside[:, :-1]
+        eroded[:, :-1] &= inside[:, 1:]
+        if not eroded.any():
+            break
+        dist[eroded] = step
+        inside = eroded
+    return dist
+
+
 @dataclass
 class Corridor:
     """A rasterised road: its centreline, its surface and its blend fringe."""
@@ -120,8 +143,17 @@ class Layout:
     corridors: List[Corridor] = field(default_factory=list)
     water_masks: List[np.ndarray] = field(default_factory=list)
     water_surfaces: List[float | None] = field(default_factory=list)
+    #: Centreline per water feature (empty for a lake). Water bands ALONG this,
+    #: not by height value -- see gen/water.py.
+    water_lines: List[List[Point]] = field(default_factory=list)
     regions: Dict[str, np.ndarray] = field(default_factory=dict)
     flatten: np.ndarray | None = None            # tile-space flatten request
+    #: Depth in cm to cut out of the terrain under each water body, graded to 0
+    #: at the shoreline. Without a carved bed the water renders as a flat slab
+    #: lying on top of the ground instead of sitting in a channel.
+    carve_cm: np.ndarray | None = None
+    #: True where the water body is a lake (one flat surface, not banded).
+    lake_mask: np.ndarray | None = None
 
     @property
     def road_mask(self) -> np.ndarray:
@@ -181,14 +213,34 @@ def build(spec: MapSpec) -> Layout:
         # trench with abrupt shoulders.
         flatten |= dist <= (half + 2.0)
 
+    carve = np.zeros(shape, np.float64)
+    lakes = np.zeros(shape, bool)
+
     for wat in spec.water:
         if wat.lake:
             mask = polygon_mask(shape, wat.waypoints)
+            lakes |= mask
+            line = []
         else:
             line = catmull_rom(wat.waypoints)
             mask = distance_field(shape, line) <= max(0.5, wat.width_m / 2.0)
         lay.water_masks.append(mask)
+        lay.water_lines.append(line)
         lay.water_surfaces.append(wat.surface_z)
+
+        # Cut a bed, graded from 0 at the shoreline to `depth` in the middle, so
+        # the banks rise around the water instead of the water lying on flat
+        # ground. The grading also hides the level steps of a banded river:
+        # a step inside a channel reads as a riffle, the same step on an open
+        # plain reads as a terrace.
+        if mask.any():
+            depth = max(120.0, min(600.0, wat.width_m * 22.0))
+            inner = _distance_inside(mask)
+            grade = np.clip(inner / max(1.0, wat.width_m * 0.35), 0.0, 1.0)
+            carve = np.maximum(carve, grade * depth * mask)
+
+    lay.carve_cm = carve
+    lay.lake_mask = lakes
 
     for reg in spec.regions:
         mask = polygon_mask(shape, reg.polygon)

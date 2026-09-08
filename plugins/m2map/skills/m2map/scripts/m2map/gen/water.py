@@ -58,9 +58,24 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
     if spec.is_box() or not lay.water_masks:
         return cells, heights, wet_tiles, np.zeros_like(wet_tiles)
 
-    for mask, surface in zip(lay.water_masks, lay.water_surfaces):
+    lake_tiles = lay.lake_mask if lay.lake_mask is not None else None
+
+    for idx, (mask, surface) in enumerate(zip(lay.water_masks, lay.water_surfaces)):
         cell_mask = _tiles_to_cells(mask, ch, cw)
         if not cell_mask.any():
+            continue
+
+        # A lake is ONE flat plane. Banding it produces visible terraces across
+        # the surface -- water does not step. Only a river descending its bed
+        # needs several levels.
+        is_lake = (lake_tiles is not None and mask.any()
+                   and bool((mask & lake_tiles).sum() > mask.sum() * 0.5))
+        if surface is None and is_lake:
+            hv = height_cm[:ch, :cw][cell_mask]
+            if len(heights) < wtr.MAX_WATER_NUM and hv.size:
+                heights.append(float(np.percentile(hv, 92)) + 60.0)
+                cells[cell_mask] = len(heights) - 1
+                wet_tiles |= mask
             continue
 
         if surface is not None:
@@ -77,7 +92,12 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
         # a chain of disconnected puddles. Real maps solve this the same way the
         # format allows: many layers, each covering a stretch at its own level
         # (water.wtr holds up to 255).
-        for band, level in _level_bands(cell_mask, height_cm[:ch, :cw]):
+        line_tiles = (lay.water_lines[idx] if idx < len(lay.water_lines) else None)
+        # centreline is in TILES, the water grid is in 2 m cells
+        line_cells = ([(x / 2.0, y / 2.0) for (x, y) in line_tiles]
+                      if line_tiles else None)
+        for band, level in _level_bands(cell_mask, height_cm[:ch, :cw],
+                                        line=line_cells):
             if len(heights) >= wtr.MAX_WATER_NUM:
                 break
             heights.append(level)
@@ -96,31 +116,68 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
     return cells, heights, wet_tiles, submerged_tiles
 
 
-def _level_bands(mask: np.ndarray, height_cm: np.ndarray, step_cm: float = 150.0,
-                 depth_cm: float = 90.0):
-    """Split a water body into flat bands that each hold water.
+def _along_channel(mask: np.ndarray, line) -> np.ndarray:
+    """Position along the centreline, in tiles, for every masked cell.
 
-    Yields ``(band_mask, surface_cm)``. The bed under the feature is quantised
-    into ``step_cm`` slices, and each slice gets a surface a little ABOVE its
-    own bed so the cells in it are genuinely submerged rather than a plane
-    grazing the ground.
-
-    ``depth_cm`` is what makes it read as water: a surface set to the bed's
-    median leaves half the band dry, which is what produced a river of puddles.
+    Bands have to be contiguous ALONG the river. Grouping by height value
+    instead -- which is what this did first -- puts scattered cells from the
+    whole length into one band whenever the bed is noisy, so that band's single
+    plane floods some of them and leaves others dry. In the editor that renders
+    as alternating stripes of water and exposed bed down the whole channel.
     """
-    bed = height_cm[mask]
-    if bed.size == 0:
+    h, w = mask.shape
+    ys, xs = np.mgrid[0:h, 0:w]
+    best = np.full((h, w), np.inf, np.float64)
+    along = np.zeros((h, w), np.float64)
+    travelled = 0.0
+    for (x0, y0), (x1, y1) in zip(line, line[1:]):
+        dx, dy = x1 - x0, y1 - y0
+        seg = float(np.hypot(dx, dy))
+        if seg < 1e-9:
+            continue
+        tpar = np.clip(((xs - x0) * dx + (ys - y0) * dy) / (seg * seg), 0.0, 1.0)
+        d = np.hypot(xs - (x0 + tpar * dx), ys - (y0 + tpar * dy))
+        closer = d < best
+        best[closer] = d[closer]
+        along[closer] = travelled + tpar[closer] * seg
+        travelled += seg
+    return along
+
+
+def _level_bands(mask: np.ndarray, height_cm: np.ndarray, line=None,
+                 segment_m: float = 26.0, depth_cm: float = 110.0):
+    """Split a water body into flat reaches that each hold water.
+
+    Yields ``(band_mask, surface_cm)``. Each band is a contiguous stretch of the
+    channel, and its surface sits ``depth_cm`` above the highest bed cell in that
+    stretch, so every cell in the band is genuinely submerged.
+
+    Falls back to height banding only when there is no centreline (which in
+    practice means a lake, and lakes take the single-plane path before reaching
+    here).
+    """
+    if mask.sum() == 0:
         return
-    lo, hi = float(bed.min()), float(bed.max())
-    n = max(1, int(np.ceil((hi - lo) / max(1.0, step_cm))))
-    edges = np.linspace(lo, hi, n + 1)
+    if line and len(line) >= 2:
+        along = _along_channel(mask, line)
+        vals = along[mask]
+        lo, hi = float(vals.min()), float(vals.max())
+        n = max(1, int(np.ceil((hi - lo) / max(1.0, segment_m))))
+        edges = np.linspace(lo, hi, n + 1)
+        key = along
+    else:
+        vals = height_cm[mask]
+        lo, hi = float(vals.min()), float(vals.max())
+        n = max(1, int(np.ceil((hi - lo) / 150.0)))
+        edges = np.linspace(lo, hi, n + 1)
+        key = height_cm
+
     for i in range(n):
         a = edges[i]
         b = edges[i + 1] + (1e-3 if i == n - 1 else 0.0)
-        band = mask & (height_cm >= a) & (height_cm < b)
+        band = mask & (key >= a) & (key < b)
         if not band.any():
             continue
-        # Surface above the band's own high point keeps the whole band wet.
         yield band, float(height_cm[band].max()) + depth_cm
 
 

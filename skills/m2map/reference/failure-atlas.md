@@ -906,3 +906,48 @@ regen/Town coordinates (units of 100, not cm), and `ViewRadius`
 All three faults above were found by **loading the map in WorldEditor**, not by
 any automated check. The 2D previews validate the model; only the real engine
 validates the boundary. `reference/we-api.md` has the working headless command.
+
+---
+
+## 5. Water that is technically correct and visibly wrong
+
+Three faults in a row, all found by loading the map in WorldEditor, none
+detectable from the file or the 2D previews. Water is disproportionately
+represented in this atlas because `water.wtr` is the format's most indirect
+layer: a cell index into a table of flat planes, with the terrain a separate
+file entirely.
+
+### A river rendered as alternating stripes of water and dry bed
+
+**Cause.** Banding the surface by **height value**. A water body larger than one
+flat plane has to be split into several, and the obvious split is by bed
+elevation. But on a noisy bed, cells of similar height occur *scattered along
+the whole channel*, so one band covers patches at both ends and its single plane
+floods some of them while missing others.
+
+**Fix.** Band **along the channel**, not by height: project each cell onto the
+centreline, cut the river into contiguous reaches, and give each reach one plane
+sitting above its own highest bed cell. Contiguity is the property that matters;
+elevation is only a proxy for it, and a poor one.
+
+### A lake rendered as terraces
+
+**Cause.** Applying the same banding to a lake. Water does not step. A lake is
+one flat surface by definition, and any banding of it is visible as blocky
+level changes across the pool.
+
+**Fix.** Lakes get exactly one plane. Only a descending river needs several.
+
+### Water lying on the ground as a flat slab
+
+**Cause.** No bed. Rasterising a water polygon and putting a plane over it gives
+a sheet of water sitting on unmodified terrain, with no banks.
+
+**Fix.** Carve the bed in the terrain stage, graded from zero at the shoreline
+to full depth in the middle. The grading also hides what remains of the reach
+steps: a level change inside a channel reads as a riffle, the same change on
+open ground reads as a terrace.
+
+Ordering note: the carve must come from the **layout** (stage 2), because terrain
+is stage 3 and water is stage 4. The water polygons are known early; only their
+surface levels need the finished terrain.

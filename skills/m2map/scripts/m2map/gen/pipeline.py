@@ -75,7 +75,8 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
 
     if step("terrain"):
         flat = b.layout.flatten_mask_cells() if b.layout else None
-        b.height_cm = terrain.build(spec, flatten_mask=flat)
+        carve = b.layout.carve_cm if b.layout else None
+        b.height_cm = terrain.build(spec, flatten_mask=flat, carve_cm=carve)
         b.slope_deg = terrain.slope_degrees(b.height_cm)
         s = terrain.stats(b.height_cm)
         b.note("terrain: slope p50 %.1f / p95 %.1f deg, flat %.0f%%"

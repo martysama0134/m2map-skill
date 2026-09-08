@@ -192,7 +192,8 @@ def _flatten_mask(height_cm: np.ndarray, mask: np.ndarray,
     return out
 
 
-def build(spec: MapSpec, flatten_mask: np.ndarray | None = None) -> np.ndarray:
+def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
+          carve_cm: np.ndarray | None = None) -> np.ndarray:
     """Whole-map vertex height grid in world cm.
 
     Returns ``(h*128+1, w*128+1)`` -- the shared logical vertex grid. Splitting
@@ -225,7 +226,29 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None) -> np.ndarray:
     if flatten_mask is not None and flatten_mask.any():
         height = _flatten_mask(height, flatten_mask)
 
+    # Cut the water bed last, so flattening cannot fill it back in. Without a
+    # bed the water plane lies on top of the ground as a flat slab; with one it
+    # sits in a channel and the banks read as banks.
+    if carve_cm is not None and carve_cm.any():
+        height = height - _to_cells(carve_cm, height.shape)
+        height = np.clip(height, 0.0, 32767.5)
+
     return height
+
+
+def _to_cells(tile_grid: np.ndarray, shape) -> np.ndarray:
+    """Tile-space (1 m) field -> terrain vertex grid (2 m), taking the max.
+
+    Max rather than mean: a 3 m stream straddling a cell boundary must still
+    carve that cell, or the channel develops gaps the water leaks out of.
+    """
+    h, w = shape
+    th, tw = tile_grid.shape
+    out = np.zeros(shape, tile_grid.dtype)
+    uh, uw = min(h, th // 2), min(w, tw // 2)
+    blk = tile_grid[:uh * 2, :uw * 2].reshape(uh, 2, uw, 2)
+    out[:uh, :uw] = blk.max(axis=(1, 3))
+    return out
 
 
 def to_raw(height_cm: np.ndarray) -> np.ndarray:
