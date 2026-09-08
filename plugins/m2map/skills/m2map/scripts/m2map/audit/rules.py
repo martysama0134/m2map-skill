@@ -319,6 +319,35 @@ def audit(map_dir, corpus_root=None, property_crcs: Optional[Iterable[int]] = No
             except Exception:                                # noqa: BLE001
                 pass
 
+        # water planes far below every cell they cover: invisible in game, and
+        # the classic symptom of writing centimetres into a raw-unit field.
+        if wf.exists() and hf.exists():
+            try:
+                wm = water_codec.read_water(wf)
+                surfaces = list(wm.world_heights())
+                if surfaces:
+                    hm = height_codec.read_height(hf)
+                    terrain = hm.raw[1:129, 1:129].astype(float) * 0.5
+                    lo, hi = float(terrain.min()), float(terrain.max())
+                    for i, s in enumerate(surfaces):
+                        if not (wm.cells == i).any():
+                            continue
+                        if float(s) < lo - 5000:
+                            out.append(Finding(
+                                "M2MAP-WTR-002", "major", "%s/water.wtr" % rel,
+                                "water is invisible in game",
+                                "Layer %d sits at %.0f cm, below every terrain "
+                                "cell it covers (%.0f..%.0f). A plane under the "
+                                "ground never renders. Classic cause: heights "
+                                "written in centimetres into a field the format "
+                                "defines in RAW units (worldZ = value * "
+                                "HeightScale), which halves them."
+                                % (i, s, lo, hi),
+                                "Divide world cm by HeightScale when writing."))
+                            break
+            except Exception:                                # noqa: BLE001
+                pass
+
     # --- server_attr ----------------------------------------------------
     saf = root / "server_attr"
     if saf.exists():

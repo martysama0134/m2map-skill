@@ -24,7 +24,7 @@ import numpy as np
 
 from ..codec import water as wtr
 from .layout import Layout
-from .spec import MapSpec, SECTOR_CELLS
+from .spec import HEIGHT_SCALE, MapSpec, SECTOR_CELLS
 
 #: water.wtr is a 128x128 cell grid per sector; 0xFF means "no water here".
 CELLS = 128
@@ -151,5 +151,16 @@ def to_sector(cells: np.ndarray, heights: List[float], cx: int, cy: int):
     out = np.full((CELLS, CELLS), NO_WATER, np.uint8)
     for old, new in remap.items():
         out[block == old] = new
-    local = [heights[o] for o in used]
+
+    # water.wtr stores heights in RAW units, the same scale as height.raw --
+    # worldZ = value * HeightScale (reference/mapformat/water-wtr.md, and
+    # AreaTerrain.cpp:1086). Everything upstream of here works in world
+    # centimetres, so convert on the way out.
+    #
+    # Storing centimetres directly puts every water plane at HALF its intended
+    # altitude, which is reliably below the terrain: the water is invisible in
+    # game, and the attr WATER flags computed from the in-memory (correct)
+    # heights no longer match the file. Found by loading a generated map in
+    # WorldEditor and seeing no water at all.
+    local = [float(heights[o]) / HEIGHT_SCALE for o in used]
     return wtr.WaterMap(cells=out, heights=local)

@@ -361,3 +361,64 @@ def test_regen_file_round_trips_and_derives_monsterarrange(built, tmp_path):
     assert rf.problems() == []
     ma = rc.MonsterArrange.load(tmp_path / "monsterarrange.txt")
     assert 101 in ma.vnums and 9001 in ma.vnums and 2001 in ma.vnums
+
+
+# --- unit boundaries at the write edge ------------------------------------
+#
+# The in-memory model can be right while the FILE is wrong, which is exactly
+# what happened: water surfaces were written in centimetres into a field the
+# format defines in raw units, so every plane landed at half its altitude --
+# reliably below the terrain. The pipeline reported 7.2% submerged, the file
+# contained 0%, and nothing caught it until the map was opened in WorldEditor
+# and had no water in it.
+
+def test_written_water_matches_the_in_memory_model(built, written):
+    """water.wtr stores RAW units (worldZ = value * HeightScale), not cm."""
+    import numpy as np
+    from m2map.codec import height as hc
+    from m2map.codec import water as wc
+
+    sectors = [p for p in written.iterdir() if p.is_dir() and p.name.isdigit()]
+    total_sub = 0
+    for sec in sectors:
+        wm = wc.read_water(sec / "water.wtr")
+        hm = hc.read_height(sec / "height.raw")
+        surfaces = list(wm.world_heights())
+        if not surfaces:
+            continue
+        terrain = hm.raw[1:129, 1:129].astype(float) * 0.5
+        sub = np.zeros(wm.cells.shape, bool)
+        for i, s in enumerate(surfaces):
+            m = wm.cells == i
+            if m.any():
+                sub |= m & (float(s) > terrain)
+        total_sub += int(sub.sum())
+
+    expected = int(built.submerged.sum()) // 4      # tile mask -> 2 m cells
+    assert total_sub > 0, (
+        "no submerged cell survived the write -- water heights are probably in "
+        "centimetres where the format wants raw units (factor of 1/HeightScale)")
+    assert total_sub >= expected * 0.5, (
+        "written submerged area %d is far below the in-memory %d"
+        % (total_sub, expected))
+
+
+def test_water_surfaces_are_plausible_against_terrain(written):
+    """A plane far below every terrain cell it covers is invisible in game."""
+    import numpy as np
+    from m2map.codec import height as hc
+    from m2map.codec import water as wc
+
+    for sec in [p for p in written.iterdir() if p.is_dir() and p.name.isdigit()]:
+        wm = wc.read_water(sec / "water.wtr")
+        surfaces = list(wm.world_heights())
+        if not surfaces:
+            continue
+        terrain = hc.read_height(sec / "height.raw").raw[1:129, 1:129].astype(float) * 0.5
+        lo, hi = float(terrain.min()), float(terrain.max())
+        for i, s in enumerate(surfaces):
+            if not (wm.cells == i).any():
+                continue
+            assert lo - 5000 <= float(s) <= hi + 5000, (
+                "water layer %d at %.0f cm against terrain %.0f..%.0f -- off by "
+                "a unit conversion?" % (i, s, lo, hi))
