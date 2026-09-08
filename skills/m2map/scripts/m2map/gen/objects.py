@@ -91,6 +91,8 @@ def _candidate_mask(spec: MapSpec, lay: Layout, tier: ObjectTier,
         ok &= allowed
 
     ok &= slope <= tier.max_slope
+    if tier.min_slope > 0:
+        ok &= slope >= tier.min_slope
     if submerged is not None:
         ok &= ~submerged
     # Vegetation in the shore band reads as trees growing in the river. Only

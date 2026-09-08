@@ -154,10 +154,27 @@ T 36.7 % / Y 35.8 % / X-skew 13.1 % / star5 5.5 %.
 
 This is the single most important thing to reproduce, and the easiest to get backwards.
 
-**It is about ground.** Three features are painted solid and are *not* stipple:
-the **cliff** (§1.10), the **road surface** (§1.8, dithered only at its rim) and
-the **plaza disc** (§1.9, no dither at all). Applying this rule to the rock skin
-turns every mountain into pepper — measured, and it happened.
+**It is about `mid` and `accent` slots.** Solidity by role over the outdoor
+corpus — the share of a slot's tiles surviving one erosion:
+
+| role | n | p25 | **median** | p75 |
+|---|---|---|---|---|
+| `shore` | 20 | 37.3 % | **72.7 %** | 92.5 % |
+| `base` | 53 | 43.1 % | **62.7 %** | 74.3 % |
+| `path` | 28 | 42.6 % | **56.0 %** | 85.1 % |
+| `cliff` | 94 | 3.8 % | **27.2 %** | 54.3 % |
+| `mid` | 130 | 4.7 % | **17.8 %** | 35.2 % |
+| `accent` | 86 | 0.3 % | **5.1 %** | 18.2 % |
+
+So the **base is a carpet**, the **cliff a massif** (§1.10), the **road surface**
+solid with a dithered rim (§1.8) and the **plaza** solid throughout (§1.9). Only
+`mid` and `accent` are the stipple this section describes.
+
+`metin2_n_desert1` shows the whole model in one palette: `sand01` covers 31.3 %
+of the ground at **93.6 %** solid, while `sand02` (26.2 %) and `sand03` (26.4 %)
+sit at **1.2 %** and **0.8 %** — a carpet with a checkerboard in its gaps, not
+three sands competing. Sampling all of them the same way gave a base of 13 %
+solid and a map that reads as camouflage.
 
 Measured over the 114 maps with terrain, 87.9 M painted tiles
 (`catalog/stats-tiles.json`, `textures.md` sec 4c):

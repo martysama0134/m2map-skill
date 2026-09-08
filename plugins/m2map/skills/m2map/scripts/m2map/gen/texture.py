@@ -16,6 +16,18 @@ decides the pixel.** Region-fill-then-perturb-the-edges produces clean blobs wit
 noisy borders, which is the opposite of what the corpus looks like -- there the
 interior is noisy and there are barely any borders at all.
 
+**That is true of `mid` and `accent` and of nothing else.** Solidity by role over
+the outdoor corpus -- the share of a slot's tiles surviving one erosion:
+
+    base 62.7%   shore 72.7%   path 56.0%   cliff 27.2%   mid 17.8%   accent 5.1%
+
+So the base lays down as a carpet (`base_carpet`), the rock as a massif
+(`cliff_massif`), and the mids stipple in what is left. Sampling all three the
+same way gave a base of 13% solid against the corpus's 63%, and the render read
+as camouflage rather than ground. `metin2_n_desert1` is the clearest case:
+`sand01` 31.3% at solid **93.6%**, with `sand02` 26.2% at 1.2% and `sand03`
+26.4% at 0.8% interleaving in the gaps.
+
 Roads are painted here too, and they are *not* a special texture: no road, path,
 trail or track texture exists in Ymir's art (all 355 distinct .dds searched).
 ``metin2_map_a1``'s road web is ``b/field/field 01.dds``, an ordinary ground
@@ -162,6 +174,46 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     cum = np.cumsum(prob, axis=0)
     idx = (draw[None, :, :] > cum).sum(axis=0)
     tiles = np.clip(idx, 0, len(spec.textures) - 1).astype(np.uint8) + 1
+
+    # The base lays down as a carpet first, and the mids sample only in the
+    # gaps -- see `base_carpet`. Painting it into the same categorical draw as
+    # the mids is what made every slot equally dithered.
+    base_slots = [i for i, sl in enumerate(spec.textures, start=1)
+                  if sl.role == "base"]
+    if base_slots:
+        carpet = base_carpet(spec, scores, rng)
+        if carpet.any():
+            if len(base_slots) == 1:
+                tiles = np.where(carpet, np.uint8(base_slots[0]), tiles)
+            else:
+                sub = np.stack([np.maximum(scores[i - 1], 1e-9) for i in base_slots])
+                sub /= sub.sum(axis=0)
+                pick = (draw[None, :, :] > np.cumsum(sub, axis=0)).sum(axis=0)
+                chosen = np.take(np.array(base_slots, np.uint8),
+                                 np.clip(pick, 0, len(base_slots) - 1))
+                tiles = np.where(carpet, chosen, tiles)
+            # ...and the base does not also appear as speckle outside its own
+            # carpet. In the corpus a base slot's tiles are 63% pure interior;
+            # leaving strays behind puts that straight back to where it was.
+            stray = np.isin(tiles, base_slots) & ~carpet
+            if stray.any():
+                alt = [i for i, sl in enumerate(spec.textures, start=1)
+                       if sl.role in ("mid", "accent", "shore")]
+                if alt:
+                    # An INDEPENDENT draw, and that matters more than it looks.
+                    # Re-using the main draw re-assigns every stray tile from the
+                    # same smoothed field that chose it in the first place, so the
+                    # mids come out in contiguous blobs: measured sand02 at 44%
+                    # solid where the corpus has 1.2%. A fresh, barely-softened
+                    # field lets the two mids interleave, which is what
+                    # `metin2_n_desert1`'s 26.2/26.4 split at ~1% solid is.
+                    alt_draw = _soften(rng.random((h, w)), weight=0.5)
+                    sub = np.stack([np.maximum(scores[i - 1], 1e-9) for i in alt])
+                    sub /= sub.sum(axis=0)
+                    pick = (alt_draw[None, :, :] > np.cumsum(sub, axis=0)).sum(axis=0)
+                    chosen = np.take(np.array(alt, np.uint8),
+                                     np.clip(pick, 0, len(alt) - 1))
+                    tiles = np.where(stray, chosen, tiles)
 
     # The rock skin is region fill, not stipple -- see `cliff_massif`. Inside
     # the massif the cliff slots still dither AMONG THEMSELVES, which is how the
@@ -429,6 +481,57 @@ def _majority(mask: np.ndarray) -> np.ndarray:
 #: massif. 0 would make the rock line a contour of the terrain, which reads as
 #: machine-made; too much dissolves the massif back into pepper.
 MASSIF_JITTER = 0.35
+
+
+#: Spatial jitter mixed into the base carpet's threshold. Higher than the
+#: massif's because the carpet answers to nothing but its own field -- there is
+#: no slope ranking underneath it to keep the shape plausible.
+CARPET_JITTER = 1.0
+
+
+def base_carpet(spec: MapSpec, scores: np.ndarray, rng) -> np.ndarray:
+    """Where the base texture lays down as solid ground.
+
+    The `base` role is not a stipple partner. Measured over the outdoor corpus,
+    the share of a slot's tiles surviving one erosion is **62.7%** median for
+    `base` (p25 43.1, p75 74.3) against **17.8%** for `mid` and **5.1%** for
+    `accent`. `metin2_n_desert1` is the extreme and the clearest: `sand01` 31.3%
+    of the ground at solid **93.6%**, with `sand02` 26.2% at 1.2% and `sand03`
+    26.4% at 0.8% interleaving in the gaps. That is a carpet plus a checkerboard,
+    not three sands sampled against each other -- and sampling them the same way
+    gave a base of 13.2% solid and a map that reads as camouflage.
+
+    Shape comes from the slot's own suitability field, so the carpet still
+    prefers the ground the spec says it should, plus a low-frequency jitter so
+    the boundary is not a contour of the terrain.
+    """
+    base = [i for i, sl in enumerate(spec.textures, start=1) if sl.role == "base"]
+    if not base:
+        return np.zeros(scores.shape[1:], bool)
+    share = sum(max(0.0, spec.textures[i - 1].weight) for i in base)
+    total = sum(max(0.0, sl.weight) for sl in spec.textures
+                if sl.role != "path") or 1.0
+    frac = float(np.clip(share / total, 0.0, 0.85))
+    if frac <= 0.01:
+        return np.zeros(scores.shape[1:], bool)
+
+    from .terrain import fbm
+    field = np.zeros(scores.shape[1:], np.float64)
+    for i in base:
+        field += scores[i - 1]
+    hi = float(np.percentile(field, 99)) or 1.0
+    score = np.clip(field / hi, 0.0, 1.0)
+    h, w = score.shape
+    score = score + CARPET_JITTER * (fbm(rng, h, w, octaves=3, base_cells=40,
+                                         gain=0.55) - 0.5)
+    mask = score >= float(np.quantile(score, 1.0 - frac))
+
+    # Smooth only. No opening: a carpet is allowed thin arms and bays, and the
+    # 5x5 opening the massif needs would eat them. Two majority passes take
+    # solidity to roughly the corpus median without squaring the shape off.
+    for _ in range(2):
+        mask = _majority(mask)
+    return mask
 
 
 def cliff_massif(spec: MapSpec, slope: np.ndarray, rng) -> np.ndarray:

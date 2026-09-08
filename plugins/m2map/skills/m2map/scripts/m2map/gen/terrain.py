@@ -128,14 +128,15 @@ def _fit_flat_fraction(field: np.ndarray, lo: float, hi: float, spec,
     """
     target = float(np.clip(spec.flat_fraction, 0.0, 0.95))
     if target <= 0.0:
-        return _match_slope(lo + field * (hi - lo), spec.slope_p50, spec.slope_p95)
+        return _match_slope(lo + field * (hi - lo), spec.slope_p50,
+                            spec.slope_p95, base=lo)
 
     best, best_err = None, None
     q_lo, q_hi = target, 0.98
     for _ in range(iterations):
         q = (q_lo + q_hi) / 2.0
         h = _match_slope(lo + _plateau(field, q) * (hi - lo),
-                         spec.slope_p50, spec.slope_p95)
+                         spec.slope_p50, spec.slope_p95, base=lo)
         got = float((slope_degrees(h) < 2.0).mean())
         err = abs(got - target)
         if best_err is None or err < best_err:
@@ -150,12 +151,25 @@ def _fit_flat_fraction(field: np.ndarray, lo: float, hi: float, spec,
 
 
 def _match_slope(height_cm: np.ndarray, p50: float, p95: float,
-                 iterations: int = 24) -> np.ndarray:
-    """Scale the field until its walkable-slope quantiles match the archetype.
+                 iterations: int = 24, base: float = 0.0) -> np.ndarray:
+    """Scale the field's RELIEF until its walkable-slope quantiles match.
 
     Slope scales with amplitude, so a single global factor moves the whole
     distribution. Iterating on the p95 converges quickly and keeps the shape
     the noise produced, which a per-cell clamp would destroy.
+
+    ``base`` is the floor the scaling pivots on, and it has to be
+    ``height_range_cm[0]``. Scaling about **zero** -- which this did -- moves the
+    terrain's absolute altitude as well as its relief, so a spec asking for
+    16,000-23,000 cm came out at 3,486-8,348: the band was rescaled bodily
+    toward the origin. Nothing in the map looks wrong on its own, because slope
+    and relief are both still right; what breaks is anything expressed in
+    absolute world cm, and ``WaterSpec.surface_z`` is exactly that. A lake at a
+    surface picked from the requested range ends up a hundred metres above the
+    ground it was meant to fill.
+
+    Archetypes whose floor is 0 are unaffected -- pivoting on 0 and on the floor
+    are the same operation there.
     """
     out = height_cm.astype(np.float64)
     for _ in range(iterations):
@@ -169,7 +183,7 @@ def _match_slope(height_cm: np.ndarray, p50: float, p95: float,
         ratio = p95 / cur95
         if 0.99 < ratio < 1.01:
             break
-        out *= np.clip(ratio, 0.5, 2.0)
+        out = base + (out - base) * np.clip(ratio, 0.5, 2.0)
     return out
 
 

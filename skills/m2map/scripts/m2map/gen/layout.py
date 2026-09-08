@@ -292,9 +292,19 @@ def build(spec: MapSpec) -> Layout:
         # a step inside a channel reads as a riffle, the same step on an open
         # plain reads as a terrace.
         if mask.any():
-            depth = max(120.0, min(600.0, wat.width_m * 22.0))
+            # A lake carries no `width_m` -- it is a polygon -- so both the depth
+            # and the grading scale have to come from its own area, or the
+            # expression below degenerates. With `width_m` 0 the depth clamped to
+            # its 120 cm floor and `clip(inner / max(1, 0))` saturated at the
+            # first tile inside the shore, which cut a flat pan with vertical
+            # walls: in the editor the waterline came out as a visible staircase
+            # instead of a beach.
+            eff_w = wat.width_m
+            if eff_w <= 0.0:
+                eff_w = 2.0 * float(np.sqrt(mask.sum() / np.pi))
+            depth = max(120.0, min(600.0, eff_w * 22.0))
             inner = _distance_inside(mask)
-            grade = np.clip(inner / max(1.0, wat.width_m * 0.35), 0.0, 1.0)
+            grade = np.clip(inner / max(1.0, eff_w * 0.35), 0.0, 1.0)
             carve = np.maximum(carve, grade * depth * mask)
 
     lay.carve_cm = carve
@@ -306,6 +316,17 @@ def build(spec: MapSpec) -> Layout:
     gap = np.zeros(shape, np.float64)
     for mask, wat in zip(lay.water_masks, spec.water):
         if not mask.any():
+            continue
+        # ONLY for water that actually reaches the map edge. The rim opens so a
+        # river can leave; a body that stays inside has nothing to leave through,
+        # and suppressing the ridge around it erases the very high ground the
+        # feature was placed against. Measured: a basin sited on the east rim to
+        # hold the top of a waterfall came back with its ground at 16,064 cm --
+        # the plateau floor -- because the gap had levelled the 31 m of rim
+        # underneath it.
+        touches_edge = (mask[0, :].any() or mask[-1, :].any() or
+                        mask[:, 0].any() or mask[:, -1].any())
+        if not touches_edge:
             continue
         reach = max(6.0, wat.width_m * 1.6)
         d = _distance_to(mask)

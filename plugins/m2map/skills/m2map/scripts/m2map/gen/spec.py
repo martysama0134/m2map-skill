@@ -99,6 +99,12 @@ class ObjectTier:
     on_tiles: List[int] = field(default_factory=list)
     #: maximum ground slope in degrees
     max_slope: float = 25.0
+    #: MINIMUM ground slope in degrees. Rarely useful and occasionally
+    #: essential: a handful of props only make sense on a face. `fall_7`, the
+    #: waterfall, measures slope p50 71.4 deg with 26 of its 44 placements above
+    #: 45 -- expressed with `max_slope` alone it lands on the flat and the sheet
+    #: of water hangs in the air.
+    min_slope: float = 0.0
     #: keep this far from a road corridor edge, cm
     road_clearance_cm: float = 0.0
     #: allowed distance band to the nearest water, metres, as (min, max).

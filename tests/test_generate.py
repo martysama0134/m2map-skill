@@ -41,7 +41,14 @@ def make_spec(**over) -> MapSpec:
         textures=[
             TextureSlot("d:/ymir work/terrainmaps/b/field/field 01.dds", role="path"),
             TextureSlot("d:/ymir work/terrainmaps/b/grass/grass 01.dds", role="base", weight=0.55),
-            TextureSlot("d:/ymir work/terrainmaps/b/field/field 03.dds", role="mid", weight=0.30),
+            # TWO mids, deliberately. A corpus palette uses a median of 7 slots
+            # and the run-length statistic below is a property of several mids
+            # interleaving. With the base painted as a carpet and the cliff as a
+            # region, a single-mid palette has nothing left to dither and
+            # measures a run length of 7 -- correct for that palette, and not
+            # representative of anything Ymir shipped.
+            TextureSlot("d:/ymir work/terrainmaps/b/field/field 03.dds", role="mid", weight=0.18),
+            TextureSlot("d:/ymir work/terrainmaps/b/grass/grass 02.dds", role="mid", weight=0.14),
             TextureSlot("d:/ymir work/terrainmaps/b/stone/stone01.dds", role="cliff", weight=0.15),
             TextureSlot("d:/ymir work/terrainmaps/b/tile/tile01.dds", role="path"),
         ],
@@ -58,7 +65,7 @@ def make_spec(**over) -> MapSpec:
         slope_p50=4.5, slope_p95=23.0, flat_fraction=0.40,
         attr_style="slope_driven", block_slope_deg=20.0, border_band_m=4,
         safezone_regions=["settlement"],
-        plazas=[PlazaSpec(centre=(195.0, 55.0), radius_m=18.0, tile_index=5)],
+        plazas=[PlazaSpec(centre=(195.0, 55.0), radius_m=18.0, tile_index=6)],
     )
     for k, v in over.items():
         setattr(spec, k, v)
@@ -574,7 +581,7 @@ def test_cliff_is_a_solid_skin_not_a_dither(built):
     screenshot and every automated check passed while it was true.
     """
     tiles = built.tiles
-    mask = tiles == 4                                     # the cliff slot
+    mask = tiles == 5                                     # the cliff slot
     assert mask.any(), "no cliff painted at all"
     massif = texture_stage._dilate(texture_stage._erode(mask, 2), 2)
     ratio = massif.sum() / float(mask.sum())
@@ -592,7 +599,7 @@ def test_cliff_share_rises_with_slope(built):
     h, w = slope.shape
     ys, xs = np.mgrid[:tiles.shape[0], :tiles.shape[1]]
     sl = slope[np.clip(ys // 2, 0, h - 1), np.clip(xs // 2, 0, w - 1)]
-    mask = tiles == 4
+    mask = tiles == 5
     bands = [(0, 10), (10, 20), (20, 30), (30, 90)]
     shares = []
     for lo, hi in bands:
@@ -611,7 +618,7 @@ def test_rock_feathers_out_of_the_massif_and_then_stops(built):
     keeps sprinkling rock across open ground turns the map into gravel.
     """
     tiles = built.tiles
-    cliff = 4
+    cliff = 5
     mask = tiles == cliff
     if not mask.any():
         pytest.skip("no cliff painted on this seed")
@@ -706,9 +713,9 @@ def test_plaza_is_flat(built):
 
 
 @pytest.mark.parametrize("plaza,fragment", [
-    (PlazaSpec(centre=(120.0, 120.0), radius_m=60.0, tile_index=5), "outside the corpus band"),
-    (PlazaSpec(centre=(120.0, 120.0), radius_m=2.0, tile_index=5), "outside the corpus band"),
-    (PlazaSpec(centre=(5.0, 120.0), radius_m=18.0, tile_index=5), "runs off"),
+    (PlazaSpec(centre=(120.0, 120.0), radius_m=60.0, tile_index=6), "outside the corpus band"),
+    (PlazaSpec(centre=(120.0, 120.0), radius_m=2.0, tile_index=6), "outside the corpus band"),
+    (PlazaSpec(centre=(5.0, 120.0), radius_m=18.0, tile_index=6), "runs off"),
     (PlazaSpec(centre=(120.0, 120.0), radius_m=18.0, tile_index=99), "outside the palette"),
 ])
 def test_bad_plaza_is_caught_before_building(plaza, fragment):
