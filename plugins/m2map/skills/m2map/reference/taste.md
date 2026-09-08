@@ -170,6 +170,13 @@ So the **base is a carpet**, the **cliff a massif** (§1.10), the **road surface
 solid with a dithered rim (§1.8) and the **plaza** solid throughout (§1.9). Only
 `mid` and `accent` are the stipple this section describes.
 
+**The split is base-against-mids.** `shore` and `accent` do not compete for
+ground cover -- shore is gated by water, accent is decorative speckle -- so a
+palette with no `mid` slot at all is a map with **one** ground texture, and that
+is a legitimate choice rather than a degenerate one. Reproduce the corpus's
+three-way sand split only if the three textures hold up together; if they do
+not, drop them (`textures.md` §4c2).
+
 **Shape, not just solidity.** The base is ONE percolating region: its largest
 connected component holds **78 %** of the base tiles on `metin2_map_a1`, **81 %**
 on `metin2_map_b1` and **51 %** on `metin2_map_n_desert_01`. The mids are the

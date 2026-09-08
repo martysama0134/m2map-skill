@@ -192,6 +192,25 @@ palette: that is a road. And `stone01`/`stone02` are the base/cliff pair — sam
 folder, same "stone" name, 45% versus 20%, separated only by the fact that
 `stone02` sits on 50.9 deg ground with almost no interior.
 
+**(c2) One ground texture is a legitimate palette.** The measured shares tell you
+what Ymir painted, not what you must paint. `metin2_n_desert1` splits its ground
+three ways -- `sand01` 31.3%, `sand02` 26.2%, `sand03` 26.4% -- but reproducing
+that split is only correct if the three textures actually hold up together at the
+UV scales you have chosen. On a generated desert they did not: `sand02` and
+`sand03` read as blotches rather than as sand, and every adjustment to their
+mixture changed the shape of the blotches rather than removing them. Dropping
+both and letting `sand01` carry the whole walkable surface is the fix, and the
+corpus sanctions it -- `map_a2` paints 100% of its massif with a single slot, and
+17.3% of all declared slots corpus-wide are never painted at all (see (d)).
+
+A palette is a menu. Declare what you will use.
+
+The generator supports this directly: the carpet's share is computed against the
+`mid` slots alone, so a palette with **no** `mid` gives a carpet that covers all
+the ground. `shore` and `accent` are overlays gated by their own suitability --
+shore near water, accent as speckle -- and never fill the space the carpet leaves,
+which would turn them into ground cover they are not.
+
 **(d) A palette carries far more than it uses.** 17.3% of all declared slots are
 never painted, and the tail sets are worse: `metin2_map_t2.txt` paints 6 of 17,
 `metin2_b_fielddungeon.txt` 5 of 17, `metin2_map_treasure_hunt.txt` 10 of 17.

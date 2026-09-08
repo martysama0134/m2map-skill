@@ -85,6 +85,15 @@ gentle undulation across the pan. Do not fractalise it.
 
 ## Textureset recipe
 
+> **`sand02` and `sand03` do not hold up at generated UV scales.** The measured
+> palette splits the ground `sand01` 31.3% / `sand02` 26.2% / `sand03` 26.4%, and
+> reproducing that split produced blotches rather than sand on every attempt to
+> tune it. Declare `sand01` alone as the `base` and let it carry the whole
+> walkable surface; keep `stone03` for the rock, `field 01` for the road with
+> `field 02` as its rim partner, `field 03` for the shore band and the grasses
+> for the oasis rim. See `textures.md` §4c2.
+
+
 Reference palette **`metin2_n_desert1.txt`**, 12 slots, measured on
 `metin2_map_n_desert_01` and its five siblings (`textures.json`
 `texturesets["metin2_n_desert1.txt"]`). `weight` = measured `ground_share`; sums to

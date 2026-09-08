@@ -200,43 +200,53 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
                 chosen = np.take(np.array(base_slots, np.uint8),
                                  np.clip(pick, 0, len(base_slots) - 1))
                 tiles = np.where(carpet, chosen, tiles)
-            # ...and everything OUTSIDE the carpet is repainted as fine
-            # stipple. Not just the tiles the carpet displaced: the main
-            # categorical draw is a smoothed field weighted by the fitted
-            # scores, and left in place it keeps the heavier mid in broad
-            # coherent regions -- measured sand02 at 26% solid and 27% of its
-            # tiles in one component, where `metin2_n_desert1` has 1.2% and a
-            # largest component of a few tiles. Those regions are the dark
-            # shapes that appear on open ground.
+            # Everything outside the carpet is repainted as fine stipple --
+            # not just the tiles the carpet displaced. The main categorical draw
+            # is a smoothed field weighted by the fitted scores, and left in
+            # place it keeps the heavier mid in broad coherent regions: measured
+            # sand02 at 26% solid with 27% of its tiles in one component, where
+            # `metin2_n_desert1` has 1.2% and a largest component of a few
+            # tiles. Those regions are the dark shapes that appear on open
+            # ground.
             #
-            # An independent, unsoftened draw split by the DECLARED weights
-            # gives the corpus behaviour: two mids of weight 0.262 and 0.264
-            # interleave at ~26% each and ~1% solid.
+            # MIDS ONLY. Accents and shore are overlaid afterwards at their own
+            # rates and with their own gates; letting them fill the gap made
+            # them ground cover, which they are not.
             gaps = ~carpet
-            alt = [i for i, sl in enumerate(spec.textures, start=1)
-                   if sl.role in ("mid", "accent", "shore")]
-            if gaps.any() and alt:
+            mid_slots = [i for i, sl in enumerate(spec.textures, start=1)
+                         if sl.role == "mid"]
+            if gaps.any() and mid_slots:
                 wts = np.array([max(1e-9, spec.textures[i - 1].weight)
-                                for i in alt], float)
+                                for i in mid_slots], float)
                 wts /= wts.sum()
-                # Barely softened. Fully independent draws give a run length
-                # of 1 -- white noise -- against the corpus median of 2; one
-                # pass at 0.25 restores the run without gathering the mids into
+                # Barely softened. Fully independent draws give a run length of
+                # 1 -- white noise -- against the corpus median of 2; one pass
+                # at 0.25 restores the run without gathering the mids into
                 # patches (measured solidity 4.8% and 9.7%, inside the corpus
                 # mid band of 4.7-35.2%).
                 alt_draw = _soften(rng.random((h, w)), weight=0.25)
-                cum = np.cumsum(wts)
-                pick = np.clip(np.searchsorted(cum, alt_draw), 0, len(alt) - 1)
-                chosen = np.take(np.array(alt, np.uint8), pick)
-                # `shore` still answers to the water, so keep its terrain gate:
-                # it may only appear where the suitability field allows it.
-                for j, i in enumerate(alt):
-                    if spec.textures[i - 1].role == "shore":
-                        bad = (chosen == i) & (scores[i - 1] <= 1e-6)
-                        if bad.any():
-                            alt2 = [k for k in alt if k != i] or alt
-                            chosen = np.where(bad, np.uint8(alt2[0]), chosen)
-                tiles = np.where(gaps, chosen, tiles)
+                pick = np.clip(np.searchsorted(np.cumsum(wts), alt_draw),
+                               0, len(mid_slots) - 1)
+                tiles = np.where(gaps,
+                                 np.take(np.array(mid_slots, np.uint8), pick),
+                                 tiles)
+            elif gaps.any() and len(base_slots) == 1:
+                # No mids at all: the base owns the whole ground.
+                tiles = np.where(gaps, np.uint8(base_slots[0]), tiles)
+
+    # `shore` and `accent` are overlays, not ground. Each is sprinkled at its
+    # declared share over the tiles its own suitability field allows -- shore
+    # only near water (>=70% of corpus shore tiles are within 4 m of it), accent
+    # anywhere, at under 1.5% cover and a corpus median solidity of 5.1%.
+    for i, slot in enumerate(spec.textures, start=1):
+        if slot.role not in ("shore", "accent") or slot.weight <= 0:
+            continue
+        allowed = scores[i - 1] > 1e-6
+        if not allowed.any():
+            continue
+        rate = float(np.clip(slot.weight, 0.0, 1.0))
+        hit = allowed & (rng.random((h, w)) < rate / max(1e-6, allowed.mean()))
+        tiles = np.where(hit, np.uint8(i), tiles)
 
     # The rock skin is region fill, not stipple -- see `cliff_massif`. Inside
     # the massif the cliff slots still dither AMONG THEMSELVES, which is how the
@@ -409,8 +419,13 @@ def _fringe_partner(spec: MapSpec, band: int) -> int:
     want = motif_of(spec.textures[band - 1].path)
     if not want:
         return 0
+    # A `path` slot is a legitimate partner. It is never sampled into the
+    # ground, so nominating it here paints it ONLY in the rim -- which is
+    # exactly what `map_a2` does with `field 02` (0.015 of the ring-1 tiles,
+    # enriched 23.9x, and essentially absent from the open field). Excluding
+    # path slots left a single-ground-texture palette with no partner at all.
     for i, slot in enumerate(spec.textures, start=1):
-        if i == band or slot.role == "path":
+        if i == band:
             continue
         if motif_of(slot.path) == want:
             return i
@@ -534,12 +549,22 @@ def base_carpet(spec: MapSpec, scores: np.ndarray, rng) -> np.ndarray:
     base = [i for i, sl in enumerate(spec.textures, start=1) if sl.role == "base"]
     if not base:
         return np.zeros(scores.shape[1:], bool)
+    # Against the MIDS only. `shore` is gated by water and `accent` is
+    # decorative speckle -- neither competes with the base for ground cover, so
+    # neither belongs in the split that decides how much ground the carpet
+    # takes. Counting them shrank the carpet and handed the remainder to them,
+    # which on a palette whose only ground texture is the base meant grass and
+    # shoreline sand scattered over open desert.
+    #
+    # The corollary is the useful one: a palette with NO mids gives a carpet
+    # that covers everything, which is how a map gets a single ground texture.
     share = sum(max(0.0, spec.textures[i - 1].weight) for i in base)
-    total = sum(max(0.0, sl.weight) for sl in spec.textures
-                if sl.role != "path") or 1.0
-    frac = float(np.clip(share / total, 0.0, 0.85))
+    mids = sum(max(0.0, sl.weight) for sl in spec.textures if sl.role == "mid")
+    frac = float(np.clip(share / (share + mids), 0.0, 1.0)) if share > 0 else 0.0
     if frac <= 0.01:
         return np.zeros(scores.shape[1:], bool)
+    if frac >= 0.999:
+        return np.ones(scores.shape[1:], bool)
 
     from .terrain import fbm
     field = np.zeros(scores.shape[1:], np.float64)
