@@ -143,6 +143,14 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     for i in range(len(spec.textures)):
         if spec.textures[i].role == "path":
             continue
+        # Only for the roles that form REGIONS. A wandering mixture is what
+        # gives the base carpet and the rock its shape; applied to the mids it
+        # gathers them into broad patches instead of letting them interleave,
+        # and those patches are what read as dark shapes on open ground. Corpus
+        # mid solidity is 1-18% (median 17.8); with the patch field on the mids
+        # the generator sat at 32%.
+        if spec.textures[i].role not in ("base", "cliff", "shore"):
+            continue
         patch = fbm(rng, h, w, octaves=3, base_cells=48, gain=0.55)
         scores[i] *= 0.35 + 1.65 * patch
 
@@ -192,28 +200,43 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
                 chosen = np.take(np.array(base_slots, np.uint8),
                                  np.clip(pick, 0, len(base_slots) - 1))
                 tiles = np.where(carpet, chosen, tiles)
-            # ...and the base does not also appear as speckle outside its own
-            # carpet. In the corpus a base slot's tiles are 63% pure interior;
-            # leaving strays behind puts that straight back to where it was.
-            stray = np.isin(tiles, base_slots) & ~carpet
-            if stray.any():
-                alt = [i for i, sl in enumerate(spec.textures, start=1)
-                       if sl.role in ("mid", "accent", "shore")]
-                if alt:
-                    # An INDEPENDENT draw, and that matters more than it looks.
-                    # Re-using the main draw re-assigns every stray tile from the
-                    # same smoothed field that chose it in the first place, so the
-                    # mids come out in contiguous blobs: measured sand02 at 44%
-                    # solid where the corpus has 1.2%. A fresh, barely-softened
-                    # field lets the two mids interleave, which is what
-                    # `metin2_n_desert1`'s 26.2/26.4 split at ~1% solid is.
-                    alt_draw = _soften(rng.random((h, w)), weight=0.5)
-                    sub = np.stack([np.maximum(scores[i - 1], 1e-9) for i in alt])
-                    sub /= sub.sum(axis=0)
-                    pick = (alt_draw[None, :, :] > np.cumsum(sub, axis=0)).sum(axis=0)
-                    chosen = np.take(np.array(alt, np.uint8),
-                                     np.clip(pick, 0, len(alt) - 1))
-                    tiles = np.where(stray, chosen, tiles)
+            # ...and everything OUTSIDE the carpet is repainted as fine
+            # stipple. Not just the tiles the carpet displaced: the main
+            # categorical draw is a smoothed field weighted by the fitted
+            # scores, and left in place it keeps the heavier mid in broad
+            # coherent regions -- measured sand02 at 26% solid and 27% of its
+            # tiles in one component, where `metin2_n_desert1` has 1.2% and a
+            # largest component of a few tiles. Those regions are the dark
+            # shapes that appear on open ground.
+            #
+            # An independent, unsoftened draw split by the DECLARED weights
+            # gives the corpus behaviour: two mids of weight 0.262 and 0.264
+            # interleave at ~26% each and ~1% solid.
+            gaps = ~carpet
+            alt = [i for i, sl in enumerate(spec.textures, start=1)
+                   if sl.role in ("mid", "accent", "shore")]
+            if gaps.any() and alt:
+                wts = np.array([max(1e-9, spec.textures[i - 1].weight)
+                                for i in alt], float)
+                wts /= wts.sum()
+                # Barely softened. Fully independent draws give a run length
+                # of 1 -- white noise -- against the corpus median of 2; one
+                # pass at 0.25 restores the run without gathering the mids into
+                # patches (measured solidity 4.8% and 9.7%, inside the corpus
+                # mid band of 4.7-35.2%).
+                alt_draw = _soften(rng.random((h, w)), weight=0.25)
+                cum = np.cumsum(wts)
+                pick = np.clip(np.searchsorted(cum, alt_draw), 0, len(alt) - 1)
+                chosen = np.take(np.array(alt, np.uint8), pick)
+                # `shore` still answers to the water, so keep its terrain gate:
+                # it may only appear where the suitability field allows it.
+                for j, i in enumerate(alt):
+                    if spec.textures[i - 1].role == "shore":
+                        bad = (chosen == i) & (scores[i - 1] <= 1e-6)
+                        if bad.any():
+                            alt2 = [k for k in alt if k != i] or alt
+                            chosen = np.where(bad, np.uint8(alt2[0]), chosen)
+                tiles = np.where(gaps, chosen, tiles)
 
     # The rock skin is region fill, not stipple -- see `cliff_massif`. Inside
     # the massif the cliff slots still dither AMONG THEMSELVES, which is how the
@@ -223,7 +246,9 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     cliff_slots = [i for i, sl in enumerate(spec.textures, start=1)
                    if sl.role == "cliff"]
     if cliff_slots:
-        massif = cliff_massif(spec, slope, rng)
+        massif = cliff_massif(spec, slope, rng,
+                              slope_deg_src=slope_deg,
+                              road_mask=lay.road_mask)
         if massif.any():
             # ONE texture, flat across the whole face. See `dominant_cliff`.
             tiles = np.where(massif, np.uint8(dominant_cliff(spec)), tiles)
@@ -479,6 +504,14 @@ MASSIF_JITTER = 0.35
 #: Spatial jitter mixed into the base carpet's threshold. Higher than the
 #: massif's because the carpet answers to nothing but its own field -- there is
 #: no slope ranking underneath it to keep the shape plausible.
+#: Feature size of the carpet field, in tiles. The corpus base is ONE
+#: percolating region -- its largest connected component holds 78% of the base
+#: tiles on `metin2_map_a1`, 81% on `metin2_map_b1`, 51% on
+#: `metin2_map_n_desert_01`. At 40 the threshold cut the field into separate
+#: blobs tens of metres across, which is what scattered hard-edged dark shapes
+#: over the walkable ground.
+CARPET_CELLS = 140
+
 CARPET_JITTER = 1.0
 
 
@@ -515,8 +548,9 @@ def base_carpet(spec: MapSpec, scores: np.ndarray, rng) -> np.ndarray:
     hi = float(np.percentile(field, 99)) or 1.0
     score = np.clip(field / hi, 0.0, 1.0)
     h, w = score.shape
-    score = score + CARPET_JITTER * (fbm(rng, h, w, octaves=3, base_cells=40,
-                                         gain=0.55) - 0.5)
+    score = score + CARPET_JITTER * (fbm(rng, h, w, octaves=2,
+                                         base_cells=CARPET_CELLS,
+                                         gain=0.5) - 0.5)
     mask = score >= float(np.quantile(score, 1.0 - frac))
 
     # Smooth only. No opening: a carpet is allowed thin arms and bays, and the
@@ -527,7 +561,9 @@ def base_carpet(spec: MapSpec, scores: np.ndarray, rng) -> np.ndarray:
     return mask
 
 
-def cliff_massif(spec: MapSpec, slope: np.ndarray, rng) -> np.ndarray:
+def cliff_massif(spec: MapSpec, slope: np.ndarray, rng,
+                 slope_deg_src: np.ndarray | None = None,
+                 road_mask: np.ndarray | None = None) -> np.ndarray:
     """Where the rock skin covers the ground: **everywhere the player cannot
     walk**.
 
@@ -555,17 +591,21 @@ def cliff_massif(spec: MapSpec, slope: np.ndarray, rng) -> np.ndarray:
         return np.zeros(slope.shape, bool)
 
     from .terrain import fbm
+    from . import walkable
     h, w = slope.shape
 
     if spec.attr_style == "slope_driven":
-        # The attr stage's own threshold. A jittered band around it, rather than
-        # a hard contour, so the rock line reads as geology and not as a
-        # topographic map -- the width of the band is a quarter of the threshold,
-        # which on a 25 deg cut lets rock start at 19 and be certain by 31.
-        cut = float(spec.block_slope_deg)
-        band = max(2.0, cut * 0.25)
+        # The SHARED walkability mask, so the rock skin and the collision map
+        # have the same footprint. Steep ground alone is not enough: the crest of
+        # the border ridge is flat, so blocking on slope left it walkable, it
+        # took ground texture, and it read as a sandy plateau sitting on top of
+        # the mountains. Ymir seals the whole rim -- the high third of the outer
+        # 64 m ring is 100% blocked on all five maps measured. See
+        # `gen/walkable.py`.
         jitter = (fbm(rng, h, w, octaves=3, base_cells=32, gain=0.55) - 0.5) * 2.0
-        mask = slope >= (cut + band * jitter)
+        mask = walkable.terrain_block(
+            spec, slope_deg_src if slope_deg_src is not None else slope,
+            (h, w), roads=road_mask, jitter=jitter)
     else:
         # Interiors and painted_box maps have no slope rule to borrow, so fall
         # back to the palette's own weights: rank by slope, take the top share.

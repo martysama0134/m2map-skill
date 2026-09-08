@@ -31,6 +31,7 @@ import numpy as np
 
 from ..codec import attr as attr_codec
 from ..codec import server_attr as sa_codec
+from . import walkable
 from .layout import Layout
 from .spec import MapSpec, SECTOR_TILES
 
@@ -62,8 +63,14 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
             walk[8:-8, 8:-8] = True
         cells[walk] &= np.uint8(~attr_codec.ATTR_BLOCK & 0xFF)
     else:
-        slope_tiles = _upsample(slope_deg, h, w)
-        cells[slope_tiles >= spec.block_slope_deg] |= attr_codec.ATTR_BLOCK
+        # Steep ground, the border band, AND anything walkable-by-slope that is
+        # cut off from the playable interior. That last term is what seals the
+        # flat crest of the border ridge: measured over five corpus maps the
+        # high third of the outer 64 m ring is 100% blocked, so Ymir walls the
+        # rim all the way over the top rather than only on its faces. See
+        # `gen/walkable.py`.
+        cells[walkable.terrain_block(spec, slope_deg, (h, w),
+                                     roads=lay.road_mask)] |= attr_codec.ATTR_BLOCK
 
     # Water: only cells whose surface is actually above the terrain. A buried
     # water plane is invisible and correctly unflagged in every shipped map.

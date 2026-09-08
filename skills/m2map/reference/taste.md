@@ -170,6 +170,13 @@ So the **base is a carpet**, the **cliff a massif** (§1.10), the **road surface
 solid with a dithered rim (§1.8) and the **plaza** solid throughout (§1.9). Only
 `mid` and `accent` are the stipple this section describes.
 
+**Shape, not just solidity.** The base is ONE percolating region: its largest
+connected component holds **78 %** of the base tiles on `metin2_map_a1`, **81 %**
+on `metin2_map_b1` and **51 %** on `metin2_map_n_desert_01`. The mids are the
+opposite — median component size **1 tile**, p90 5–22. So the ground is a single
+carpet with a fine speckle over it, never a field of medium patches. Generating
+medium patches is what puts hard-edged dark shapes across open ground.
+
 `metin2_n_desert1` shows the whole model in one palette: `sand01` covers 31.3 %
 of the ground at **93.6 %** solid, while `sand02` (26.2 %) and `sand03` (26.4 %)
 sit at **1.2 %** and **0.8 %** — a carpet with a checkerboard in its gaps, not
@@ -358,8 +365,31 @@ Build it with `PlazaSpec`. `textures.md` §4g–4h.
 
 ### 1.10 Rock is exactly where the player cannot walk, and it is one texture
 
-The rule is not about slope numbers or palette weights. **If the player cannot
-walk there it is mountain, and mountain is stone.** Measured as
+**Unwalkable means unreachable, not steep.** A flat shelf on top of a cliff is
+gentle ground nobody can get to, and blocking on slope alone leaves it walkable
+— so it takes ground texture and reads as a sandy plateau floating above the
+mountains. Ymir leaves none. Block rate on the outer 64 m ring, split by height
+band within the ring:
+
+| map | ring | low ⅓ | mid ⅓ | **high ⅓** |
+|---|---|---|---|---|
+| `metin2_map_a1` | 97 % | 97 % | 93 % | **100 %** |
+| `metin2_map_n_desert_01` | 96 % | 87 % | 100 % | **100 %** |
+| `metin2_map_b1` | 98 % | 100 % | 94 % | **100 %** |
+| `metin2_map_c1` | 99 % | 100 % | 96 % | **100 %** |
+| `metin2_map_a3` | 96 % | 88 % | 100 % | **100 %** |
+
+The high third is **100 % blocked on every map**: the wall is sealed all the way
+over its top, not only on its faces. And stranded ground — walkable by slope but
+cut off from the playable interior — measures 0.01 %, 0.00 %, 0.13 %, 0.02 % and
+0.02 % of those maps. Ymir leaves no shelves at all.
+
+> **Rule:** blocked = too steep **or** on the border band **or** unreachable from
+> the interior. `gen/walkable.py` computes it once and both the attr stage and
+> the texture stage read it, so rock and collision share a footprint by
+> construction. Everything walkable and off the road is grass or sand.
+
+That the painted rock then coincides with the block map is measurable —
 P(blocked | cliff-painted) over eight maps:
 
 | map | P(blk ∣ cliff) | P(cliff ∣ blk) | IoU |
