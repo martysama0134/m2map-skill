@@ -951,3 +951,50 @@ open ground reads as a terrace.
 Ordering note: the carve must come from the **layout** (stage 2), because terrain
 is stage 3 and water is stage 4. The water polygons are known early; only their
 surface levels need the finished terrain.
+
+---
+
+## 6. Non-determinism that looks deterministic
+
+The mapspec's whole value is that a map is reproducible from `(spec, seed)`: it
+is what makes `improve` a spec diff, what lets a user re-create a map from a
+committed file, and what makes a bug report actionable. That guarantee is easy
+to break in a way no obvious test catches.
+
+**What happened.** Every stage seeded numpy with
+`abs(hash(("terrain", spec.seed)))`. Python salts the hash of `str` and `bytes`
+per process, so the same spec built a different map in every run:
+
+```
+tiles 155287   height mean 235.401   objects 120
+tiles 155436   height mean 302.389   objects 120
+tiles 154879   height mean 286.433   objects 122
+```
+
+**Why the test missed it.** `test_seed_is_deterministic` built the map twice and
+compared — but *inside one process*, where the salt is constant. It asserted the
+right property at the wrong scope, and passed for months.
+
+**The symptom was elsewhere.** It surfaced as a flaky assertion about border
+terrain. The flakiness was the tell; the terrain underneath was simply different
+each run.
+
+### Rules
+
+- **Never seed from `hash()`.** Use `spec.stream_seed(salt, seed)` — a crc32 of
+  `"salt/seed"`, stable across processes, versions and platforms.
+- **Give each stage its own salt.** Re-running stage 5 must not shift stage 6's
+  placements, which a single shared generator guarantees it will.
+- **Test the derived value, not just the output.** Pin the constant:
+  `stream_seed("terrain", 4242) == 162036731`. An output-comparison test cannot
+  see a per-process salt; a pinned constant fails the moment someone
+  reintroduces `hash()`.
+- **A determinism test must cross a process boundary**, or it is testing that
+  one process agrees with itself.
+
+### The general shape
+
+Sources of accidental non-determinism to check before claiming reproducibility:
+`hash()` of anything but an int, `set` and `dict` iteration order over unsorted
+keys, `os.walk` and `glob` ordering, floating-point reductions whose order
+depends on thread count, and any default RNG that is not explicitly seeded.
