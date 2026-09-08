@@ -31,7 +31,7 @@ import numpy as np
 
 from ..codec import areadata as ad
 from .layout import Layout
-from .spec import MapSpec, ObjectTier, SECTOR_TILES
+from .spec import MapSpec, ObjectTier, SECTOR_TILES, stream_seed
 
 #: Heading snap, from the corpus: 99.7% of rolls are multiples of this.
 ROLL_SNAP = 15.0
@@ -134,7 +134,7 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
     """
     h, w = lay.shape
     rng = spec.rng("objects")
-    np_rng = np.random.default_rng(abs(hash(("objects", spec.seed))) % (2 ** 32))
+    np_rng = np.random.default_rng(stream_seed("objects", spec.seed))
 
     slope_t = _upsample(slope_deg, h, w)
     height_t = _upsample(height_cm, h, w)

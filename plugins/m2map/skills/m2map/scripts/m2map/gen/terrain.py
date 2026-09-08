@@ -26,7 +26,7 @@ from __future__ import annotations
 
 import numpy as np
 
-from .spec import CELL_SCALE, HEIGHT_SCALE, MapSpec, SECTOR_CELLS
+from .spec import CELL_SCALE, HEIGHT_SCALE, MapSpec, SECTOR_CELLS, stream_seed
 
 #: height.raw is stored 131x131 with a 1-vertex skirt on each side around the
 #: 129x129 logical vertex grid (see reference/mapformat/height-raw.md).
@@ -212,7 +212,7 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
         # a single texture at luminance 0 with TerrainVisible 0.
         return np.full((h, w), lo, np.float64)
 
-    rng = np.random.default_rng(abs(hash(("terrain", spec.seed))) % (2 ** 32))
+    rng = np.random.default_rng(stream_seed("terrain", spec.seed))
 
     form = fbm(rng, h, w, octaves=5, base_cells=96, gain=0.5, ridged=True)
     detail = fbm(rng, h, w, octaves=4, base_cells=24, gain=0.55)
@@ -235,7 +235,7 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
             gap=(_to_cells(ridge_gap, height.shape)
                  if ridge_gap is not None else None),
             rng=np.random.default_rng(
-                abs(hash(("ridge", spec.seed))) % (2 ** 32)))
+                stream_seed("ridge", spec.seed)))
         height = np.clip(height, 0.0, 32767.5)
 
     # Cut the water bed last, so flattening cannot fill it back in. Without a

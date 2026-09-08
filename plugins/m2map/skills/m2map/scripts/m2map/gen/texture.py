@@ -31,7 +31,7 @@ import numpy as np
 
 from ..codec import textureset as ts_codec
 from .layout import Layout
-from .spec import MapSpec, SECTOR_TILES
+from .spec import MapSpec, SECTOR_TILES, stream_seed
 
 #: tile.raw is stored 258x258 -- the usable 256x256 window plus a 1-tile skirt
 #: that must mirror the neighbouring sector.
@@ -118,7 +118,7 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     slope = _upsample(slope_deg, h, w)
     height = _upsample(height_cm, h, w)
 
-    rng = np.random.default_rng(abs(hash(("texture", spec.seed))) % (2 ** 32))
+    rng = np.random.default_rng(stream_seed("texture", spec.seed))
 
     scores = _suitability(spec, lay, slope, height, wet)
 

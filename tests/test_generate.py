@@ -97,6 +97,26 @@ def test_bad_spec_is_caught_before_building(field, value, fragment):
             spec.require_valid()
 
 
+def test_stream_seeds_are_stable_across_processes():
+    """The mapspec promises reproducibility from (spec, seed). It must hold.
+
+    Python salts the hash of str/bytes per process, so `hash(("terrain", seed))`
+    returns a different value in every run. The generator used that, which made
+    every map irreproducible across processes while looking perfectly
+    deterministic inside one -- exactly what test_seed_is_deterministic below
+    checks, which is why it never caught it. Measured before the fix: one spec
+    built in three processes gave three different maps.
+
+    These constants are the point of the test. If someone reintroduces hash(),
+    they change per run and this fails.
+    """
+    from m2map.gen.spec import stream_seed
+    assert stream_seed("terrain", 4242) == 162036731
+    assert stream_seed("texture", 4242) == stream_seed("texture", 4242)
+    assert stream_seed("terrain", 4242) != stream_seed("texture", 4242)
+    assert stream_seed("terrain", 1) != stream_seed("terrain", 2)
+
+
 def test_seed_is_deterministic():
     a, b = pipeline.run(make_spec()), pipeline.run(make_spec())
     assert np.array_equal(a.tiles, b.tiles)

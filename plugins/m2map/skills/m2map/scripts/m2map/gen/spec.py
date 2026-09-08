@@ -17,6 +17,7 @@ from __future__ import annotations
 import json
 import pathlib
 import random
+import zlib
 from dataclasses import asdict, dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
@@ -35,6 +36,21 @@ SECTOR_UNITS = SECTOR_CELLS * CELL_SCALE   # 25,600 cm
 #: A map's origin must be a multiple of this (four maps in the corpus violate
 #: it; the editor still writes multiples of 25,600).
 BASE_ALIGN = SECTOR_UNITS
+
+
+def stream_seed(salt: str, seed: int) -> int:
+    """A stable 32-bit seed for one generation stage.
+
+    NOT ``hash()``. Python salts the hash of str and bytes per process
+    (PYTHONHASHSEED), so ``hash(("terrain", seed))`` returns a different value
+    in every run -- which silently made the whole generator non-reproducible
+    across processes while looking deterministic inside one. Measured before the
+    fix: the same spec built in three processes gave three different maps.
+
+    crc32 is stable across processes, versions and platforms, which is what a
+    seed has to be if a mapspec is going to mean anything.
+    """
+    return zlib.crc32(("%s/%d" % (salt, int(seed))).encode("utf-8")) & 0xFFFFFFFF
 
 
 class SpecError(ValueError):
@@ -215,7 +231,7 @@ class MapSpec:
         Re-running stage 5 must not change stage 6's placements, which a single
         shared generator would guarantee it does.
         """
-        return random.Random("%d/%s" % (self.seed, salt))
+        return random.Random(stream_seed(salt, self.seed))
 
     def is_box(self) -> bool:
         return self.style == "box"
