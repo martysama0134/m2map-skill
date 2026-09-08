@@ -422,3 +422,70 @@ def test_water_surfaces_are_plausible_against_terrain(written):
             assert lo - 5000 <= float(s) <= hi + 5000, (
                 "water layer %d at %.0f cm against terrain %.0f..%.0f -- off by "
                 "a unit conversion?" % (i, s, lo, hi))
+
+
+# --- border occlusion -----------------------------------------------------
+#
+# Outdoor maps wall their edges so the player cannot see past the world
+# (measured outdoor median +1,351 cm over the outer 64 m); interiors measure
+# exactly 0 and occlude with fog instead.
+
+def test_border_ridge_walls_every_edge_including_corners():
+    from m2map.gen.terrain import border_ridge
+    r = border_ridge((129, 129), 4000.0, 64.0)
+    mid_edge = float(r[0, 64])
+    corner = float(r[0, 0])
+    centre = float(r[64, 64])
+    assert centre < 1.0, "the rim must not lift the playable interior"
+    assert mid_edge > 3000.0, "mid-edge is not walled"
+    # max-of-ramps, not sum: a sum peaks at corners and sags mid-edge, leaving a
+    # notch the player can see through.
+    assert abs(mid_edge - corner) < 1.0, (
+        "corner %.0f vs mid-edge %.0f -- uneven rim leaves a gap" % (corner, mid_edge))
+
+
+def test_border_ridge_opens_where_water_leaves_the_map():
+    """A rim across a river's exit makes the river climb the mountain."""
+    import numpy as np
+    from m2map.gen.terrain import border_ridge
+    gap = np.zeros((129, 129))
+    gap[62:67, :] = 1.0                       # a channel crossing both edges
+    r = border_ridge((129, 129), 4000.0, 64.0, gap=gap)
+    assert float(r[64, 0]) < 1.0, "no gorge: the rim blocks the watercourse"
+    assert float(r[0, 64]) > 3000.0, "the gorge removed the rest of the wall too"
+
+
+def test_ridge_statistics_must_be_read_on_the_interior():
+    """Archetype slope targets describe ground the player stands on.
+
+    The rim is a ~41 degree wall by design, so including it makes the whole-map
+    figures look like a broken generator: measured, it moved slope p50 from 4.1
+    to 16.0 and the flat fraction from 37% to 6%. The interior will not match
+    the target exactly either -- the target was fitted across the whole grid,
+    and trimming the rim also removes the map's own natural edge relief -- so
+    the invariant that matters is that the interior is markedly CLOSER.
+    """
+    from m2map.gen import terrain
+    walled = make_spec(border_ridge_cm=3500.0, border_ridge_width_m=40.0)
+    b = pipeline.run(walled)
+    m = int(walled.border_ridge_width_m / 2.0) + 2
+    inner = b.height_cm[m:-m, m:-m]
+
+    target = walled.flat_fraction
+    whole = float((terrain.slope_degrees(b.height_cm) < 2.0).mean())
+    interior = float((terrain.slope_degrees(inner) < 2.0).mean())
+
+    assert abs(interior - target) < abs(whole - target), (
+        "interior %.2f is no closer to the target %.2f than the whole map %.2f "
+        "-- the rim is not being excluded" % (interior, target, whole))
+    assert abs(interior - target) < 0.20, (
+        "interior flat fraction %.2f vs requested %.2f" % (interior, target))
+
+
+def test_box_style_never_gets_a_ridge():
+    """Interiors measure exactly 0 ring lift; they use fog."""
+    import numpy as np
+    spec = make_spec(style="box", attr_style="painted_box", water=[],
+                     border_ridge_cm=0.0)
+    b = pipeline.run(spec)
+    assert float(b.height_cm.std()) == 0.0

@@ -346,6 +346,12 @@ If the map needs a road, borrow the grammar from a confirmed-road archetype
 (`field_empire`, `field_valley`, `guild_village`) and keep this archetype's own
 path texture and setbacks.
 
+## Border occlusion
+
+**Fog, not terrain.** Ring lift is **-1338 cm** -- this archetype does not wall its border, and for the negative cases the map sits ON the high ground with the edges falling away. Occlusion comes from the environment instead. Leave `border_ridge_cm` at 0 and keep the archetype's `Fog.NearDistance`, which is what does the work.
+
+Measured over the outer 64 m against the interior; see `../taste.md` for the corpus-wide table and the two traps when building a rim.
+
 ## Sources
 
 `corpus-overview.md` sec 4 ; `catalog/map-taxonomy.json` `archetypes.snow_field` ;

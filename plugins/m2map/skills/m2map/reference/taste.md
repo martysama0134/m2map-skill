@@ -750,3 +750,77 @@ the map, saying that you did.
 plainly: "do not ring an oasis with ferns -- decorate it with props". Palms
 around a desert pool are an authored choice, not corpus behaviour; if you make
 it, say so rather than presenting it as measured.
+
+---
+
+## Every map occludes its horizon. Only the instrument varies.
+
+A player must never see past the world. The corpus does this two ways, and which
+one an archetype uses is measurable.
+
+**Measured**: stitch each map's `height.raw` into one grid and compare the outer
+64 m ring to the interior, per archetype (n=111 maps with own terrain).
+
+| Archetype | ring lift vs interior | instrument |
+|---|---|---|
+| `field_valley` | **+3,836 cm** | terrain ridge |
+| `field_empire` | +2,579 | terrain ridge |
+| `ice_valley` | +2,570 | terrain ridge |
+| `arena_pvp` | +2,104 | terrain ridge |
+| `empire_war` | +1,724 | terrain ridge |
+| `guild_village` | +1,456 | terrain ridge |
+| `darkforest_coast` | +1,260 | terrain ridge |
+| `event_instance` | +1,024 | terrain ridge |
+| `eastplain` | +829 | terrain ridge |
+| `trent_forest` | +738 | terrain ridge |
+| `desert` | +350 median, **+4,474 on the reference map** | mixed |
+| `dungeon_block` | **0** | fog |
+| `dungeon_themed` | **0** | fog |
+| `elemental` | 0 | fog |
+| `flame_field` | -188 | fog |
+| `snow_field` | **-1,338** | fog |
+
+Outdoor median **+1,351 cm**; interior median **exactly 0**, corner lift also
+exactly 0. 62% of outdoor maps exceed +300 cm, and the flagships are far higher:
+`metin2_map_a1` +4,518, `c1` +4,662, `a3` +4,655, `n_desert_01` +4,474.
+
+### The discriminator is `Fog.NearDistance`, not distance
+
+Read from the `.msenv` files themselves:
+
+| Environment | ring lift | `NearDistance` | `FarDistance` |
+|---|---|---|---|
+| `a1.msenv` (field_empire) | +4,518 | **5,000** | 20,000 |
+| `dark.msenv` (dungeon) | 0 | 5,000 | 20,000 |
+| `milgyo.msenv` (desert) | +4,474 on ref | **1** | 50,000 |
+| `N-snowm01.msenv` (snow) | -1,338 | **1** | 40,000 |
+
+`NearDistance 5000` leaves a clear 50 m foreground, so something solid has to
+stop the eye — a ridge outdoors, walls in a dungeon. `NearDistance 1` starts the
+haze at the camera and accumulates over the whole view, which occludes on its
+own. That is why `snow_field` sits *on* the high ground with edges falling away
+and still reads as enclosed, and why the desert needs less rim than the empire
+field despite being open.
+
+**So the rule is not "always build mountains".** It is: pick an instrument and
+commit. A map with `NearDistance 5000` and no rim lets the player see the world
+end. A map with a rim *and* haze from the camera is merely wasteful.
+
+### Two traps when building the rim
+
+**Water must cut through it.** A ridge raised across a river's exit lifts the
+bed and the river runs uphill off the map — on the first attempt here it broke a
+continuous watercourse into three pieces stepping up toward each edge. Suppress
+the ridge where water reaches the boundary so the valley passes through. The wall
+stops the player, not the river.
+
+**The rim invalidates the archetype's terrain statistics.** A 3,500 cm rise over
+40 m is a ~41° wall. Including it moved the reported slope p50 from 4.1 to 16.0
+and the flat fraction from 37% to 6% — figures that look like a broken generator
+when checked against archetype targets, because those targets describe *ground
+the player stands on*. Measure and report the interior; report the rim
+separately.
+
+**Corners specifically.** Use the max of the two axis ramps, not their sum. A sum
+peaks at the corners and sags mid-edge, leaving a notch the player can see
+through — which is the opposite of the requirement.

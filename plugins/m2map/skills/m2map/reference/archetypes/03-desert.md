@@ -360,6 +360,12 @@ measured**. Treat them as a starting point and check the result by eye.
 The path-texture identification and the `d(road)` setbacks are unaffected: both
 come from per-slot and per-CRC statistics, not from corridor detection.
 
+## Border occlusion
+
+**Mixed.** Median ring lift is only **+350 cm**, but that median hides a split: the flagship maps wall themselves properly while the small instanced siblings do not. Follow the reference map, not the median.
+
+Measured over the outer 64 m against the interior; see `../taste.md` for the corpus-wide table and the two traps when building a rim.
+
 ## Sources
 
 `corpus-overview.md` sec 4 ; `catalog/map-taxonomy.json` `archetypes.desert` ;

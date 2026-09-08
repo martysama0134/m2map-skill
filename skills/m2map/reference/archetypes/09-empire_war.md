@@ -297,6 +297,14 @@ archetype in the corpus.
 
 ---
 
+## Border occlusion
+
+**Terrain ridge.** The outer 64 m sits **+1724 cm** above the interior (corner ring +2001 cm). Set `border_ridge_cm` near that and let the fog keep a clear foreground.
+
+Scale the *width* to the map: the measurement ring is 64 m, which on a 1x1 map (256 m) would consume half the playable surface. Keep the lift, narrow the rise.
+
+Measured over the outer 64 m against the interior; see `../taste.md` for the corpus-wide table and the two traps when building a rim.
+
 ## Sources
 
 `corpus-overview.md` sec 4 ; `catalog/map-taxonomy.json` `archetypes.empire_war`,

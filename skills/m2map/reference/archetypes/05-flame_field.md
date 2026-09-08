@@ -320,6 +320,12 @@ measured**. Treat them as a starting point and check the result by eye.
 The path-texture identification and the `d(road)` setbacks are unaffected: both
 come from per-slot and per-CRC statistics, not from corridor detection.
 
+## Border occlusion
+
+**Fog, not terrain.** Ring lift is **-188 cm** -- this archetype does not wall its border, and for the negative cases the map sits ON the high ground with the edges falling away. Occlusion comes from the environment instead. Leave `border_ridge_cm` at 0 and keep the archetype's `Fog.NearDistance`, which is what does the work.
+
+Measured over the outer 64 m against the interior; see `../taste.md` for the corpus-wide table and the two traps when building a rim.
+
 ## Sources
 
 `corpus-overview.md` sec 4 ; `catalog/map-taxonomy.json` `archetypes.flame_field` ;

@@ -76,12 +76,31 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
     if step("terrain"):
         flat = b.layout.flatten_mask_cells() if b.layout else None
         carve = b.layout.carve_cm if b.layout else None
-        b.height_cm = terrain.build(spec, flatten_mask=flat, carve_cm=carve)
+        gap = b.layout.ridge_gap if b.layout else None
+        b.height_cm = terrain.build(spec, flatten_mask=flat,
+                                    carve_cm=carve, ridge_gap=gap)
         b.slope_deg = terrain.slope_degrees(b.height_cm)
-        s = terrain.stats(b.height_cm)
-        b.note("terrain: slope p50 %.1f / p95 %.1f deg, flat %.0f%%"
-               % (s["walkable_slope_deg"]["p50"], s["walkable_slope_deg"]["p95"],
-                  s["flat_fraction_2deg"] * 100))
+        # Report the PLAYABLE interior, not the whole grid. The border ridge is
+        # a 40 deg wall by design, and including it pushed the reported slope
+        # p50 from 4.1 to 16.0 and the flat fraction from 37% to 6% -- numbers
+        # that look like a broken generator when compared against the
+        # archetype's targets, which describe ground the player stands on.
+        inner = b.height_cm
+        if spec.border_ridge_cm > 0:
+            m = int(max(4, spec.border_ridge_width_m / 2.0)) + 2
+            if min(inner.shape) > 2 * m + 8:
+                inner = inner[m:-m, m:-m]
+        s = terrain.stats(inner)
+        scope = "interior" if inner is not b.height_cm else "map"
+        b.note("terrain (%s): slope p50 %.1f / p95 %.1f deg, flat %.0f%%"
+               % (scope, s["walkable_slope_deg"]["p50"],
+                  s["walkable_slope_deg"]["p95"], s["flat_fraction_2deg"] * 100))
+        if scope == "interior":
+            w = terrain.stats(b.height_cm)
+            b.note("  border ridge: +%.0f cm over %.0f m; whole-map slope p50 "
+                   "%.1f deg (the wall, by design)"
+                   % (spec.border_ridge_cm, spec.border_ridge_width_m,
+                      w["walkable_slope_deg"]["p50"]))
 
     if step("water"):
         cells, heights, wet, sub = water.build(spec, b.layout, b.height_cm)

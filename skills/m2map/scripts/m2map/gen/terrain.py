@@ -193,7 +193,8 @@ def _flatten_mask(height_cm: np.ndarray, mask: np.ndarray,
 
 
 def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
-          carve_cm: np.ndarray | None = None) -> np.ndarray:
+          carve_cm: np.ndarray | None = None,
+          ridge_gap: np.ndarray | None = None) -> np.ndarray:
     """Whole-map vertex height grid in world cm.
 
     Returns ``(h*128+1, w*128+1)`` -- the shared logical vertex grid. Splitting
@@ -226,6 +227,17 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
     if flatten_mask is not None and flatten_mask.any():
         height = _flatten_mask(height, flatten_mask)
 
+    # Wall the map in before the water bed is cut, so a river running off the
+    # edge still carves through the rim rather than being buried by it.
+    if spec.border_ridge_cm > 0:
+        height = height + border_ridge(
+            height.shape, spec.border_ridge_cm, spec.border_ridge_width_m,
+            gap=(_to_cells(ridge_gap, height.shape)
+                 if ridge_gap is not None else None),
+            rng=np.random.default_rng(
+                abs(hash(("ridge", spec.seed))) % (2 ** 32)))
+        height = np.clip(height, 0.0, 32767.5)
+
     # Cut the water bed last, so flattening cannot fill it back in. Without a
     # bed the water plane lies on top of the ground as a flat slab; with one it
     # sits in a channel and the banks read as banks.
@@ -248,6 +260,52 @@ def _to_cells(tile_grid: np.ndarray, shape) -> np.ndarray:
     uh, uw = min(h, th // 2), min(w, tw // 2)
     blk = tile_grid[:uh * 2, :uw * 2].reshape(uh, 2, uw, 2)
     out[:uh, :uw] = blk.max(axis=(1, 3))
+    return out
+
+
+def border_ridge(shape, lift_cm: float, width_m: float = 64.0,
+                 gap: np.ndarray | None = None,
+                 rng: np.random.Generator | None = None) -> np.ndarray:
+    """A rim that rises toward every edge, so the player cannot see off the map.
+
+    Outdoor maps in the corpus wall themselves: median lift of the outer 64 m is
+    1,351 cm over the interior across 61 maps, and the flagships run 3,500-4,700.
+    Interiors measure exactly 0 and use fog instead.
+
+    ``max`` of the two axis ramps rather than their sum, so the wall has uniform
+    height all the way round INCLUDING the corners -- a sum peaks at the corners
+    and sags along the edges, which leaves a visible notch mid-edge where the
+    player can see out. Smoothstepped, because a linear ramp reads as a
+    perfectly conical embankment.
+    """
+    h, w = shape
+    width_cells = max(2.0, width_m / 2.0)          # metres -> 2 m terrain cells
+    ys = np.arange(h, dtype=np.float64)[:, None]
+    xs = np.arange(w, dtype=np.float64)[None, :]
+
+    dy = np.minimum(ys, (h - 1) - ys)
+    dx = np.minimum(xs, (w - 1) - xs)
+    ry = np.clip(1.0 - dy / width_cells, 0.0, 1.0)
+    rx = np.clip(1.0 - dx / width_cells, 0.0, 1.0)
+    ramp = np.maximum(rx, ry)
+    ramp = ramp * ramp * (3.0 - 2.0 * ramp)
+
+    # Break the wall into peaks and saddles. A pure ramp is a smooth conical
+    # bowl, which reads as a crater rather than as a mountain range -- the
+    # corpus rims are irregular, and the eye reads regularity as machine-made.
+    if rng is not None:
+        relief = fbm(rng, h, w, octaves=3, base_cells=40, gain=0.55)
+        ramp = ramp * (0.62 + 0.76 * relief)
+
+    out = ramp * float(lift_cm)
+
+    # Cut a gorge where water leaves the map. Without this the rim lifts the
+    # riverbed at the boundary and the river climbs the mountain: on the first
+    # attempt it broke a continuous watercourse into three pieces at different
+    # levels, each stepping UP toward the edge. Real maps let the valley through
+    # the ring -- the wall stops the player, not the river.
+    if gap is not None and gap.any():
+        out = out * (1.0 - np.clip(gap, 0.0, 1.0))
     return out
 
 

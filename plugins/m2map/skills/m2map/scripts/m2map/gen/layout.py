@@ -100,6 +100,29 @@ def polygon_mask(shape: Tuple[int, int], polygon: Sequence[Point]) -> np.ndarray
     return mask
 
 
+def _distance_to(mask: np.ndarray, cap: float = 48.0) -> np.ndarray:
+    """Distance in tiles from every cell to the nearest masked cell."""
+    if not mask.any():
+        return np.full(mask.shape, cap, np.float32)
+    d = np.where(mask, 0.0, np.inf).astype(np.float32)
+    frontier = mask.copy()
+    step = 0.0
+    while step < cap:
+        step += 1.0
+        grown = frontier.copy()
+        grown[1:, :] |= frontier[:-1, :]
+        grown[:-1, :] |= frontier[1:, :]
+        grown[:, 1:] |= frontier[:, :-1]
+        grown[:, :-1] |= frontier[:, 1:]
+        new = grown & ~np.isfinite(d)
+        if not new.any():
+            break
+        d[new] = step
+        frontier = grown
+    d[~np.isfinite(d)] = cap
+    return d
+
+
 def _distance_inside(mask: np.ndarray, cap: float = 64.0) -> np.ndarray:
     """Distance in tiles from each masked cell to the nearest cell outside it.
 
@@ -154,6 +177,8 @@ class Layout:
     carve_cm: np.ndarray | None = None
     #: True where the water body is a lake (one flat surface, not banded).
     lake_mask: np.ndarray | None = None
+    #: 0..1 suppression of the border ridge, so water can leave the map.
+    ridge_gap: np.ndarray | None = None
 
     @property
     def road_mask(self) -> np.ndarray:
@@ -241,6 +266,18 @@ def build(spec: MapSpec) -> Layout:
 
     lay.carve_cm = carve
     lay.lake_mask = lakes
+
+    # Where water meets the map edge the rim must open into a gorge, or the
+    # ridge lifts the bed and the river runs uphill off the map. Widened well
+    # past the channel so the opening has shoulders rather than a slot.
+    gap = np.zeros(shape, np.float64)
+    for mask, wat in zip(lay.water_masks, spec.water):
+        if not mask.any():
+            continue
+        reach = max(6.0, wat.width_m * 1.6)
+        d = _distance_to(mask)
+        gap = np.maximum(gap, np.clip(1.0 - d / reach, 0.0, 1.0))
+    lay.ridge_gap = gap
 
     for reg in spec.regions:
         mask = polygon_mask(shape, reg.polygon)

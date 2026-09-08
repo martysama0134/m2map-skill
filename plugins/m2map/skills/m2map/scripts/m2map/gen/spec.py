@@ -164,6 +164,24 @@ class MapSpec:
     flat_fraction: float = 0.55
     roughness: float = 0.5
 
+    # --- border occlusion --------------------------------------------------
+    #: Height added at the map edge, cm. Outdoor maps wall themselves in so the
+    #: player cannot see past the world: measured median ring lift is 1,351 cm
+    #: over the outer 64 m (n=61 outdoor maps), and the flagship maps are far
+    #: higher -- metin2_map_a1 4,518, c1 4,662, n_desert_01 4,474.
+    #:
+    #: Interiors are EXACTLY 0 (n=50, median and corner lift both 0). They
+    #: occlude with fog instead: `dark.msenv` and friends. Leave this at 0 for
+    #: `style: box`, and for the outdoor archetypes that also choose fog --
+    #: snow_field measures -1,338 (the map sits ON the high ground) and pairs it
+    #: with `Fog.NearDistance 1`, haze starting at the camera.
+    #:
+    #: The rule is not "always build mountains", it is "always occlude the
+    #: horizon"; ridge and fog are the two instruments. See taste.md.
+    border_ridge_cm: float = 0.0
+    #: Width of the rise, metres. The measurement ring was 64 m.
+    border_ridge_width_m: float = 64.0
+
     # --- attr policy ------------------------------------------------------
     #: slope_driven (outdoor: block above a threshold) or painted_box (interior:
     #: paint everything, carve the walkable corridor). The corpus splits 59/57
