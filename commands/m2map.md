@@ -1,0 +1,19 @@
+---
+description: Generate, improve, audit, merge, reskin or populate Metin2 client maps
+argument-hint: "[generate|improve|audit|merge|reskin|server] <description or map path>"
+---
+
+Invoke the `m2map` skill with: $ARGUMENTS
+
+Follow `skills/m2map/SKILL.md` — detect the mode, load
+`reference/mental-model.md` as the mandatory floor, then the matching file from
+`modes/`.
+
+If no arguments were given, ask which of these the user wants:
+
+- **(a) Generate** a new map from a description
+- **(b) Improve** an existing map
+- **(c) Audit** a map for problems
+- **(d) Merge** maps, or expand one
+- **(e) Reskin** a map to another biome
+- **(f) Server** files — spawns and registration

@@ -64,15 +64,24 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
     else:
         slope_tiles = _upsample(slope_deg, h, w)
         cells[slope_tiles >= spec.block_slope_deg] |= attr_codec.ATTR_BLOCK
-        # Roads cut through steep ground: the corpus leaves ~4% of steep cells
-        # open, and they are almost all corridors.
-        for corr in lay.corridors:
-            cells[corr.core] &= np.uint8(~attr_codec.ATTR_BLOCK & 0xFF)
 
     # Water: only cells whose surface is actually above the terrain. A buried
     # water plane is invisible and correctly unflagged in every shipped map.
     if submerged is not None and submerged.any():
         cells[submerged] |= attr_codec.ATTR_WATER | attr_codec.ATTR_BLOCK
+
+    # The road corridor is cleared LAST of the terrain rules, after slope and
+    # water, because a road is a route by definition: it cuts through steep
+    # ground (the corpus leaves ~4% of steep cells open and they are almost all
+    # corridors) and it crosses water as a ford or bridge. Clearing before the
+    # water pass instead let a river re-block the crossing, sealing the route
+    # with no way through -- and the map still looked fine in every layer
+    # preview except attr.
+    #
+    # ATTR_WATER stays set on a ford: Ymir paints exactly this as 0xCA
+    # ("bridge, walkable" over water). Only BLOCK is lifted.
+    for corr in lay.corridors:
+        cells[corr.core] &= np.uint8(~attr_codec.ATTR_BLOCK & 0xFF)
 
     # Border seal. Maps stop the player with a block band at the edge; measured
     # widths cluster at a few metres.

@@ -62,15 +62,26 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
         cell_mask = _tiles_to_cells(mask, ch, cw)
         if not cell_mask.any():
             continue
-        if surface is None:
-            # Auto: sit the surface just under the local terrain median so the
-            # feature reads as a river bed rather than a slab on the hillside.
-            hv = height_cm[:ch, :cw][cell_mask]
-            surface = float(np.percentile(hv, 35)) if hv.size else 0.0
-        if len(heights) >= wtr.MAX_WATER_NUM:
-            break
-        heights.append(float(surface))
-        cells[cell_mask] = len(heights) - 1
+
+        if surface is not None:
+            if len(heights) >= wtr.MAX_WATER_NUM:
+                break
+            heights.append(float(surface))
+            cells[cell_mask] = len(heights) - 1
+            wet_tiles |= mask
+            continue
+
+        # Auto-levelled water. A water layer is a single FLAT plane, so one
+        # surface across a river that descends 20 m leaves the upper reach
+        # buried and the lower reach flooding the banks -- the river renders as
+        # a chain of disconnected puddles. Real maps solve this the same way the
+        # format allows: many layers, each covering a stretch at its own level
+        # (water.wtr holds up to 255).
+        for band, level in _level_bands(cell_mask, height_cm[:ch, :cw]):
+            if len(heights) >= wtr.MAX_WATER_NUM:
+                break
+            heights.append(level)
+            cells[band] = len(heights) - 1
         wet_tiles |= mask
 
     # submerged = wet AND surface above terrain
@@ -83,6 +94,34 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
 
     submerged_tiles = _cells_to_tiles(submerged_cells, h_tiles, w_tiles)
     return cells, heights, wet_tiles, submerged_tiles
+
+
+def _level_bands(mask: np.ndarray, height_cm: np.ndarray, step_cm: float = 150.0,
+                 depth_cm: float = 90.0):
+    """Split a water body into flat bands that each hold water.
+
+    Yields ``(band_mask, surface_cm)``. The bed under the feature is quantised
+    into ``step_cm`` slices, and each slice gets a surface a little ABOVE its
+    own bed so the cells in it are genuinely submerged rather than a plane
+    grazing the ground.
+
+    ``depth_cm`` is what makes it read as water: a surface set to the bed's
+    median leaves half the band dry, which is what produced a river of puddles.
+    """
+    bed = height_cm[mask]
+    if bed.size == 0:
+        return
+    lo, hi = float(bed.min()), float(bed.max())
+    n = max(1, int(np.ceil((hi - lo) / max(1.0, step_cm))))
+    edges = np.linspace(lo, hi, n + 1)
+    for i in range(n):
+        a = edges[i]
+        b = edges[i + 1] + (1e-3 if i == n - 1 else 0.0)
+        band = mask & (height_cm >= a) & (height_cm < b)
+        if not band.any():
+            continue
+        # Surface above the band's own high point keeps the whole band wet.
+        yield band, float(height_cm[band].max()) + depth_cm
 
 
 def _cells_to_tiles(mask: np.ndarray, h: int, w: int) -> np.ndarray:
