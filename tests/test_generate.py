@@ -292,3 +292,72 @@ def test_map_names_without_the_metin2_prefix_are_valid(name):
 def test_names_that_break_a_folder_or_index_are_rejected(name):
     spec = make_spec(name=name)
     assert [p for p in spec.validate() if "name" in p]
+
+
+# --- server spawns --------------------------------------------------------
+#
+# The rule that matters is walkability: a zone on blocked ground spawns monsters
+# inside terrain, unreachable, and nothing in the client or server warns you.
+
+def test_spawns_land_on_walkable_ground(built):
+    from m2map.gen import spawns
+    sets = spawns.place(built.spec, built.layout, built.attr_cells,
+                        monsters=[(101, 5), (102, 4)], npcs=[9001],
+                        bosses=[2001], stones=[(8001, 2)])
+    assert sum(len(v) for v in sets.values()) > 0
+    problems = []
+    for zs in sets.values():
+        problems += spawns.audit_zones(zs, built.attr_cells, built.spec)
+    assert problems == [], problems
+
+
+def test_npcs_prefer_the_settlement(built):
+    from m2map.gen import spawns
+    settlement = built.layout.regions.get("settlement")
+    if settlement is None or not settlement.any():
+        pytest.skip("no settlement region in the fixture spec")
+    sets = spawns.place(built.spec, built.layout, built.attr_cells,
+                        npcs=[9001, 9002, 9003])
+    assert sets["npc"], "no NPC placed"
+    for z in sets["npc"]:
+        assert settlement[int(z.cy), int(z.cx)], (
+            "NPC at (%.0f, %.0f) is outside the settlement" % (z.cx, z.cy))
+
+
+def test_monsters_keep_off_the_road_corridor(built):
+    from m2map.gen import spawns
+    if not built.layout.corridors:
+        pytest.skip("no road in the fixture spec")
+    sets = spawns.place(built.spec, built.layout, built.attr_cells,
+                        monsters=[(101, 5), (102, 5), (103, 5)])
+    for z in sets["regen"]:
+        assert built.layout.road_distance[int(z.cy), int(z.cx)] > 12.0, (
+            "monster zone sits on the only route through the map")
+
+
+def test_regen_coordinates_are_tiles_not_centimetres(built):
+    """regen is in units of 100 -- metres. Not cm, and NOT negated."""
+    from m2map.gen import spawns
+    sets = spawns.place(built.spec, built.layout, built.attr_cells,
+                        monsters=[(101, 3)])
+    rf = spawns.to_regen_file(sets["regen"])
+    h, w = built.layout.shape
+    for row in rf.rows:
+        assert 0 <= row.cx < w and 0 <= row.cy < h, (
+            "regen coordinate %r looks like centimetres or a negated Y"
+            % ((row.cx, row.cy),))
+
+
+def test_regen_file_round_trips_and_derives_monsterarrange(built, tmp_path):
+    from m2map.codec import regen as rc
+    from m2map.gen import spawns
+    sets = spawns.place(built.spec, built.layout, built.attr_cells,
+                        monsters=[(101, 5)], npcs=[9001], bosses=[2001],
+                        stones=[(8001, 1)])
+    written = spawns.write(tmp_path, sets)
+    assert "monsterarrange.txt" in written
+    rf = rc.RegenFile.load(tmp_path / "regen.txt")
+    assert rf.to_bytes() == (tmp_path / "regen.txt").read_bytes()
+    assert rf.problems() == []
+    ma = rc.MonsterArrange.load(tmp_path / "monsterarrange.txt")
+    assert 101 in ma.vnums and 9001 in ma.vnums and 2001 in ma.vnums

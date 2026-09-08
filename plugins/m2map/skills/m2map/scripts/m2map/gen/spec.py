@@ -260,6 +260,11 @@ class MapSpec:
         for w in self.water:
             if len(w.waypoints) < (3 if w.lake else 2):
                 out.append("water feature has too few waypoints")
+        # Archetype tables state distances measured on 2x4 to 6x6 maps. Copied
+        # onto a small map they exclude the whole surface, and the failure is
+        # silent -- the tier simply places nothing. Catch it here rather than
+        # letting the shortfall report explain it after the build.
+        span_m = min(self.size) * SECTOR_TILES
         for o in self.objects:
             if o.density <= 0 and o.count <= 0:
                 out.append("object %s (%d) has neither density nor count"
@@ -268,6 +273,21 @@ class MapSpec:
                 if not 0 <= t <= n:
                     out.append("object %s references tile %d outside the palette"
                                % (o.name or o.crc, t))
+            lo, hi = o.water_distance_m
+            if hi < lo:
+                out.append("object %s water_distance_m %r is inverted"
+                           % (o.name or o.crc, o.water_distance_m))
+            if self.water and lo >= span_m * 0.45:
+                out.append(
+                    "object %s keeps %.0f m from water on a map only %d m across "
+                    "-- nothing will place. The archetype tables measure these on "
+                    "2x4 to 6x6 maps; scale the distance to the map and say so"
+                    % (o.name or o.crc, lo, span_m))
+            if o.road_clearance_cm / 100.0 >= span_m * 0.45 and self.roads:
+                out.append(
+                    "object %s keeps %.0f m from the road on a map only %d m "
+                    "across -- nothing will place"
+                    % (o.name or o.crc, o.road_clearance_cm / 100.0, span_m))
         if self.is_box() and self.water:
             out.append("style 'box' with water features -- interiors have none")
         return out
