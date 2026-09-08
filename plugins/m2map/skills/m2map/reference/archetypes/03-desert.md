@@ -352,11 +352,22 @@ Assembly, in order:
    puts the plane inside the bowl and the plane is drawn past the shore, so the
    waterline comes out as a curve with a beach — see `taste.md` §1.12. A
    hand-picked absolute surface is the reliable way to get this wrong.
-3. **The fall on the lip**, placed with `ObjectTier.positions` — "steep and near
-   water" cannot say *which* water, and constrained placement puts the sheet at
-   the foot of the drop instead of the top of it. `align_to_slope` turns it to
-   the fall line + 90°. One sheet: it renders ~40 m across, so two or three on
-   the same wall overlap into a slab.
+3. **The fall at the FOOT of the wall, lifted to the lip.** Place it with
+   `ObjectTier.positions` — "steep and near water" cannot say *which* water, and
+   constrained placement puts the sheet at the bottom of the drop instead of on
+   it. `align_to_slope` turns it to the fall line + 90°. One sheet: it renders
+   ~40 m across, so two or three on the same wall overlap into a slab.
+
+   Anchor it a tile or two **in front** of the face rather than on the crest.
+   Anchored on the crest, the rock clips through the sheet; anchored at the foot
+   it stands clear, and `height_bias` puts the top back at the lip. On the
+   reference map the face runs 15,733 → 18,021 cm, the anchor at x=233 reads
+   16,578, and +1,443 lands the top exactly on the crest.
+
+   Read that ground value from the **built terrain**, not from a cell profile:
+   placement samples the tile grid and tiles map two to a cell, so the number at
+   a tile is not the number at `cell[x // 2]`. Deriving it put the sheet 8 m
+   above the crest.
 4. **Green only at the waterline.** `grass 01/02` as accents, gated to the wet
    band. The archetype is 64% sand and a green surround at any scale stops
    reading as desert.
