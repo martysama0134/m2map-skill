@@ -343,26 +343,33 @@ p95 **+3,692**. A negative bias sinks the sheet into the ground.
 
 Assembly, in order:
 
-1. **Cut the upper basin** into the massif — a `WaterSpec` lake with its own
-   surface, sitting inside the rock, not on the sand.
-2. **Cut the lower pool** at the foot of the same massif, at the oasis floor
-   level. Two separate water bodies with different surfaces, not one banded
-   river: `gen/water.py` gives a lake one plane, which is what each basin needs.
-3. **Leave a vertical rock face between them.** The 71° median slope is the
-   whole illusion; on a graded slope the effect reads as spray on a hill.
-4. **Place `fall_7` on that face, at the waterline of the upper basin**, roll
-   set so the sheet faces out. Roll is 90.2 % zero for Effects
-   (`stats-objects.json.by_type`), so leave it at 0 unless the face does not
-   run along an axis.
-5. **Green the rim of the lower pool only.** `grass 01/02` against the sand is
-   the desert's own oasis signal — `metin2_map_n_desert_01` enriches `grass 02`
-   4.1× at its road rims for the same reason. Keep the green inside a few metres
-   of the water; the archetype's ground affinity is 64 % sand and a green
-   surround at any scale stops reading as desert.
-6. **Decorate with props, not with the archetype's flora.** `tree/n2` sits a
-   median 200 m from water corpus-wide; the JoshuaTrees 350–390 m. Palms
-   (`DatePalm_RT_02`, `CoconutPalm_RT_01/02`) are the exception that belongs at
-   the waterline — they are the only desert species that measurably tolerate it.
+1. **Cut the wall.** A `ScarpSpec` along the side of the oasis the fall will come
+   down: `drop_cm` 1,800 over `run_m` 3 is **81°**, against the 71.4° median the
+   corpus gives this prop. Direction of travel decides which side stands — the
+   cut is on the line's right. Blend it back over 40–60 m (`reach_m`) so the
+   floor below is a basin and not a trench.
+2. **Pool at the foot**, as a `WaterSpec` lake with `surface_z=None`. Auto-level
+   puts the plane inside the bowl and the plane is drawn past the shore, so the
+   waterline comes out as a curve with a beach — see `taste.md` §1.12. A
+   hand-picked absolute surface is the reliable way to get this wrong.
+3. **The fall on the lip**, placed with `ObjectTier.positions` — "steep and near
+   water" cannot say *which* water, and constrained placement puts the sheet at
+   the foot of the drop instead of the top of it. `align_to_slope` turns it to
+   the fall line + 90°. One sheet: it renders ~40 m across, so two or three on
+   the same wall overlap into a slab.
+4. **Green only at the waterline.** `grass 01/02` as accents, gated to the wet
+   band. The archetype is 64% sand and a green surround at any scale stops
+   reading as desert.
+5. **Palms, not the archetype's flora.** `tree/n2` sits a median 200 m from water
+   corpus-wide and the JoshuaTrees 350–390 m. `DatePalm`, `CoconutPalm` and
+   `CurlyPalm` are the exception that belongs at the edge.
+
+**The two-level form needs a plateau.** `metin2_map_n_desert_01` is 6×6 and has
+one. On a 1×1 map walled by a 40 m ridge there is nowhere for the upper basin:
+the rim is a continuous 25–54° ramp and the crest above 18,900 cm is only 6–9
+cells (12–18 m) wide per side, so a lake there floods the outer slope instead of
+filling a bowl. Cut a scarp and let the fall come off the face as a spring —
+`fall_7` is on water in 84% of its placements, which leaves 16% that are not.
 
 ---
 

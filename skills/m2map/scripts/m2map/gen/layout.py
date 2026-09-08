@@ -79,6 +79,32 @@ def distance_field(shape: Tuple[int, int], polyline: Sequence[Point]) -> np.ndar
     return best
 
 
+def _signed_distance(shape: Tuple[int, int],
+                     polyline: Sequence[Point]) -> np.ndarray:
+    """Distance to the polyline, negative on its left and positive on its right.
+
+    The sign is taken from the cross product with the segment that is nearest,
+    which is what lets a scarp leave one side of a line standing.
+    """
+    h, w = shape
+    ys, xs = np.mgrid[0:h, 0:w]
+    best = np.full((h, w), np.inf)
+    sign = np.ones((h, w))
+    for (x0, y0), (x1, y1) in zip(polyline, polyline[1:]):
+        dx, dy = x1 - x0, y1 - y0
+        seg2 = dx * dx + dy * dy
+        if seg2 < 1e-9:
+            continue
+        t = np.clip(((xs - x0) * dx + (ys - y0) * dy) / seg2, 0.0, 1.0)
+        px, py = x0 + t * dx, y0 + t * dy
+        d = np.hypot(xs - px, ys - py)
+        cross = dx * (ys - y0) - dy * (xs - x0)
+        closer = d < best
+        sign = np.where(closer, np.where(cross >= 0, 1.0, -1.0), sign)
+        np.minimum(best, d, out=best)
+    return best * sign
+
+
 def polygon_mask(shape: Tuple[int, int], polygon: Sequence[Point]) -> np.ndarray:
     """Even-odd fill, no dependencies."""
     h, w = shape
@@ -188,6 +214,8 @@ class Layout:
     #: at the shoreline. Without a carved bed the water renders as a flat slab
     #: lying on top of the ground instead of sitting in a channel.
     carve_cm: np.ndarray | None = None
+    #: Height to subtract for each scarp face, cm, in tile space.
+    scarp_cm: np.ndarray | None = None
     #: True where the water body is a lake (one flat surface, not banded).
     lake_mask: np.ndarray | None = None
     #: 0..1 suppression of the border ridge, so water can leave the map.
@@ -306,6 +334,26 @@ def build(spec: MapSpec) -> Layout:
             inner = _distance_inside(mask)
             grade = np.clip(inner / max(1.0, eff_w * 0.35), 0.0, 1.0)
             carve = np.maximum(carve, grade * depth * mask)
+
+    # Scarps: a signed cut that leaves one side of a line standing and drops the
+    # other. Signed distance comes from the cross product against the nearest
+    # segment, so "which side" follows the direction of travel -- the face looks
+    # to the right of the line.
+    scarp = np.zeros(shape, np.float64)
+    for sc in spec.scarps:
+        line = catmull_rom(sc.waypoints)
+        if len(line) < 2:
+            continue
+        sd = _signed_distance(shape, line)
+        run = max(0.5, sc.run_m)
+        reach = max(run, sc.reach_m)
+        # 0 on the standing side, 1 across the face, then held out to `reach`
+        # and faded back so the cut does not end in a step of its own.
+        t = np.clip(sd / run, 0.0, 1.0)
+        fade = np.clip(1.0 - (sd - run) / max(1e-6, reach - run), 0.0, 1.0)
+        fade = np.where(sd <= run, 1.0, fade)
+        scarp = np.maximum(scarp, sc.drop_cm * t * fade)
+    lay.scarp_cm = scarp
 
     lay.carve_cm = carve
     lay.lake_mask = lakes

@@ -177,6 +177,36 @@ class RegionSpec:
 
 
 @dataclass
+class ScarpSpec:
+    """A near-vertical rock face cut along a line.
+
+    The reason this exists is `fall_7`. The corpus hangs its waterfall on ground
+    of slope p50 **71.4 deg** (p75 86.6, p95 87.8, n = 44) -- a wall. A generated
+    border ridge is a smooth 41-52 deg ramp, and a flat quad hung on a ramp
+    either floats clear of it or sinks half into it. No height-bias tuning fixes
+    that, because the fault is the terrain.
+
+    A heightfield cannot express 90 degrees: the steepest face is one cell of run
+    per drop, and a cell is 200 cm. At the default ``run_m`` of 3 a 20 m drop is
+    **81 deg**, which is inside the corpus band. Shorten the run or deepen the
+    drop for a harder face.
+
+    The ground on the ``waypoints`` side of the line keeps its height; the other
+    side is cut down by ``drop_cm``. Which side is which follows the direction of
+    travel along the line: the fall is on its **right**.
+    """
+
+    waypoints: List[Tuple[float, float]]
+    #: Height lost across the face, cm.
+    drop_cm: float = 2000.0
+    #: Horizontal distance the drop takes, metres. Small means steep.
+    run_m: float = 3.0
+    #: How far the cut reaches past the face before it fades back into the
+    #: surrounding terrain, metres.
+    reach_m: float = 24.0
+
+
+@dataclass
 class PlazaSpec:
     """A safe-zone disc -- the town-square / duel-ring stamp.
 
@@ -233,6 +263,7 @@ class MapSpec:
     water: List[WaterSpec] = field(default_factory=list)
     regions: List[RegionSpec] = field(default_factory=list)
     plazas: List[PlazaSpec] = field(default_factory=list)
+    scarps: List[ScarpSpec] = field(default_factory=list)
     objects: List[ObjectTier] = field(default_factory=list)
 
     # --- terrain shaping, clamped to the archetype's mined statistics ------
@@ -363,6 +394,20 @@ class MapSpec:
                     out.append("object %s has a position (%.0f, %.0f) outside "
                                "the %dx%d m map"
                                % (o.name or o.crc, px, py, *span_tiles))
+        for sc in self.scarps:
+            if len(sc.waypoints) < 2:
+                out.append("scarp with %d waypoint(s) -- need at least 2"
+                           % len(sc.waypoints))
+            if sc.run_m <= 0:
+                out.append("scarp run_m must be positive")
+            elif sc.drop_cm / max(1e-6, sc.run_m * 100.0) < 1.0:
+                out.append(
+                    "scarp drop %.0f cm over %.1f m is only %.0f deg -- that is a "
+                    "slope, not a face. fall_7 sits on 71 deg median."
+                    % (sc.drop_cm, sc.run_m,
+                       __import__("math").degrees(__import__("math").atan(
+                           sc.drop_cm / max(1e-6, sc.run_m * 100.0)))))
+
         for pz in self.plazas:
             if not 0 <= pz.tile_index <= n:
                 out.append("plaza tile_index %d outside the palette (0..%d)"
@@ -438,6 +483,7 @@ class MapSpec:
         d["water"] = [WaterSpec(**w) for w in d.get("water", [])]
         d["regions"] = [RegionSpec(**r) for r in d.get("regions", [])]
         d["plazas"] = [PlazaSpec(**p) for p in d.get("plazas", [])]
+        d["scarps"] = [ScarpSpec(**x) for x in d.get("scarps", [])]
         d["objects"] = [ObjectTier(**o) for o in d.get("objects", [])]
         for k in ("size", "base_position", "height_range_cm"):
             if k in d and d[k] is not None:

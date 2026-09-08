@@ -507,6 +507,71 @@ reads as gravel scattered over sand. `textures.md` §4l.
 
 ---
 
+### 1.12 The terrain draws the waterline, not the water map
+
+`water.wtr` is a **128×128 grid of 2 m cells** per sector, axis-aligned. So
+wherever the water map's own edge is the visible edge, the shore renders as a
+staircase of 2 m steps. There is no smoothing and no sub-cell coverage.
+
+The corpus never shows one, and the reason is measurable: the plane is drawn far
+wider than the water actually is, and the ground that rises through it draws the
+shore. Of the cells flagged as water, the share genuinely submerged:
+
+| map | submerged |
+|---|---|
+| `metin2_map_n_desert_01` | **23 %** |
+| `metin2_map_a1` | 41 % |
+| `metin2_map_c1` | 53 % |
+| `metin2_map_b1` | 57 % |
+| `metin2_map_eastplain_01` | 92 % |
+
+**58 %** over the six maps measured. More than half of a typical water map is
+plane hidden under the beach.
+
+> **Rule:** draw the plane well past the basin — `gen/water.py.PLANE_OVERRUN`
+> extends it by 45 % of the basin's radius — and keep the authored polygon for
+> the shore texture and the object water-distance rules. A mask that is ~100 %
+> submerged has drawn the shoreline itself, and it will step.
+
+**And the surface belongs INSIDE the bowl.** Corpus water depth is a median of
+174–410 cm. A plane at or above the rim of its basin floods outward to the
+polygon instead of filling it: no beach, no shallows, and the staircase again
+because the polygon is once more the edge. The lake auto-level takes the **35th
+percentile** of the terrain under the basin plus 40 cm; it used to take the 92nd
+plus 60, which is the rim.
+
+Three facts follow, and they are the ones to check on a render:
+
+1. a beach exists — sand between the palms and the water;
+2. the waterline is a curve, not a set of right angles;
+3. the depth reads as wadeable at the edge.
+
+### 1.13 A waterfall needs a wall, and a heightfield has to be told to make one
+
+`fall_7` is a flat quad about **40 m across**. The corpus hangs it on ground of
+slope **p50 71.4°**, p75 86.6, p95 87.8 (n = 44) — a wall, not a hillside. A
+generated border ridge is a smooth 41–52° ramp, and a flat quad on a ramp floats
+clear of it at the bottom and buries its top. No amount of `height_bias` tuning
+fixes that; the fault is the terrain.
+
+A heightfield cannot express 90°: the steepest face is one cell of run per drop,
+and a cell is 200 cm. `ScarpSpec` is the primitive — a line, a drop and a short
+run — and 1,800 cm over 3 m is **81°**, inside the corpus band. Cut the wall
+first, then hang the sheet on it.
+
+The other three numbers for that prop, all its own:
+
+| | |
+|---|---|
+| `height_bias` | p25 **+78**, p50 **+288**, p75 **+1,378** cm — raised, never sunk |
+| roll | zero in only **13.6 %** of placements (Effects as a class: 90.2 %) |
+| facing | roll = fall line **+ 90°**; the plane lies along the heading, so pointing it downhill shows the sheet edge-on |
+
+`textures.md` §4k0 covers what the wall is then painted with: it is unwalkable,
+so it is stone.
+
+---
+
 ## 2. Geometry constants
 
 These never vary and should be treated as fixed (`corpus-overview.md` sec 1,

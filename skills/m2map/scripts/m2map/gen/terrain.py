@@ -258,7 +258,8 @@ def _level_pad(height_cm: np.ndarray, mask: np.ndarray,
 def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
           carve_cm: np.ndarray | None = None,
           ridge_gap: np.ndarray | None = None,
-          pads: "list | None" = None) -> np.ndarray:
+          pads: "list | None" = None,
+          scarp_cm: np.ndarray | None = None) -> np.ndarray:
     """Whole-map vertex height grid in world cm.
 
     Returns ``(h*128+1, w*128+1)`` -- the shared logical vertex grid. Splitting
@@ -298,6 +299,13 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
                  if ridge_gap is not None else None),
             rng=np.random.default_rng(
                 stream_seed("ridge", spec.seed)))
+        height = np.clip(height, 0.0, 32767.5)
+
+    # Scarps before the corridor levelling, so a road that crosses one is
+    # levelled over the face it finds rather than cutting a face through a road
+    # that was already flat.
+    if scarp_cm is not None and scarp_cm.any():
+        height = height - _to_cells(scarp_cm, height.shape)
         height = np.clip(height, 0.0, 32767.5)
 
     # Corridors and pads are levelled AFTER the ridge, not before. A road that
