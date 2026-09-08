@@ -798,3 +798,70 @@ we.SetTerrainModified()
 - **Read the attr/tile/water/height buffers as arrays.** `GetHeightRegion` is the only bulk reader, and it is per-pixel Python calls under the hood. For bulk data, parse the files with the `m2map` codec.
 - **Enumerate objects across the whole map.** `GetObjectCount`/`GetObjectData` are edit-area only, and `GetObjectList` is a stub.
 - **Distinguish "attr is 0" from "out of range"** — `GetAttrAt` returns `0` for both.
+
+---
+
+# Headless verification — a working recipe
+
+Verified on this machine, 2026-09-08, against a generated map. This is the
+fastest way to see whether a map is actually right, and it found three faults no
+automated check caught.
+
+## The command
+
+```
+cd <data dir>                      # the dir holding pack/ and ymir work/
+WorldEditorRemix_MfcRelease_x64.exe \
+    --map    d:/map_skill_test_01 \
+    --target 12800,12800 \
+    --cam    30,0,22000 \
+    --size   1600,1000 \
+    --shot   d:/map_skill_test_01/_preview/we_render.png \
+    --shot-frames 60 \
+    --quit
+```
+
+Exits 0 and writes the PNG. About 30 s for a 1x1 map, most of it asset loading.
+
+## What each argument actually does
+
+| Argument | Unit / meaning | Notes |
+|---|---|---|
+| `--map` | map directory | Forward slashes work. Any switch enables headless mode and mutes the LogBox. |
+| `--target x,y` | **world centimetres** | The camera look-at. Sector centre is `sector*25600 + 12800`. The status bar shows it in metres, so `12800,12800` reads as `128.00 / 128.00`. |
+| `--cam pitch,roll,dist` | degrees, degrees, **cm** | `30,0,22000` gives a raised three-quarter view of one sector. Larger `dist` for bigger maps. |
+| `--size w,h` | pixels | Render target size. |
+| `--shot <path>` | PNG out | Directory must exist. |
+| `--shot-frames N` | frames to settle | **Use 60.** Fewer and terrain streaming or trees may not have finished; the shot comes out half-loaded. |
+| `--quit` | — | Exits after the shot. Without it the window stays open. |
+
+## Getting it wrong
+
+- **Run from the data directory.** Not from the map directory and not from the
+  repo. The editor resolves `pack/` and `ymir work/` relative to the working
+  directory, and without them you get a grey screen with no error.
+- **An exe copied to `D:\` needs the gran212 import patch** (`granny2.dll` ->
+  `gran212.dll`). `prepare_package.py` does this for releases. An unpatched copy
+  fails at load with no useful message.
+- **Aim the camera.** With no `--target` the camera sits at the map corner
+  looking outward and the shot is mostly sky. This is the single most common
+  reason a headless shot looks broken when the map is fine.
+- **Check the render, not the window.** Screen-capturing the editor window
+  catches whatever else is on the desktop, including always-on-top utilities.
+  `--shot` renders the viewport directly and cannot pick up an overlay.
+
+## Reading the info panel
+
+The left panel reports the loaded map, and two of its fields are easy to
+misread:
+
+- **"Topography"** is *not* a map size. It is the row for
+  `IDC_STATIC_VIEW_RADIUS` and prints `ViewRadius * CellScale / 100` metres.
+  Since the engine doubles `ViewRadius` on load (`MapOutdoorLoad.cpp:387`), a
+  normal map with `ViewRadius 128` reads **512.00 meter** regardless of whether
+  it is 1x1 or 6x6.
+- **"Max"** is the height ceiling (`65535 * 0.5 = 327.67 meter`), not the map's
+  own maximum terrain height.
+
+`Cell Size`, `Starting Point` and `Environment Variable` do read literally, and
+are worth checking against `setting.txt` after a generate.

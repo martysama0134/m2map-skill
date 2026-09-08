@@ -196,3 +196,46 @@ map is streamed, not loaded whole. Sector-border continuity therefore matters
 visually — a height mismatch at a shared edge shows as a seam the player walks
 across — but the engine does not enforce it, and real Ymir maps carry a
 measurable, non-zero amount of it.
+
+## 11. Two values the engine transforms on load
+
+Most of `setting.txt` is read literally. Two are not, and both have burned this
+skill.
+
+**`ViewRadius` is doubled.** `MapOutdoorLoad.cpp:387` does
+`m_lViewRadius <<= 1` immediately after parsing. A file saying `ViewRadius 128`
+gives the engine 256. WorldEditor's info panel then prints
+`ViewRadius * CellScale / 100` metres, so a normal map reads **512.00 meter** on
+a field labelled *Topography* — which is not a map-size readout despite the
+label, and 512 does not mean the map is 512 m across. A 1x1 map (256 m) shows
+512.00 too.
+
+Write 128. It is what 116 of the 142 corpus maps carry, and the editor forces it
+on its own save path.
+
+**Water heights are raw, not centimetres.** `water.wtr` stores
+`worldZ = value * HeightScale`, the same scale as `height.raw`
+(`AreaTerrain.cpp:1086`). Everything else in a generator naturally works in
+world centimetres, so this is the one place a unit slips silently:
+
+> Writing centimetres into that field puts every water plane at **half** its
+> intended altitude. Half is reliably below the terrain, so the water is
+> invisible in game — while the `attr.atr` water flags, computed in memory from
+> the correct heights, still say water is there. The map loads, passes a byte
+> round trip, and has an invisible lake with collision.
+
+Measured on a generated map: surfaces at 2,080–2,595 cm under terrain of
+3,922–5,289 cm, with 4,696 `ATTR_WATER` cells marking water nobody can see.
+
+### The general shape of this
+
+**A byte round trip cannot catch a unit error.** Read a file, write it back,
+compare — it passes, because the wrong unit is preserved perfectly in both
+directions. So is an in-memory assertion, because the model is right; it is the
+*boundary* that is wrong.
+
+The only checks that catch it are the ones that cross the boundary and come
+back: write the file, re-read it, and assert a property that depends on the
+unit — "the water is above the ground", "the object is inside the map", "the
+slope distribution still matches". Those are worth writing for every field whose
+stored unit differs from its working unit.

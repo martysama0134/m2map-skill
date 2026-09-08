@@ -852,3 +852,57 @@ Run in this order; each stage is worthless if the previous one fails.
 8. **Cosmetics** — F1, F2, F3, B5, B8 (`MMP-001`, `SET-004`, `SHD-001`, `TIL-003`, `HGT-003`)
 
 After **any** merge or reskin, four artefacts are stale by construction: `server_attr`, the height skirts at new internal seams, every `minimap.dds`-derived atlas, and `atlasinfo.txt`.
+
+---
+
+## 4. Unit boundaries — the faults a round trip cannot see
+
+Every entry above describes a file that is wrong in a way some check can notice.
+This section is about the class that slips through **every** check the skill had,
+and it earned its own section by producing three separate bugs.
+
+The shape is always the same: the in-memory model is correct, the file is
+correct-looking, and the *conversion between them* is wrong.
+
+- A **byte round trip passes**, because reading and writing preserve the wrong
+  unit symmetrically.
+- An **in-memory assertion passes**, because the model really is right.
+- The **audit passes**, because the file is structurally valid.
+- The map **loads**, and is wrong only when a human looks at it.
+
+### The three that happened
+
+| Fault | Symptom | Why nothing caught it |
+|---|---|---|
+| Water heights written in cm into a raw-unit field | No water in game; `attr` says water is there | Round-trip preserved the wrong unit; pipeline reported 7.2% submerged and the file had 0% |
+| `attr` cleared the road corridor before the water pass | Route sealed where the road crossed the river | Every layer preview looked right except `attr` |
+| Object spacing pinned to a stipple texture | 17 of 20 props silently not placed | Placement is best-effort by design, so "fewer than asked" was not an error |
+
+### The check that does catch it
+
+**Cross the boundary and come back.** Write the file, re-read it with the codec,
+and assert a property that *depends on the unit*:
+
+```
+water   -- the surface is above the terrain it covers
+objects -- every record lands inside the map, Y negative
+terrain -- the slope distribution still matches what was requested
+regen   -- coordinates fall inside the tile grid, not 100x out
+```
+
+Each of those fails loudly on a factor-of-2, a sign flip, or a missing offset,
+and none of them can be satisfied by a symmetric round trip.
+
+### Where to expect them
+
+Any field whose **stored** unit differs from its **working** unit. In this format
+that is: `water.wtr` heights (raw, not cm), `height.raw` (raw, not cm),
+`areadata` Y (negated) and its coordinates (map-local, not world),
+regen/Town coordinates (units of 100, not cm), and `ViewRadius`
+(doubled on load). Five conventions in one map.
+
+### And look at it in the editor
+
+All three faults above were found by **loading the map in WorldEditor**, not by
+any automated check. The 2D previews validate the model; only the real engine
+validates the boundary. `reference/we-api.md` has the working headless command.

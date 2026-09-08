@@ -96,6 +96,9 @@ All modes, all generated output. Reference files cite these by number — number
     </EXTREMELY-IMPORTANT>
 16. **Do not run WorldEditor scripts.** Emit them and hand them over.
 17. **ASCII-only in emitted Python.** cp1252/cp949 build encodings.
+18. <EXTREMELY-IMPORTANT>
+    **Five unit conventions live in one map. Convert at the write boundary, and verify by reading back.** `water.wtr` heights are RAW (`worldZ = value * HeightScale`), `height.raw` is RAW, `areadata` is map-local centimetres with Y NEGATED, regen/Town are units of 100, and `ViewRadius` is DOUBLED by the engine on load. A byte round-trip cannot catch a unit error -- it preserves the wrong unit perfectly in both directions -- and neither can an in-memory assertion, because the model is right. The only check that works crosses the boundary and comes back: write, re-read, and assert something that depends on the unit ("the water is above the terrain", "the object is inside the map"). See `reference/failure-atlas.md` section 4.
+    </EXTREMELY-IMPORTANT>
 
 ## Verification — not optional
 
@@ -116,7 +119,19 @@ Then read `_preview/*.png` and ask:
 - **height** — plains and relief, or uniform rolling? Seams at sector lines?
 - **water** — is anything marked submerged that should be dry?
 
-3D screenshots via WorldEditor headless when it is available (`reference/we-api.md`); the 2D pass needs nothing.
+<EXTREMELY-IMPORTANT>
+**Then load it in WorldEditor.** The 2D pass needs nothing installed; this one needs the editor, and it is not a formality. Three separate faults have reached a map that every 2D preview, every in-memory assertion and every audit rule passed:
+
+| Fault | What the checks said |
+|---|---|
+| Water heights written in centimetres into a raw-unit field, so every plane sat at half altitude and below the terrain | Pipeline reported 7.2% submerged; the file contained 0%. The byte round-trip passed, because it preserves a wrong unit perfectly. |
+| `attr` cleared the road corridor before the water pass, sealing the route where the road crossed the river | Every layer preview looked correct except `attr` |
+| Object spacing pinned to a stipple texture; 17 of 20 props never placed | Placement is best-effort, so "fewer than asked" was not an error |
+
+The 2D previews validate the **model**, and in all three cases the model was right. Only the real engine validates the **boundary between the model and the bytes**. `reference/we-api.md` has the verified command — run it from the data dir, aim `--target` at a sector centre, and use `--shot-frames 60` or the shot catches a half-loaded map.
+
+If the editor is genuinely unavailable, say so when you hand the map over rather than implying it was checked.
+</EXTREMELY-IMPORTANT>
 
 ## Pre-Emit Self-Review
 
@@ -137,7 +152,9 @@ Verify each item against the draft; any failure → revise and re-check.
 9. Rule 14: `server_attr` regenerated if `attr.atr` changed
 10. `audit_map.py` reports **zero blockers**
 11. Previews rendered **and actually looked at**
-12. The mapspec is written beside the map, so the result is reproducible
+12. Rule 18: every unit-converted field re-read from the written file and checked against something that depends on the unit -- water above terrain, records inside the map, regen coordinates in tile range
+13. Loaded in WorldEditor and looked at, or the user told it was not
+14. The mapspec is written beside the map, so the result is reproducible
 
 ## Screenshots
 
