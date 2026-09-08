@@ -204,6 +204,21 @@ class ScarpSpec:
     #: How far the cut reaches past the face before it fades back into the
     #: surrounding terrain, metres.
     reach_m: float = 24.0
+    #: Absolute height of the face's TOP, world cm. When set, the standing side
+    #: is raised (or lowered) to meet it and ``drop_cm`` is ignored -- the face
+    #: then runs from the natural ground on the falling side up to this crest.
+    #:
+    #: This is how you fit terrain to a prop instead of a prop to terrain. A
+    #: waterfall sheet has a fixed height, so the wall it hangs on has to match
+    #: it: set ``crest_cm`` to ``pool_surface + sheet_height`` and it spans from
+    #: lip to waterline exactly. Chasing the same result with ``height_bias``
+    #: cannot work when the wall and the sheet are different sizes.
+    #:
+    #: The falling side is left ALONE in this mode. That is deliberate: it is
+    #: what stops the operation deepening the basin it is standing next to, and
+    #: so what keeps the lake -- and the water level the crest was derived from
+    #: -- where they are.
+    crest_cm: Optional[float] = None
 
 
 @dataclass
@@ -400,7 +415,7 @@ class MapSpec:
                            % len(sc.waypoints))
             if sc.run_m <= 0:
                 out.append("scarp run_m must be positive")
-            elif sc.drop_cm / max(1e-6, sc.run_m * 100.0) < 1.0:
+            elif sc.crest_cm is None and sc.drop_cm / max(1e-6, sc.run_m * 100.0) < 1.0:
                 out.append(
                     "scarp drop %.0f cm over %.1f m is only %.0f deg -- that is a "
                     "slope, not a face. fall_7 sits on 71 deg median."

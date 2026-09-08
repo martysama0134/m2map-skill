@@ -259,7 +259,8 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
           carve_cm: np.ndarray | None = None,
           ridge_gap: np.ndarray | None = None,
           pads: "list | None" = None,
-          scarp_cm: np.ndarray | None = None) -> np.ndarray:
+          scarp_cm: np.ndarray | None = None,
+          benches: "list | None" = None) -> np.ndarray:
     """Whole-map vertex height grid in world cm.
 
     Returns ``(h*128+1, w*128+1)`` -- the shared logical vertex grid. Splitting
@@ -306,6 +307,14 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
     # that was already flat.
     if scarp_cm is not None and scarp_cm.any():
         height = height - _to_cells(scarp_cm, height.shape)
+        height = np.clip(height, 0.0, 32767.5)
+
+    # Crest-driven scarps: pull the standing side to an absolute height. See
+    # `ScarpSpec.crest_cm` -- this is how a wall gets sized to the prop that
+    # will hang on it rather than the other way round.
+    for weight, target in (benches or []):
+        w = np.clip(_to_cells(weight, height.shape), 0.0, 1.0)
+        height = height * (1.0 - w) + float(target) * w
         height = np.clip(height, 0.0, 32767.5)
 
     # Corridors and pads are levelled AFTER the ridge, not before. A road that

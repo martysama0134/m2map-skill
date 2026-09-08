@@ -546,7 +546,56 @@ Three facts follow, and they are the ones to check on a render:
 2. the waterline is a curve, not a set of right angles;
 3. the depth reads as wadeable at the edge.
 
-### 1.13 A waterfall needs a wall, and a heightfield has to be told to make one
+### 1.13 Fit the terrain to the prop, not the prop to the terrain
+
+`fall_7` is a fixed **~18.14 m tall** quad, ~40 m across, anchored at its **top**.
+The corpus hangs it on ground of slope p50 **71.4°** (p75 86.6, p95 87.8, n = 44)
+— a wall, not a hillside. A generated ridge is a smooth 41–52° ramp.
+
+The instinct is to search for a `height_bias` that makes the sheet sit right on
+whatever face the terrain produced. **That cannot work when the wall and the
+sheet are different sizes.** On a 29.6 m lip-to-pool face the choice is a top
+hanging 11 m below the crest or a base hanging 12 m above the water, and every
+intermediate value is both. Three rebuilds went into confirming that.
+
+The prop's geometry is fixed and the terrain is not, so **the terrain is what
+moves**:
+
+1. Place the prop where it should be — for a waterfall, at the shore of the pool
+   it lands in.
+2. Derive the crest: `pool_surface + sheet_height − bite`. With the pool at
+   15,671 and a 150 cm bite, that is **17,343**.
+3. Build the wall to it. `ScarpSpec.crest_cm` sets the face's top to an absolute
+   height, raising the standing side to meet it while the falling side is cut by
+   `drop_cm` to make the basin.
+4. Set the bias so the sheet's top lands on that crest. It now spans lip to
+   waterline by construction rather than by search.
+
+**Two passes, because the pool level is an output.** The crest depends on the
+water surface, and the cut that forms the wall also forms the basin the water
+levels itself in. Build once, read the surface, set the crest, build again — it
+converges in one iteration (16,728 → 17,343 → stable).
+
+**The falling side is what keeps the lake.** `crest_cm` only *raises* the
+standing side; nothing deepens the basin beside it, so the level the crest was
+derived from does not move under you. Cap the crest without cutting and you get
+the opposite failure: no basin, no face, the pool back up at the natural floor
+with a 1.4 m step in front of it.
+
+**Curve the line.** A straight scarp cuts a rectangular terrace and reads as a
+bulldozer cut from the air. An arc reads as a cirque.
+
+Two traps in the arithmetic, both of which cost a rebuild:
+
+- **Read the ground from a build, never derive it.** The object stage samples
+  the tile grid with `(x * 129) // 256`, not `x // 2`, so neighbouring tiles can
+  land on different cells — tiles 225 and 226 both read the crest while only 224
+  read the bed.
+- **Re-anchor after moving the line.** Curving the scarp moved the face two
+  tiles west and the old anchor was suddenly on top of it, putting the sheet
+  23 m into the air.
+
+### 1.14 A waterfall needs a wall, and a heightfield has to be told to make one
 
 `fall_7` is a flat quad about **40 m across**. The corpus hangs it on ground of
 slope **p50 71.4°**, p75 86.6, p95 87.8 (n = 44) — a wall, not a hillside. A

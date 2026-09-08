@@ -216,6 +216,9 @@ class Layout:
     carve_cm: np.ndarray | None = None
     #: Height to subtract for each scarp face, cm, in tile space.
     scarp_cm: np.ndarray | None = None
+    #: ``(weight, target_cm)`` per crest-driven scarp: pull the terrain toward
+    #: ``target_cm`` with weight in [0, 1]. Tile space.
+    benches: List[Tuple[np.ndarray, float]] = field(default_factory=list)
     #: True where the water body is a lake (one flat surface, not banded).
     lake_mask: np.ndarray | None = None
     #: 0..1 suppression of the border ridge, so water can leave the map.
@@ -349,6 +352,32 @@ def build(spec: MapSpec) -> Layout:
         reach = max(run, sc.reach_m)
         # 0 on the standing side, 1 across the face, then held out to `reach`
         # and faded back so the cut does not end in a step of its own.
+        if sc.crest_cm is not None:
+            # Crest-driven: raise the STANDING side (sd < 0) to an absolute
+            # height and leave the falling side alone. Full weight within the
+            # run, blending back to natural terrain by `reach`. Not touching the
+            # falling side is the point -- it is what keeps a lake sitting
+            # beside the face from being deepened, and so keeps the water level
+            # the crest was chosen against.
+            # Full weight AT the line, blending back to natural terrain over
+            # `reach` going into the standing side. `run` plays no part here:
+            # the face is the step across the line itself, from untouched ground
+            # on one side to the crest on the other, which is the steepest a
+            # heightfield can be.
+            #
+            # Behind the crest the ground returns to whatever it was -- on a
+            # border rim that means a ledge at the crest with the rim rising
+            # again behind it, which is what a waterfall lip looks like and
+            # leaves the horizon still walled.
+            weight = np.where(sd <= 0.0,
+                              np.clip(1.0 + sd / max(1e-6, reach), 0.0, 1.0),
+                              0.0)
+            if weight.any():
+                lay.benches.append((weight, float(sc.crest_cm)))
+            # and FALL THROUGH: the drop still digs the falling side. Capping
+            # the crest without it leaves no face at all -- the basin is what
+            # gives the wall its height, and skipping it put the pool back up
+            # at the natural floor with a 1.4 m step in front of it.
         t = np.clip(sd / run, 0.0, 1.0)
         fade = np.clip(1.0 - (sd - run) / max(1e-6, reach - run), 0.0, 1.0)
         fade = np.where(sd <= run, 1.0, fade)

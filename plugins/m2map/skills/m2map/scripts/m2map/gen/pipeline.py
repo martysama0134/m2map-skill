@@ -119,7 +119,9 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
         b.height_cm = terrain.build(spec, flatten_mask=flat,
                                     carve_cm=carve, ridge_gap=gap, pads=pads,
                                     scarp_cm=(b.layout.scarp_cm
-                                              if b.layout else None))
+                                              if b.layout else None),
+                                    benches=(b.layout.benches
+                                             if b.layout else None))
         b.slope_deg = terrain.slope_degrees(b.height_cm)
         # Report the PLAYABLE interior, not the whole grid. The border ridge is
         # a 40 deg wall by design, and including it pushed the reported slope

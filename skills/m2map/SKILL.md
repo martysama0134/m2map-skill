@@ -108,7 +108,10 @@ All modes, all generated output. Reference files cite these by number — number
 22. <EXTREMELY-IMPORTANT>
     **The terrain draws the waterline.** `water.wtr` is 2 m axis-aligned cells, so a plane that stops at its basin renders the shore as a staircase. Corpus planes run far wider than the water: only **23–57%** of water-flagged cells are actually submerged (58% over six maps). Draw the plane past the basin and let the ground that rises through it make the shore. The surface belongs **inside** the bowl — corpus depth median 174–410 cm — or the lake floods to its polygon and there is no beach.
     </EXTREMELY-IMPORTANT>
-23. **A waterfall needs a wall.** `fall_7` sits on slope p50 **71.4°** in the corpus and is a flat quad ~40 m across; a 41–52° ridge is a ramp, and a quad on a ramp floats or buries. Cut a `ScarpSpec` first (1,800 cm over a 3 m run is 81°, the steepest a heightfield can hold is one 200 cm cell of run per drop), then place the sheet on it — raised into its measured bias band (+78/+288/+1,378 cm) and rolled to the fall line **+90°**, because the plane lies along the heading.
+23. <EXTREMELY-IMPORTANT>
+    **Fit the terrain to the prop, not the prop to the terrain.** A prop's geometry is fixed; the ground is not. `fall_7` is ~18.14 m tall anchored at its top, so on a 29.6 m wall no `height_bias` avoids either a top 11 m below the crest or a base 12 m above the water. Place the prop, derive the crest (`pool_surface + sheet_height − bite`), and build the wall to it with `ScarpSpec.crest_cm`. Two passes: the water level is an output, so build, read it, set the crest, build again — it converges in one. See `taste.md` §1.13.
+    </EXTREMELY-IMPORTANT>
+24. **A waterfall needs a wall.** `fall_7` sits on slope p50 **71.4°** in the corpus and is a flat quad ~40 m across; a 41–52° ridge is a ramp, and a quad on a ramp floats or buries. Cut a `ScarpSpec` first (1,800 cm over a 3 m run is 81°, the steepest a heightfield can hold is one 200 cm cell of run per drop), then place the sheet on it — raised into its measured bias band (+78/+288/+1,378 cm) and rolled to the fall line **+90°**, because the plane lies along the heading.
 
 ## Verification — not optional
 
