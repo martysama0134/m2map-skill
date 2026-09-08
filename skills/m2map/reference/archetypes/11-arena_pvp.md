@@ -177,16 +177,19 @@ has a flat NN quartile spread.
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 `on_tiles` indexes the 17-slot `metin2_map_oxevent.txt` palette above.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 2929491352 | `a1-038-wall-lin2_duel` (Building, `zone/duel`) | 0.01516 | **1000** | 3,7,11 | **0** | 2094 | (0, 0) |
-| signature | 93804060 | `b1-bigdam-04` (Building, `zone/b/building`) | 0.00549 | 1000 | 3,4,11 | 0 | 0 | (0, 0) |
-| signature | 4147623174 | `b1-bigdam-05` (Building, `zone/b/building`) | 0.00326 | 0 | 3,4,11 | 0 | 0 | (0, 0) |
-| signature | 3686638315 | `b1-bigdam-06` (Building, `zone/b/building`) | 0.00285 | 4000 | 3,4,11 | 0 | 0 | (0, 0) |
-| signature | 3050870705 | `a1_018-stonelight-1` (Building, `zone/a/building`) | 0.00326 | 958 | 7,11 | 17 | 100 | (-5, 0) |
-| filler | 1471924893 | `ob-7-02-01` (Building, `zone/b/obj`) | 0.00661 | 213 | 3,11 | 22 | 0 | (-20, 108) |
-| filler | 2401125466 | `general_obj_flag` (Building, `zone/b/obj`) | 0.00336 | 612 | 3,11,14 | 18 | 0 | (0, 0) |
-| accent | 2237878140 | `fire_ob-11-02-stonelight01.mse` (Effect, `effect/background`) | 0.00346 | 23 | 3,7,11 | 1 | 0 | (0, 0) |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 2929491352 | `a1-038-wall-lin2_duel` (Building, `zone/duel`) | 0.01516 | **1000** | 3,7,11 | **0** | 2094 | (0, 0) | 0/0/2 (0, inf) |
+| signature | 93804060 | `b1-bigdam-04` (Building, `zone/b/building`) | 0.00549 | 1000 | 3,4,11 | 0 | 0 | (0, 0) | 65/120/185 **(65, inf)** |
+| signature | 4147623174 | `b1-bigdam-05` (Building, `zone/b/building`) | 0.00326 | 0 | 3,4,11 | 0 | 0 | (0, 0) | 82/124/203 **(82, inf)** |
+| signature | 3686638315 | `b1-bigdam-06` (Building, `zone/b/building`) | 0.00285 | 4000 | 3,4,11 | 0 | 0 | (0, 0) | 57/118/193 **(57, inf)** |
+| signature | 3050870705 | `a1_018-stonelight-1` (Building, `zone/a/building`) | 0.00326 | 958 | 7,11 | 17 | 100 | (-5, 0) | 0/14/43 (0, inf) |
+| filler | 1471924893 | `ob-7-02-01` (Building, `zone/b/obj`) | 0.00661 | 213 | 3,11 | 22 | 0 | (-20, 108) | 51/119/230 **(51, inf)** |
+| filler | 2401125466 | `general_obj_flag` (Building, `zone/b/obj`) | 0.00336 | 612 | 3,11,14 | 18 | 0 | (0, 0) | 22/44/96 (0, inf) |
+| accent | 2237878140 | `fire_ob-11-02-stonelight01.mse` (Effect, `effect/background`) | 0.00346 | 23 | 3,7,11 | 1 | 0 | (0, 0) | 30/39/69 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 **`fire_ob-11-02-stonelight01.mse` is the corpus's only fully parasitic effect: 100 % of
 its 36 records lie within 1 m of a non-Effect object** (`placement.md` sec 6) -- it is the
@@ -279,6 +282,17 @@ corpus), out-of-bounds 11.8 %, water 3.8 %, residual 0.8 %. **78.8 % of cells bl
 10. **Object halo is 14.2 % of block.** The furniture is the level.
 
 ---
+
+## Road grammar confidence
+
+**3 of 4 road-bearing maps here are confirmed roads (75%.)** The rest are
+`terrain_ribbon` or `ambiguous` -- soft-edged regions the corridor detector picks
+up as tracks. `roads.json.by_archetype` is now filtered to the confirmed set, but
+with n=3 the width, curvature and junction figures are **indicative, not
+measured**. Treat them as a starting point and check the result by eye.
+
+The path-texture identification and the `d(road)` setbacks are unaffected: both
+come from per-slot and per-CRC statistics, not from corridor detection.
 
 ## Sources
 

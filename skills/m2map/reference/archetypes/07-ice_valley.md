@@ -186,28 +186,31 @@ Family budget:
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 `on_tiles` indexes the 20-slot `metin2_map_snakevalley.txt` palette above.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 2713011117 | `SpearRock_002` (Building, `zone/snakevalley`) | 0.00295 | 451 | 3,8,9,10,12 | 66 | **7766** | (-157, -31) |
-| signature | 687416296 | `SpearRock_003` (Building, `zone/snakevalley`) | 0.00237 | 0 | 3,8,12 | 45 | **6119** | (-106, -11) |
-| signature | 997685939 | `SpearRock_004` (Building, `zone/snakevalley`) | 0.00097 | 0 | 3,8,12 | 58 | **10418** | (-311, -3) |
-| signature | 711692756 | `invocation_stone03` (Building, `zone/snakevalley`) | 0.00084 | 1908 | 8,12 | 50 | 7299 | (-385, 0) |
-| signature | 2142209084 | `invocation_stone02` (Building, `zone/snakevalley`) | 0.00081 | 1640 | 8,12 | 58 | 6215 | (-406, -91) |
-| signature | 1416455319 | `invocation_stone01` (Building, `zone/snakevalley`) | 0.00058 | `TODO: no catalog evidence` | 8,12 | -- | -- | -- |
-| filler | 3370024845 | `WhitePine1` (Tree, `tree/n1`) | 0.00354 | 2681 | 2,7,12,13 | 19 | 0 | (-40, -31) |
-| filler | 239479779 | `ColoradoBlueSpruce1` (Tree, `tree/n1`) | 0.00240 | 1305 | 2,7,12,13 | 21 | 565 | (-80, -8) |
-| filler | 2988076545 | `ColoradoBlueSpruce2` (Tree, `tree/n1`) | 0.00211 | 1129 | 2,7,12,13 | 24 | 282 | (-80, -31) |
-| filler | 1313531708 | `Beech_Winter3` (Tree, `tree/n1`) | 0.00201 | 2933 | 2,7,12,13 | 26 | 1372 | (-80, -40) |
-| filler | 2418081500 | `Beech_Winter1` (Tree, `tree/n1`) | 0.00198 | 2717 | 2,7,12,13 | 25 | 847 | (-80, -12) |
-| filler | 4193629000 | `MontereyCypress_Winter2` (Tree, `tree/n1`) | 0.00179 | 2509 | 2,7,12,13 | 37 | 262 | (-80, -40) |
-| filler | 3641533454 | `MontereyCypress_Winter1` (Tree, `tree/n1`) | 0.00101 | 1809 | 2,7,12,13 | 26 | 1094 | (-80, -31) |
-| filler | 1155967375 | `ob-7-02-01` (Building, `zone/n/obj/snow.m`) | 0.00205 | 323 | 12,13 | 14 | 7892 | (-41, -15) |
-| filler | 3874655559 | `ob-7-03-01` (Building, `zone/n/obj/snow.m`) | 0.00205 | 380 | 12,15 | 39 | 4912 | (-55, -18) |
-| filler | 923239313 | `general_obj_fence03` (Building, `zone/n/obj/snow.m`) | 0.00198 | 358 | 12,15 | 9 | 0 | (-29, 0) |
-| accent | 2399981002 | `Pagoda_Winter1` (Tree, `tree/b3`) | 0.00104 | 0 | 2,12 | 46 | 860 | (-165, 0) |
-| accent | 2406144081 | `Pagoda_Winter2` (Tree, `tree/b3`) | 0.00058 | 0 | 2,12 | 43 | 1247 | (-165, -4) |
-| accent | 1552435463 | `B_general_obj_22` (Building, `zone/b/obj`) | 0.00094 | 53 | 12,13 | 9 | 0 | (-5, 0) |
-| accent | 2487845082 | `ob-7-01` (Building, `zone/n/obj/snow.m`) | 0.00062 | 1067 | 12,13 | 9 | 5630 | (-64, -24) |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 2713011117 | `SpearRock_002` (Building, `zone/snakevalley`) | 0.00295 | 451 | 3,8,9,10,12 | 66 | **7766** | (-157, -31) | 141/228/312 **(141, inf)** |
+| signature | 687416296 | `SpearRock_003` (Building, `zone/snakevalley`) | 0.00237 | 0 | 3,8,12 | 45 | **6119** | (-106, -11) | 115/201/280 **(115, inf)** |
+| signature | 997685939 | `SpearRock_004` (Building, `zone/snakevalley`) | 0.00097 | 0 | 3,8,12 | 58 | **10418** | (-311, -3) | 207/233/277 **(207, inf)** |
+| signature | 711692756 | `invocation_stone03` (Building, `zone/snakevalley`) | 0.00084 | 1908 | 8,12 | 50 | 7299 | (-385, 0) | 63/127/252 **(63, inf)** |
+| signature | 2142209084 | `invocation_stone02` (Building, `zone/snakevalley`) | 0.00081 | 1640 | 8,12 | 58 | 6215 | (-406, -91) | 85/140/259 **(85, inf)** |
+| signature | 1416455319 | `invocation_stone01` (Building, `zone/snakevalley`) | 0.00058 | `TODO: no catalog evidence` | 8,12 | -- | -- | -- | n/a |
+| filler | 3370024845 | `WhitePine1` (Tree, `tree/n1`) | 0.00354 | 2681 | 2,7,12,13 | 19 | 0 | (-40, -31) | 12/24/50 (0, inf) |
+| filler | 239479779 | `ColoradoBlueSpruce1` (Tree, `tree/n1`) | 0.00240 | 1305 | 2,7,12,13 | 21 | 565 | (-80, -8) | 35/98/265 (0, inf) |
+| filler | 2988076545 | `ColoradoBlueSpruce2` (Tree, `tree/n1`) | 0.00211 | 1129 | 2,7,12,13 | 24 | 282 | (-80, -31) | 20/55/241 (0, inf) |
+| filler | 1313531708 | `Beech_Winter3` (Tree, `tree/n1`) | 0.00201 | 2933 | 2,7,12,13 | 26 | 1372 | (-80, -40) | 50/93/399 (0, inf) |
+| filler | 2418081500 | `Beech_Winter1` (Tree, `tree/n1`) | 0.00198 | 2717 | 2,7,12,13 | 25 | 847 | (-80, -12) | 14/35/221 (0, inf) |
+| filler | 4193629000 | `MontereyCypress_Winter2` (Tree, `tree/n1`) | 0.00179 | 2509 | 2,7,12,13 | 37 | 262 | (-80, -40) | 13/30/132 (0, inf) |
+| filler | 3641533454 | `MontereyCypress_Winter1` (Tree, `tree/n1`) | 0.00101 | 1809 | 2,7,12,13 | 26 | 1094 | (-80, -31) | 78/229/358 **(78, inf)** |
+| filler | 1155967375 | `ob-7-02-01` (Building, `zone/n/obj/snow.m`) | 0.00205 | 323 | 12,13 | 14 | 7892 | (-41, -15) | 5/44/49 (0, inf) |
+| filler | 3874655559 | `ob-7-03-01` (Building, `zone/n/obj/snow.m`) | 0.00205 | 380 | 12,15 | 39 | 4912 | (-55, -18) | 10/21/32 (0, inf) |
+| filler | 923239313 | `general_obj_fence03` (Building, `zone/n/obj/snow.m`) | 0.00198 | 358 | 12,15 | 9 | 0 | (-29, 0) | 19/30/40 (0, inf) |
+| accent | 2399981002 | `Pagoda_Winter1` (Tree, `tree/b3`) | 0.00104 | 0 | 2,12 | 46 | 860 | (-165, 0) | 10/90/165 (0, inf) |
+| accent | 2406144081 | `Pagoda_Winter2` (Tree, `tree/b3`) | 0.00058 | 0 | 2,12 | 43 | 1247 | (-165, -4) | 9/65/142 (0, inf) |
+| accent | 1552435463 | `B_general_obj_22` (Building, `zone/b/obj`) | 0.00094 | 53 | 12,13 | 9 | 0 | (-5, 0) | 25/99/111 (0, inf) |
+| accent | 2487845082 | `ob-7-01` (Building, `zone/n/obj/snow.m`) | 0.00062 | 1067 | 12,13 | 9 | 5630 | (-64, -24) | 12/14/48 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 ---
 
@@ -298,6 +301,17 @@ bytes; **no paint bytes above `0x07`**.
 10. **No safezone, no town, no plaza.** 5.3 % of placements stand on unpainted ground.
 
 ---
+
+## Road grammar confidence
+
+**1 of 3 road-bearing maps here are confirmed roads (33%.)** The rest are
+`terrain_ribbon` or `ambiguous` -- soft-edged regions the corridor detector picks
+up as tracks. `roads.json.by_archetype` is now filtered to the confirmed set, but
+with n=1 the width, curvature and junction figures are **indicative, not
+measured**. Treat them as a starting point and check the result by eye.
+
+The path-texture identification and the `d(road)` setbacks are unaffected: both
+come from per-slot and per-CRC statistics, not from corridor detection.
 
 ## Sources
 

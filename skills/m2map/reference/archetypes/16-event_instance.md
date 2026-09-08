@@ -186,14 +186,17 @@ overlap.
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 Slot indices depend on which member's palette you take; they are named instead.
 
-| tier | crc | name | home stage | density | spacing_cm | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 3812975508 | `gls_A_wall-lin2` (Building, `zone/geuglagsa`) | snake temple | 0.00345 | **1000** | 32 | 782 | (0, 0) |
-| signature | 1806594480 | `gls_A_wall-corner` (Building, `zone/geuglagsa`) | snake temple | 0.00105 | 800 | 44 | 1012 | (0, 0) |
-| signature | 3499218645 | `12t_statue_base` (Building, `zone/dungeon/temple_dungeon`) | 12zi | 0.00128 | 1680 | 8 | 0 | (0, 0) |
-| filler | 802175187 | `AloeVera_RT_Flowers_02` (Tree, `tree/n2`) | desert stages | 0.00105 | 255 | 37 | 400 | (-25, -5) |
-| filler | 3449844455 | `IvySpy_Winter1` (Tree, `tree/b2`) | volcanic stages | 0.00104 | 1467 | 45 | 0 | (-120, 0) |
-| filler | 1453870486 | `CinnamonFern_RT_02` (Tree, `tree/n2`) | desert stages | 0.00083 | 83 | 30 | 1009 | (-15, 0) |
+| tier | crc | name | home stage | density | spacing_cm | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 3812975508 | `gls_A_wall-lin2` (Building, `zone/geuglagsa`) | snake temple | 0.00345 | **1000** | 32 | 782 | (0, 0) | n/a |
+| signature | 1806594480 | `gls_A_wall-corner` (Building, `zone/geuglagsa`) | snake temple | 0.00105 | 800 | 44 | 1012 | (0, 0) | n/a |
+| signature | 3499218645 | `12t_statue_base` (Building, `zone/dungeon/temple_dungeon`) | 12zi | 0.00128 | 1680 | 8 | 0 | (0, 0) | 4/32/69 (0, inf) |
+| filler | 802175187 | `AloeVera_RT_Flowers_02` (Tree, `tree/n2`) | desert stages | 0.00105 | 255 | 37 | 400 | (-25, -5) | 91/226/320 **(91, inf)** |
+| filler | 3449844455 | `IvySpy_Winter1` (Tree, `tree/b2`) | volcanic stages | 0.00104 | 1467 | 45 | 0 | (-120, 0) | 37/102/228 **(37, inf)** |
+| filler | 1453870486 | `CinnamonFern_RT_02` (Tree, `tree/n2`) | desert stages | 0.00083 | 83 | 30 | 1009 | (-15, 0) | 2/120/262 **(2, inf)** |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 `zone/geuglagsa` is the corpus's clearest wall-kit signature: **98.4 % of its rolls are
 multiples of 90 deg**, NN histogram is a spike at 700-1,500 cm with **nothing below 500 cm**,
@@ -270,6 +273,17 @@ object halo 1.2 %, residual 0.3 %. 75.4 % of cells blocked.
 10. **Clean attr: six bytes, no paint convention, no safezone.**
 
 ---
+
+## Road grammar confidence
+
+**2 of 10 road-bearing maps here are confirmed roads (20%.)** The rest are
+`terrain_ribbon` or `ambiguous` -- soft-edged regions the corridor detector picks
+up as tracks. `roads.json.by_archetype` is now filtered to the confirmed set, but
+with n=2 the width, curvature and junction figures are **indicative, not
+measured**. Treat them as a starting point and check the result by eye.
+
+The path-texture identification and the `d(road)` setbacks are unaffected: both
+come from per-slot and per-CRC statistics, not from corridor detection.
 
 ## Sources
 

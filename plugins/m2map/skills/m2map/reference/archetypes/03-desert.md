@@ -201,28 +201,31 @@ patches. Reproducing it with the temperate 10-17 m spacing gives you an empty de
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 `on_tiles` indexes the 12-slot `metin2_n_desert1.txt` palette.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 2958806645 | `CinnamonFern_RT_01` (Tree, `tree/n2`) | 0.00610 | 97 | 1,2,3,11 | 22 | 1047 | (-5, 0) |
-| signature | 1453870486 | `CinnamonFern_RT_02` (Tree, `tree/n2`) | 0.00391 | 83 | 1,2,3,11 | 30 | 1009 | (-15, 0) |
-| signature | 802175187 | `AloeVera_RT_Flowers_02` (Tree, `tree/n2`) | 0.00321 | 255 | 1,2,3,11 | 37 | 400 | (-25, -5) |
-| signature | 1030411250 | `AloeVera_RT_Flowers_01` (Tree, `tree/n2`) | 0.00216 | 241 | 1,2,3,11 | 31 | 400 | (-25, -1) |
-| signature | 2323701221 | `CinnamonFern_RT_03` (Tree, `tree/n2`) | 0.00162 | 83 | 1,2,3 | 25 | 2525 | (-15, 0) |
-| signature | 1105271114 | `JoshuaTree_RT_01` (Tree, `tree/n2`) | 0.00129 | 1233 | 1,2,9 | 49 | 200 | (-827, -35) |
-| signature | 1609982784 | `JoshuaTree_RT_03` (Tree, `tree/n2`) | 0.00113 | 636 | 1,2,9 | 55 | 50 | (-879, -60) |
-| signature | 3498019135 | `JoshuaTree_RT_02` (Tree, `tree/n2`) | 0.00103 | 1249 | 1,2,9 | 59 | 200 | (-827, -60) |
-| signature | 760653991 | `CurlyPalm_RT_03` (Tree, `tree/n2`) | 0.00120 | 3538 | 1,11 | 34 | 1131 | (-33, -5) |
-| filler | 2157974046 | `general_obj_fence03.gr2` (Building, `zone/n/obj/map_n_desert_01`) | 0.00134 | 357 | 1,2,10,11 | 10 | 0 | (-25, 0) |
-| filler | 2600313213 | `general_obj_fence02.gr2` (Building, same) | 0.00106 | 310 | 1,2,10,11 | 8 | 0 | (-15, 0) |
-| filler | 3248083804 | `general_obj_fence04.GR2` (Building, same) | 0.00092 | 476 | 1,2,11 | 7 | 0 | (-20, 0) |
-| filler | 311819914 | `general_obj_fence05.GR2` (Building, same) | 0.00074 | 636 | 1,2,11 | 3 | 0 | (-22, 0) |
-| filler | 358206493 | `ob-b1-005-woodbarrel` (Building, `zone/b/obj`) | 0.00100 | 73 | 1,2,4 | 10 | 0 | (-5, 0) |
-| filler | 538957537 | `general_obj_fence03` (Building, `zone/b/obj`) | 0.00088 | 335 | 1,2,4 | 24 | 447 | (-15, 0) |
-| accent | 2108962507 | `DatePalm_RT_02` (Tree, `tree/n2`) | 0.00088 | 2246 | 1,11 | 31 | 1697 | (-82, -5) |
-| accent | 2114741906 | `DatePalm_RT_01` (Tree, `tree/n2`) | 0.00082 | 2559 | 1,11 | 36 | 447 | (-108, -5) |
-| accent | 3924497413 | `CurlyPalm_RT_01` (Tree, `tree/n2`) | 0.00089 | 2403 | 1,11 | 33 | 200 | (-40, 0) |
-| accent | 104215490 | `CoconutPalm_RT_02` (Tree, `tree/n2`) | 0.00069 | 2287 | 1,2,10,11 | 37 | 350 | (-95, 0) |
-| accent | 529292477 | `CoconutPalm_RT_01` (Tree, `tree/n2`) | 0.00069 | 1932 | 1,2,10,11 | 28 | 0 | (-72, 0) |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 2958806645 | `CinnamonFern_RT_01` (Tree, `tree/n2`) | 0.00610 | 97 | 1,2,3,11 | 22 | 1047 | (-5, 0) | 51/204/314 **(51, inf)** |
+| signature | 1453870486 | `CinnamonFern_RT_02` (Tree, `tree/n2`) | 0.00391 | 83 | 1,2,3,11 | 30 | 1009 | (-15, 0) | 2/120/262 **(2, inf)** |
+| signature | 802175187 | `AloeVera_RT_Flowers_02` (Tree, `tree/n2`) | 0.00321 | 255 | 1,2,3,11 | 37 | 400 | (-25, -5) | 91/226/320 **(91, inf)** |
+| signature | 1030411250 | `AloeVera_RT_Flowers_01` (Tree, `tree/n2`) | 0.00216 | 241 | 1,2,3,11 | 31 | 400 | (-25, -1) | 22/168/315 **(22, inf)** |
+| signature | 2323701221 | `CinnamonFern_RT_03` (Tree, `tree/n2`) | 0.00162 | 83 | 1,2,3 | 25 | 2525 | (-15, 0) | 21/193/277 **(21, inf)** |
+| signature | 1105271114 | `JoshuaTree_RT_01` (Tree, `tree/n2`) | 0.00129 | 1233 | 1,2,9 | 49 | 200 | (-827, -35) | 200/389/589 **(200, inf)** |
+| signature | 1609982784 | `JoshuaTree_RT_03` (Tree, `tree/n2`) | 0.00113 | 636 | 1,2,9 | 55 | 50 | (-879, -60) | 180/350/592 **(180, inf)** |
+| signature | 3498019135 | `JoshuaTree_RT_02` (Tree, `tree/n2`) | 0.00103 | 1249 | 1,2,9 | 59 | 200 | (-827, -60) | 183/304/452 **(183, inf)** |
+| signature | 760653991 | `CurlyPalm_RT_03` (Tree, `tree/n2`) | 0.00120 | 3538 | 1,11 | 34 | 1131 | (-33, -5) | 99/237/366 **(99, inf)** |
+| filler | 2157974046 | `general_obj_fence03.gr2` (Building, `zone/n/obj/map_n_desert_01`) | 0.00134 | 357 | 1,2,10,11 | 10 | 0 | (-25, 0) | 298/350/405 **(298, inf)** |
+| filler | 2600313213 | `general_obj_fence02.gr2` (Building, same) | 0.00106 | 310 | 1,2,10,11 | 8 | 0 | (-15, 0) | 257/329/386 **(257, inf)** |
+| filler | 3248083804 | `general_obj_fence04.GR2` (Building, same) | 0.00092 | 476 | 1,2,11 | 7 | 0 | (-20, 0) | 264/328/402 **(264, inf)** |
+| filler | 311819914 | `general_obj_fence05.GR2` (Building, same) | 0.00074 | 636 | 1,2,11 | 3 | 0 | (-22, 0) | 262/326/400 **(262, inf)** |
+| filler | 358206493 | `ob-b1-005-woodbarrel` (Building, `zone/b/obj`) | 0.00100 | 73 | 1,2,4 | 10 | 0 | (-5, 0) | 20/85/261 (0, inf) |
+| filler | 538957537 | `general_obj_fence03` (Building, `zone/b/obj`) | 0.00088 | 335 | 1,2,4 | 24 | 447 | (-15, 0) | 12/51/134 (0, inf) |
+| accent | 2108962507 | `DatePalm_RT_02` (Tree, `tree/n2`) | 0.00088 | 2246 | 1,11 | 31 | 1697 | (-82, -5) | 111/226/317 **(111, inf)** |
+| accent | 2114741906 | `DatePalm_RT_01` (Tree, `tree/n2`) | 0.00082 | 2559 | 1,11 | 36 | 447 | (-108, -5) | 80/245/383 **(80, inf)** |
+| accent | 3924497413 | `CurlyPalm_RT_01` (Tree, `tree/n2`) | 0.00089 | 2403 | 1,11 | 33 | 200 | (-40, 0) | 0/36/287 (0, inf) |
+| accent | 104215490 | `CoconutPalm_RT_02` (Tree, `tree/n2`) | 0.00069 | 2287 | 1,2,10,11 | 37 | 350 | (-95, 0) | 0/6/132 (0, inf) |
+| accent | 529292477 | `CoconutPalm_RT_01` (Tree, `tree/n2`) | 0.00069 | 1932 | 1,2,10,11 | 28 | 0 | (-72, 0) | 0/30/202 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 `JoshuaTree_RT_03` carries `height_bias` p50 **-697 cm** -- the deepest sink of any CRC in
 the corpus. Its model is authored well above its origin; without the sink it floats
@@ -345,6 +348,17 @@ this archetype.
 9. **Six attr bytes, no paint convention.** Clean `0x00`-`0x05` only.
 
 ---
+
+## Road grammar confidence
+
+**1 of 5 road-bearing maps here are confirmed roads (20%.)** The rest are
+`terrain_ribbon` or `ambiguous` -- soft-edged regions the corridor detector picks
+up as tracks. `roads.json.by_archetype` is now filtered to the confirmed set, but
+with n=1 the width, curvature and junction figures are **indicative, not
+measured**. Treat them as a starting point and check the result by eye.
+
+The path-texture identification and the `d(road)` setbacks are unaffected: both
+come from per-slot and per-CRC statistics, not from corridor detection.
 
 ## Sources
 

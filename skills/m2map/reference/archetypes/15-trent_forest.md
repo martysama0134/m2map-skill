@@ -169,14 +169,17 @@ other vegetation archetype.
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 `on_tiles` indexes the 11-slot palette above.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 2376089798 | `Pagoda2` (Tree, `tree/b1`) | 0.00435 | 2397 | 3,4,6,7 | 47 | 600 | (-273, -20) |
-| signature | 3455398876 | `Beech3` (Tree, `tree/b3`) | 0.00397 | 2662 | 3,4,6,7 | 41 | 400 | (-60, -5) |
-| signature | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | 0.00381 | 1503 | 3,4,6,7 | 47 | 565 | (-152, -20) |
-| signature | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00381 | 2025 | 3,4,6,7 | 45 | 282 | (-91, -9) |
-| signature | 569394331 | `Pagoda1` (Tree, `tree/b1`) | 0.00374 | 1709 | 3,4,6,7 | 47 | 565 | (-358, -25) |
-| filler | 865570388 | `general_obj_stone10` (Building, `zone/b/obj`) | 0.00282 | 1001 | 1,3,6,7 | 30 | 0 | (-100, -20) |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 2376089798 | `Pagoda2` (Tree, `tree/b1`) | 0.00435 | 2397 | 3,4,6,7 | 47 | 600 | (-273, -20) | 18/61/181 (0, inf) |
+| signature | 3455398876 | `Beech3` (Tree, `tree/b3`) | 0.00397 | 2662 | 3,4,6,7 | 41 | 400 | (-60, -5) | 22/71/168 (0, inf) |
+| signature | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | 0.00381 | 1503 | 3,4,6,7 | 47 | 565 | (-152, -20) | 17/68/178 (0, inf) |
+| signature | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00381 | 2025 | 3,4,6,7 | 45 | 282 | (-91, -9) | 27/64/143 (0, inf) |
+| signature | 569394331 | `Pagoda1` (Tree, `tree/b1`) | 0.00374 | 1709 | 3,4,6,7 | 47 | 565 | (-358, -25) | 14/75/187 (0, inf) |
+| filler | 865570388 | `general_obj_stone10` (Building, `zone/b/obj`) | 0.00282 | 1001 | 1,3,6,7 | 30 | 0 | (-100, -20) | 26/56/133 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 The remaining `zone/b/obj` budget (216 records, 1.65/ha) is boulders -- the
 `general_obj_stone0*` set, as in `field_valley`. Fill it from

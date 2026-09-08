@@ -187,15 +187,18 @@ vines, temperate deciduous and arid scrub all at once.
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 `on_tiles` indexes the 19-slot palette above.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 974491171 | `IvySpy_Winter2` (Tree, `tree/b2`) | 0.00228 | 1274 | 3,7,10,11 | 46 | 200 | (-72, 0) |
-| signature | 1114715370 | `Tulip_Winter1` (Tree, `tree/n1`) | 0.00224 | 1278 | 6,7,10 | 42 | **0** | (-99, -80) |
-| signature | 3449844455 | `IvySpy_Winter1` (Tree, `tree/b2`) | 0.00131 | 1467 | 3,7,10,11 | 45 | 0 | (-120, 0) |
-| signature | 476855675 | `CommonOlive_Winter` (Tree, `tree/n1`) | 0.00101 | 2950 | 2,6,14 | 34 | 200 | (-80, -80) |
-| filler | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00095 | 2025 | 3,5,6 | 45 | 282 | (-91, -9) |
-| filler | 2988076545 | `ColoradoBlueSpruce2` (Tree, `tree/n1`) | 0.00093 | 1129 | 2,14 | 24 | 282 | (-80, -31) |
-| filler | 1353164984 | `Beech1` (Tree, `tree/b1`) | 0.00087 | 2765 | 3,5,6 | 46 | 262 | (-76, -16) |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 974491171 | `IvySpy_Winter2` (Tree, `tree/b2`) | 0.00228 | 1274 | 3,7,10,11 | 46 | 200 | (-72, 0) | 33/164/574 **(33, inf)** |
+| signature | 1114715370 | `Tulip_Winter1` (Tree, `tree/n1`) | 0.00224 | 1278 | 6,7,10 | 42 | **0** | (-99, -80) | 85/190/596 **(85, inf)** |
+| signature | 3449844455 | `IvySpy_Winter1` (Tree, `tree/b2`) | 0.00131 | 1467 | 3,7,10,11 | 45 | 0 | (-120, 0) | 37/102/228 **(37, inf)** |
+| signature | 476855675 | `CommonOlive_Winter` (Tree, `tree/n1`) | 0.00101 | 2950 | 2,6,14 | 34 | 200 | (-80, -80) | 25/104/442 **(25, inf)** |
+| filler | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00095 | 2025 | 3,5,6 | 45 | 282 | (-91, -9) | 27/64/143 (0, inf) |
+| filler | 2988076545 | `ColoradoBlueSpruce2` (Tree, `tree/n1`) | 0.00093 | 1129 | 2,14 | 24 | 282 | (-80, -31) | 20/55/241 (0, inf) |
+| filler | 1353164984 | `Beech1` (Tree, `tree/b1`) | 0.00087 | 2765 | 3,5,6 | 46 | 262 | (-76, -16) | 19/68/167 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 `Tulip_Winter1` is the archetype's own species: 113 of its records here, on
 `elemental_01/elemental_01_04.dds` (42 %) and `elemental_01/elemental_01_03.dds` (22 %), sunk 80-100 cm, roll
@@ -284,6 +287,17 @@ Block budget over 4,550,098 cells: slope 23.4 %, **out-of-bounds 74.6 %**, objec
 10. **90.5 % blocked, 707 m seal, no safezone, no water flag.**
 
 ---
+
+## Road grammar confidence
+
+**2 of 4 road-bearing maps here are confirmed roads (50%.)** The rest are
+`terrain_ribbon` or `ambiguous` -- soft-edged regions the corridor detector picks
+up as tracks. `roads.json.by_archetype` is now filtered to the confirmed set, but
+with n=2 the width, curvature and junction figures are **indicative, not
+measured**. Treat them as a starting point and check the result by eye.
+
+The path-texture identification and the `d(road)` setbacks are unaffected: both
+come from per-slot and per-CRC statistics, not from corridor detection.
 
 ## Sources
 

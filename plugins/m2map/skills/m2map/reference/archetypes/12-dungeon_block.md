@@ -189,19 +189,22 @@ archetype: a pitch, not a scatter.
 `height_bias` = (bias p25, bias p75). `on_tiles` is `[1]` for everything -- there is one
 slot.
 
-| tier | crc | name | density | spacing_cm | max_slope | height_bias |
-|---|---|---|---|---|---|---|
-| signature | 807123463 | `smallb_resorce` (Effect, `zone/dungeon/haven_dungeon`) | **0.03357** | 1058 | 7 | (**+308, +473**) |
-| signature | 3982077190 | `smalla_resorce` (Effect, same) | 0.00911 | 1927 | 15 | (**+1470, +1527**) |
-| signature | 3453634549 | `skipia_passi` (DungeonBlock, same) | 0.00185 | **6300** | 0 | (-120, 0) |
-| signature | 703712134 | `skipia_collision` (Building, same) | 0.00213 | 2270 | 15 | (-85, -80) |
-| signature | 2874598244 | `Mt_Thunder_passagepillar` (DungeonBlock, `.../mt_thunder_dungeon`) | 0.00087 | 1726 | 68 | (0, 0) |
-| signature | 3600435032 | `mt_thunder_passage02` (DungeonBlock, same) | 0.00076 | 2851 | 0 | (0, 0) |
-| signature | 133683983 | `mt_thunder_passage03` (DungeonBlock, same) | 0.00070 | `TODO: no catalog evidence` | -- | -- |
-| filler | 1755164826 | `fire_general_obj_campfire.mse` (Effect, `effect/background`) | 0.00180 | 644 | 3 | (**+410, +571**) |
-| filler | 2753626294 | `fire_general_obj_charcoal.mse` (Effect, same) | 0.00143 | 630 | 1 | (**+360, +410**) |
-| filler | 929619867 | `warpgate01` (Effect, same) | 0.00098 | 5512 | 3 | (+55, +55) |
-| filler | 1471924893 | `ob-7-02-01` (Building, `zone/b/obj`) | 0.00087 | 213 | 22 | (-20, +108) |
+| tier | crc | name | density | spacing_cm | max_slope | height_bias | water_m |
+|---|---|---|---|---|---|---|---|
+| signature | 807123463 | `smallb_resorce` (Effect, `zone/dungeon/haven_dungeon`) | **0.03357** | 1058 | 7 | (**+308, +473**) | n/a |
+| signature | 3982077190 | `smalla_resorce` (Effect, same) | 0.00911 | 1927 | 15 | (**+1470, +1527**) | n/a |
+| signature | 3453634549 | `skipia_passi` (DungeonBlock, same) | 0.00185 | **6300** | 0 | (-120, 0) | n/a |
+| signature | 703712134 | `skipia_collision` (Building, same) | 0.00213 | 2270 | 15 | (-85, -80) | n/a |
+| signature | 2874598244 | `Mt_Thunder_passagepillar` (DungeonBlock, `.../mt_thunder_dungeon`) | 0.00087 | 1726 | 68 | (0, 0) | n/a |
+| signature | 3600435032 | `mt_thunder_passage02` (DungeonBlock, same) | 0.00076 | 2851 | 0 | (0, 0) | n/a |
+| signature | 133683983 | `mt_thunder_passage03` (DungeonBlock, same) | 0.00070 | `TODO: no catalog evidence` | -- | -- | n/a |
+| filler | 1755164826 | `fire_general_obj_campfire.mse` (Effect, `effect/background`) | 0.00180 | 644 | 3 | (**+410, +571**) | 0/0/124 (0, inf) |
+| filler | 2753626294 | `fire_general_obj_charcoal.mse` (Effect, same) | 0.00143 | 630 | 1 | (**+360, +410**) | 49/131/249 **(49, inf)** |
+| filler | 929619867 | `warpgate01` (Effect, same) | 0.00098 | 5512 | 3 | (+55, +55) | 31/123/225 **(31, inf)** |
+| filler | 1471924893 | `ob-7-02-01` (Building, `zone/b/obj`) | 0.00087 | 213 | 22 | (-20, +108) | 51/119/230 **(51, inf)** |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 **`smallb_resorce` and `smalla_resorce` are 6,489 of the archetype's 10,232 placements**
 and they exist in exactly three maps (`skipia_dungeon_01/02/boss`). They are resource

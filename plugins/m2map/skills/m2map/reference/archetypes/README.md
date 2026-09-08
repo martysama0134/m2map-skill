@@ -74,7 +74,7 @@ question, these are the sections that matter:
 | `height_range_cm`, `slope_p50`, `slope_p95`, `flat_fraction`, `roughness`, `style` | **Terrain** |
 | `MapSpec.textures`, `textureset_name`, `RoadSpec.tile_index` | **Textureset recipe** |
 | `MapSpec.environment` and what to write into the `.msenv` | **Environment** |
-| `MapSpec.objects` -- crc, tier, density, spacing, on_tiles, max_slope, road_clearance, height_bias | **Object palette** |
+| `MapSpec.objects` -- crc, tier, density, spacing, on_tiles, max_slope, road_clearance, water_distance_m, height_bias | **Object palette** |
 | where things go relative to roads, water, slope and each other; what must never appear | **Placement rules** |
 | `attr_style`, `block_slope_deg`, `border_band_m`, `safezone_regions` | **Attr policy** |
 | whether your output will read as authored or as generated | **Tells** |

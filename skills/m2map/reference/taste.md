@@ -713,3 +713,40 @@ must handle:
 `catalog/cooccurrence.json` ; `catalog/textures.json` ; `catalog/environments.json` ;
 `catalog/roads.json` ; `scripts/m2map/gen/spec.py` ;
 `scripts/m2map/gen/texture.py` ; `scripts/m2map/gen/objects.py`
+
+---
+
+## Distance to water is a per-species rule, and it cuts both ways
+
+`affinity.json` measures `d_water_cm` for 349 of 420 catalogued CRCs and all 72
+families, and the spread between archetypes is large enough that ignoring it
+produces visibly wrong maps:
+
+| Family | d(water) p25 / p50 / p75, metres | Reading |
+|---|---|---|
+| `tree/n2` (arid) | 37 / **200** / 345 | avoids water |
+| `tree/n1` (winter) | 30 / **107** / 334 | avoids water |
+| `tree/b1` (broadleaf) | 16 / **54** / 146 | indifferent |
+| `tree/b3` | 12 / **53** / 131 | indifferent |
+| `zone/b/obj` (clutter) | 14 / **62** / 150 | indifferent |
+
+Every archetype's tier table now carries a `water_m` column with the observed
+p25/p50/p75 and a suggested `MapSpec.water_distance_m` band. 74 of 221 rows
+warrant a minimum; the other 124 are unconstrained.
+
+**Use the band, not the texture.** The obvious-looking way to put props at a
+waterline is to pin them to the shore texture with `on_tiles`. It does not work,
+and it fails *silently*: the splat is a per-tile stipple (see sec 5), so on a
+1x1 map with an oasis only about a dozen tiles actually carry the shore slot.
+Measured: pinning 20 palms and 10 barrels that way placed 3 palms and 0 barrels.
+Switching to `water_distance_m=(0, 11)` placed all of them.
+
+**Scale the magnitude to the map.** These distances were measured on 2x4 to 6x6
+maps. A 200 m minimum on a 1x1 map (256 m across) excludes the entire surface.
+Keep the *rule* -- arid flora stands back from water -- and scale the number to
+the map, saying that you did.
+
+**The corpus decorates oases with props, not plants.** `03-desert.md` puts it
+plainly: "do not ring an oasis with ferns -- decorate it with props". Palms
+around a desert pool are an authored choice, not corpus behaviour; if you make
+it, say so rather than presenting it as measured.

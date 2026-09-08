@@ -178,28 +178,31 @@ as a general boulder/fence kit.
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 `on_tiles` indexes the 9-slot palette above.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 239479779 | `ColoradoBlueSpruce1` (Tree, `tree/n1`) | 0.00462 | 1305 | 1,2,3 | 21 | 565 | (-80, -8) |
-| signature | 2418081500 | `Beech_Winter1` (Tree, `tree/n1`) | 0.00383 | 2717 | 1,2,3 | 25 | 847 | (-80, -12) |
-| signature | 2988076545 | `ColoradoBlueSpruce2` (Tree, `tree/n1`) | 0.00310 | 1129 | 1,2,3 | 24 | 282 | (-80, -31) |
-| signature | 2350806930 | `Beech_Winter2` (Tree, `tree/n1`) | 0.00287 | 2659 | 1,2,3 | 25 | 1094 | (-80, -80) |
-| signature | 772935195 | `ColoradoBlueSpruce3` (Tree, `tree/n1`) | 0.00232 | 1107 | 1,2,3 | 27 | 848 | (-80, -22) |
-| signature | 1313531708 | `Beech_Winter3` (Tree, `tree/n1`) | 0.00190 | 2933 | 1,2,3 | 26 | 1372 | (-80, -40) |
-| signature | 2661267695 | `WhitePine2` (Tree, `tree/n1`) | 0.00148 | 1064 | 1,2,3 | 13 | 730 | (0, 0) |
-| signature | 476855675 | `CommonOlive_Winter` (Tree, `tree/n1`) | 0.00124 | 2950 | 1,2,3 | 33 | 200 | (-80, -80) |
-| signature | 3641533454 | `MontereyCypress_Winter1` (Tree, `tree/n1`) | 0.00117 | 1809 | 1,2,3 | 26 | 1094 | (-80, -31) |
-| signature | 4193629000 | `MontereyCypress_Winter2` (Tree, `tree/n1`) | 0.00100 | 2509 | 1,2,3 | 36 | 262 | (-80, -40) |
-| accent | 886252439 | `MontereyCypress_Winter3` (Tree, `tree/n1`) | 0.00049 | 1755 | 1,2,3 | 33 | 1600 | (-80, -15) |
-| filler | 3785232591 | `general_obj_stone10` (Building, `zone/n/obj/snow.m`) | 0.00077 | 4093 | 1,2 | 19 | 2459 | (-25, 0) |
-| filler | 923239313 | `general_obj_fence03` (Building, `zone/n/obj/snow.m`) | 0.00075 | 358 | 1,2,7 | 8 | 0 | (-29, 0) |
-| filler | 1595676473 | `general_obj_stone13` (Building, `zone/n/obj/snow.m`) | 0.00073 | 2774 | 1,2 | 19 | 2015 | (-25, 0) |
-| filler | 3904665691 | `general_obj_stone14` (Building, `zone/n/obj/snow.m`) | 0.00055 | 9935 | 1,2 | 16 | 1815 | (-12, 5) |
-| filler | 3911262344 | `general_obj_stone07` (Building, `zone/n/obj/snow.m`) | 0.00053 | 6378 | 1,2 | 20 | 3673 | (-25, -15) |
-| filler | 2519560232 | `general_obj_fence02` (Building, `zone/n/obj/snow.m`) | 0.00053 | 307 | 1,2 | 6 | 800 | (0, 0) |
-| filler | 3590562120 | `general_obj_stone18` (Building, `zone/n/obj/snow.m`) | 0.00051 | 8005 | 1,2 | 15 | 3612 | (-25, 0) |
-| filler | 981658005 | `general_obj_stone1` (Building, `zone/n/obj/snow.m`) | 0.00046 | 5081 | 1,2 | 25 | 2541 | (-25, 0) |
-| accent | 2688839387 | `ice_01` (DungeonBlock, `zone/n/obj/snow.m`) | 0.00080 | 127 | 9 | 13 | 370 | (0, 0) |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 239479779 | `ColoradoBlueSpruce1` (Tree, `tree/n1`) | 0.00462 | 1305 | 1,2,3 | 21 | 565 | (-80, -8) | 35/98/265 (0, inf) |
+| signature | 2418081500 | `Beech_Winter1` (Tree, `tree/n1`) | 0.00383 | 2717 | 1,2,3 | 25 | 847 | (-80, -12) | 14/35/221 (0, inf) |
+| signature | 2988076545 | `ColoradoBlueSpruce2` (Tree, `tree/n1`) | 0.00310 | 1129 | 1,2,3 | 24 | 282 | (-80, -31) | 20/55/241 (0, inf) |
+| signature | 2350806930 | `Beech_Winter2` (Tree, `tree/n1`) | 0.00287 | 2659 | 1,2,3 | 25 | 1094 | (-80, -80) | 297/390/454 **(297, inf)** |
+| signature | 772935195 | `ColoradoBlueSpruce3` (Tree, `tree/n1`) | 0.00232 | 1107 | 1,2,3 | 27 | 848 | (-80, -22) | 120/228/286 **(120, inf)** |
+| signature | 1313531708 | `Beech_Winter3` (Tree, `tree/n1`) | 0.00190 | 2933 | 1,2,3 | 26 | 1372 | (-80, -40) | 50/93/399 (0, inf) |
+| signature | 2661267695 | `WhitePine2` (Tree, `tree/n1`) | 0.00148 | 1064 | 1,2,3 | 13 | 730 | (0, 0) | 21/41/62 (0, inf) |
+| signature | 476855675 | `CommonOlive_Winter` (Tree, `tree/n1`) | 0.00124 | 2950 | 1,2,3 | 33 | 200 | (-80, -80) | 25/104/442 **(25, inf)** |
+| signature | 3641533454 | `MontereyCypress_Winter1` (Tree, `tree/n1`) | 0.00117 | 1809 | 1,2,3 | 26 | 1094 | (-80, -31) | 78/229/358 **(78, inf)** |
+| signature | 4193629000 | `MontereyCypress_Winter2` (Tree, `tree/n1`) | 0.00100 | 2509 | 1,2,3 | 36 | 262 | (-80, -40) | 13/30/132 (0, inf) |
+| accent | 886252439 | `MontereyCypress_Winter3` (Tree, `tree/n1`) | 0.00049 | 1755 | 1,2,3 | 33 | 1600 | (-80, -15) | 29/198/354 **(29, inf)** |
+| filler | 3785232591 | `general_obj_stone10` (Building, `zone/n/obj/snow.m`) | 0.00077 | 4093 | 1,2 | 19 | 2459 | (-25, 0) | 46/46/46 (0, inf) |
+| filler | 923239313 | `general_obj_fence03` (Building, `zone/n/obj/snow.m`) | 0.00075 | 358 | 1,2,7 | 8 | 0 | (-29, 0) | 19/30/40 (0, inf) |
+| filler | 1595676473 | `general_obj_stone13` (Building, `zone/n/obj/snow.m`) | 0.00073 | 2774 | 1,2 | 19 | 2015 | (-25, 0) | 325/325/325 **(325, inf)** |
+| filler | 3904665691 | `general_obj_stone14` (Building, `zone/n/obj/snow.m`) | 0.00055 | 9935 | 1,2 | 16 | 1815 | (-12, 5) | 0/0/0 (0, inf) |
+| filler | 3911262344 | `general_obj_stone07` (Building, `zone/n/obj/snow.m`) | 0.00053 | 6378 | 1,2 | 20 | 3673 | (-25, -15) | ~0/8/34 (0, inf) |
+| filler | 2519560232 | `general_obj_fence02` (Building, `zone/n/obj/snow.m`) | 0.00053 | 307 | 1,2 | 6 | 800 | (0, 0) | 23/34/37 (0, inf) |
+| filler | 3590562120 | `general_obj_stone18` (Building, `zone/n/obj/snow.m`) | 0.00051 | 8005 | 1,2 | 15 | 3612 | (-25, 0) | ~0/8/34 (0, inf) |
+| filler | 981658005 | `general_obj_stone1` (Building, `zone/n/obj/snow.m`) | 0.00046 | 5081 | 1,2 | 25 | 2541 | (-25, 0) | ~0/8/34 (0, inf) |
+| accent | 2688839387 | `ice_01` (DungeonBlock, `zone/n/obj/snow.m`) | 0.00080 | 127 | 9 | 13 | 370 | (0, 0) | ~0/8/34 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 **`WhitePine2` is the exception that proves the sink rule**: bias exactly 0 at p25, p50
 and p75, roll zero-share only 0.20, `never_on` everything except snow and field, slope
@@ -229,11 +232,29 @@ p75 12.15 deg, p95 22.91 deg -- a *narrower* slope band than any other archetype
    and here the per-species zero-share runs 0.74-0.94. Only `WhitePine2` (0.20) breaks it.
    Yaw is zero in 99.3-100 % of records and pitch is **exactly 0 in every single
    `tree/n1` record**. Do not tilt a conifer.
-4. **Roads are wide and looped.** Width median 8.0 m (distance-transform 5.0 m),
-   4.88 loops/km -- the loopiest network of any archetype measured -- 7.51 junctions/km,
-   tortuosity 1.29, radius of curvature 27 m, **blend band 1.0 m** (a hard edge; snow
-   does not feather into the track). Buildings and trees both sit ~3,700-3,800 cm from
-   it (`placement.md` sec 5), the largest building setback of any field archetype.
+4. **The road texture is real; the road *grammar* is not measured.**
+   `n/snow.m/field 01.dds` (slot 4) is genuinely the path surface -- 2.38 % cover,
+   clump 6.54, 56 % non-edge, mean slope 4.67 deg, all from `textures.json` per-slot
+   shape statistics. Set `RoadSpec.tile_index = 4` with confidence.
+
+   > **Corrected 2026-09-08.** This entry previously gave a corridor grammar --
+   > "width median 8.0 m, 4.88 loops/km, the loopiest network of any archetype,
+   > 7.51 junctions/km, tortuosity 1.29, radius of curvature 27 m, blend band
+   > 1.0 m". Those figures came from `roads.json.by_archetype`, which pooled every
+   > map with `has_roads` including the ones the miner's own `road_verdict`
+   > rejected. **`snow_field` has zero maps with `verdict == "road"`**: its
+   > apparent network was large soft-edged snow regions the corridor detector
+   > mistook for tracks, which is exactly why the loop count came out highest in
+   > the corpus. The numbers are withdrawn, not corrected -- there is no
+   > measurement behind them.
+   >
+   > For a snow road, borrow the grammar from a confirmed-road archetype
+   > (`field_empire` or `field_valley`) and keep snow's own texture and setbacks.
+
+   The setback figures below are unaffected: they come from `affinity.json`
+   `d_road_cm`, measured against slot-4 pixels directly rather than against a
+   detected corridor. Buildings and trees sit ~3,700-3,800 cm out, the largest
+   building setback of any field archetype.
 5. **Boulders far out, fences on the road.** `general_obj_stone*` d(road) p25 = 1,800 -
    3,700 cm; `general_obj_fence02/03` d(road) p25 = 0-800 cm. The stone set is the
    wilderness, the fence set is the pass.
@@ -311,6 +332,19 @@ instances, which block 95.1-97.6 % of their cells outright.
     `snow03.dds`, `beach`/`sand*` -> `snow01.dds` (`textures.md` sec 4e).
 
 ---
+
+## Road grammar confidence
+
+**No map in this archetype has a confirmed road.** 4 of its maps trip the
+`has_roads` flag, but the miner's own `road_verdict` classifies every one as a
+`terrain_ribbon` or `ambiguous` -- large soft-edged regions the corridor detector
+mistakes for tracks. Any corridor grammar previously quoted here (width, loops,
+junctions, tortuosity, curvature, blend band) is **withdrawn**, not corrected:
+there is no measurement behind it.
+
+If the map needs a road, borrow the grammar from a confirmed-road archetype
+(`field_empire`, `field_valley`, `guild_village`) and keep this archetype's own
+path texture and setbacks.
 
 ## Sources
 

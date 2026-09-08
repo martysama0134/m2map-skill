@@ -158,11 +158,14 @@ Generic `zone/b/obj` clutter and b-family trees. Nothing else.
 Given for completeness only. `density` per 100 m^2; `spacing_cm` = NN(same CRC) p5;
 `max_slope` = per-CRC slope p95; `height_bias` = (bias p25, bias p75).
 
-| tier | crc | name | density | spacing_cm | max_slope | height_bias |
-|---|---|---|---|---|---|---|
-| filler | 628240070 | `ob-7-02-02` (Building, `zone/b/obj`) | 0.00381 | 143 | 37 | (-20, 0) |
-| filler | 1401373405 | `ob-7-03-01` (Building, `zone/b/obj`) | 0.00381 | 336 | 29 | (-50, 0) |
-| filler | 2399205967 | `Beech2` (Tree, `tree/b1`) | 0.00114 | 2934 | 45 | (-91, -13) |
+| tier | crc | name | density | spacing_cm | max_slope | height_bias | water_m |
+|---|---|---|---|---|---|---|---|
+| filler | 628240070 | `ob-7-02-02` (Building, `zone/b/obj`) | 0.00381 | 143 | 37 | (-20, 0) | 0/5/71 (0, inf) |
+| filler | 1401373405 | `ob-7-03-01` (Building, `zone/b/obj`) | 0.00381 | 336 | 29 | (-50, 0) | 2/27/63 (0, inf) |
+| filler | 2399205967 | `Beech2` (Tree, `tree/b1`) | 0.00114 | 2934 | 45 | (-91, -13) | 21/61/149 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 If you actually want this look, build a `field_empire` map at low density instead.
 
@@ -215,6 +218,19 @@ Every one of those is a useful regression test for a codec. None of them is a de
 decision.
 
 ---
+
+## Road grammar confidence
+
+**No map in this archetype has a confirmed road.** 4 of its maps trip the
+`has_roads` flag, but the miner's own `road_verdict` classifies every one as a
+`terrain_ribbon` or `ambiguous` -- large soft-edged regions the corridor detector
+mistakes for tracks. Any corridor grammar previously quoted here (width, loops,
+junctions, tortuosity, curvature, blend band) is **withdrawn**, not corrected:
+there is no measurement behind it.
+
+If the map needs a road, borrow the grammar from a confirmed-road archetype
+(`field_empire`, `field_valley`, `guild_village`) and keep this archetype's own
+path texture and setbacks.
 
 ## Sources
 

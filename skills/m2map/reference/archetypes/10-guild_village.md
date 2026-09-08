@@ -174,17 +174,20 @@ boulders -- at 2.9 m median spacing.
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 `on_tiles` indexes the 6-slot `metin2_guild_village.txt` palette above.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 565526255 | `general_obj_jar_red02` (Building, `zone/b/obj`) | 0.00305 | 91 | 2,3,6 | 17 | 0 | (-20, 0) |
-| signature | 2395018297 | `general_obj_jar_blue02` (Building, `zone/b/obj`) | 0.00283 | 72 | 2,3,6 | 9 | 0 | (-5, 0) |
-| signature | 673027490 | `ob-bigstone04` (Building, `zone/b/obj`) | 0.00371 | 507 | 2,4 | 45 | 812 | (-152, -65) |
-| signature | 4014868700 | `ob-bigstone03` (Building, `zone/b/obj`) | 0.00240 | 455 | 2,4 | 44 | 1295 | (-152, -61) |
-| filler | 2376089798 | `Pagoda2` (Tree, `tree/b1`) | 0.00610 | 2397 | 2,3 | 47 | 600 | (-273, -20) |
-| filler | 569394331 | `Pagoda1` (Tree, `tree/b1`) | 0.00588 | 1709 | 2,3 | 47 | 565 | (-358, -25) |
-| filler | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | 0.00436 | 1503 | 2,3 | 47 | 565 | (-152, -20) |
-| filler | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00218 | 2025 | 2,3 | 45 | 282 | (-91, -9) |
-| filler | 3748653682 | `MontereyCypress3` (Tree, `tree/b1`) | 0.00218 | 2794 | 2,3 | 47 | 200 | (-152, -5) |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 565526255 | `general_obj_jar_red02` (Building, `zone/b/obj`) | 0.00305 | 91 | 2,3,6 | 17 | 0 | (-20, 0) | 42/106/274 **(42, inf)** |
+| signature | 2395018297 | `general_obj_jar_blue02` (Building, `zone/b/obj`) | 0.00283 | 72 | 2,3,6 | 9 | 0 | (-5, 0) | 13/76/165 (0, inf) |
+| signature | 673027490 | `ob-bigstone04` (Building, `zone/b/obj`) | 0.00371 | 507 | 2,4 | 45 | 812 | (-152, -65) | 58/164/274 **(58, inf)** |
+| signature | 4014868700 | `ob-bigstone03` (Building, `zone/b/obj`) | 0.00240 | 455 | 2,4 | 44 | 1295 | (-152, -61) | 86/174/287 **(86, inf)** |
+| filler | 2376089798 | `Pagoda2` (Tree, `tree/b1`) | 0.00610 | 2397 | 2,3 | 47 | 600 | (-273, -20) | 18/61/181 (0, inf) |
+| filler | 569394331 | `Pagoda1` (Tree, `tree/b1`) | 0.00588 | 1709 | 2,3 | 47 | 565 | (-358, -25) | 14/75/187 (0, inf) |
+| filler | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | 0.00436 | 1503 | 2,3 | 47 | 565 | (-152, -20) | 17/68/178 (0, inf) |
+| filler | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00218 | 2025 | 2,3 | 45 | 282 | (-91, -9) | 27/64/143 (0, inf) |
+| filler | 3748653682 | `MontereyCypress3` (Tree, `tree/b1`) | 0.00218 | 2794 | 2,3 | 47 | 200 | (-152, -5) | 4/43/105 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 The rest of the 151 CRCs fall below the 420-row per-CRC cutoff in
 `stats-objects.json.by_crc`. Fill the `zone/b/obj` budget from the corpus-wide kit

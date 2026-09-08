@@ -180,28 +180,31 @@ Poisson-random. Smoke plumes are scattered one per vent, not clumped.
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 `on_tiles` indexes the 7-slot palette above.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 974491171 | `IvySpy_Winter2` (Tree, `tree/b2`) | 0.00445 | 1274 | 1,3,4,7 | 46 | 200 | (-72, 0) |
-| signature | 3449844455 | `IvySpy_Winter1` (Tree, `tree/b2`) | 0.00290 | 1467 | 1,3,4,7 | 45 | 0 | (-120, 0) |
-| signature | 1178450968 | `volcano_greatsmoke.mse` (Effect, `effect/background`) | 0.00100 | 1628 | 5,4 | 67 | 0 | (-200, 0) |
-| signature | 1253733280 | `volcano_biglongsmoke.mse` (Effect, `effect/background`) | 0.00030 | `TODO: no catalog evidence` (outside the 420-row per-CRC block) | 5,4 | -- | -- | -- |
-| filler | 163114965 | `general_obj_bigtower03.gr2` (Building, `zone/n/obj/map_n_flame_01`) | 0.00050 | 2270 | 1,2,3 | 20 | 0 | (-15, 0) |
-| filler | 1484581411 | `flame_fence_01` (Building, `zone/dungeon/flame_dungeon`) | 0.00020 | 867 | 3,4,7 | 57 | 447 | (0, 47) |
-| accent | 1013185983 | `warpgate02_01` (Building, `zone/b/obj`) | 0.00023 | 12363 | 6 | 3 | 0 | (-10, 0) |
-| accent | 2077239231 | `warpgate02` (Building, `zone/b/obj`) | 0.00023 | 23176 | 6 | 5 | 0 | (-5, 0) |
-| accent | 1812446801 | `warpgate03` (Effect, `effect/background`) | 0.00015 | 7800 | 6 | 5 | 0 | (-20, 0) |
-| accent | 929619867 | `warpgate01` (Effect, `effect/background`) | 0.00008 | 5512 | 6 | 3 | 0 | (55, 55) |
-| accent | 2406144081 | `Pagoda_Winter2` (Tree, `tree/b3`) | 0.00015 | 0 | 1,3 | 43 | 1247 | (-165, -4) |
-| accent | 2399981002 | `Pagoda_Winter1` (Tree, `tree/b3`) | 0.00013 | 0 | 1,3 | 45 | 860 | (-165, 0) |
-| accent | 4083482882 | `bigstone_bridge.GR2` (Building, `zone/n/flame`) | 0.00018 | `TODO: no catalog evidence` | 1,3 | -- | -- | -- |
-| accent | 1753372283 | `general_obj_bigtower05.gr2` (Building, `zone/n/obj/map_n_flame_01`) | 0.00013 | `TODO: no catalog evidence` | 1,3 | -- | -- | -- |
-| accent | 2750674910 | `boss_d_gate_01` (Building, `zone/dungeon/boss_dungeon_awake`) | 0.00010 | `TODO: no catalog evidence` | 3 | -- | -- | -- |
-| accent | 1370453778 | `stone02` (Building, `zone/dungeon/flame_dungeon`) | 0.00010 | `TODO: no catalog evidence` | 3,7 | -- | -- | -- |
-| accent | 1877709817 | `dragon_gate` (Building, `zone/dungeon/flame_dragon`) | 0.00008 | `TODO: no catalog evidence` | 3 | -- | -- | -- |
-| accent | 123351605 | `general_obj_stonedoor.gr2` (Building, `zone/n/obj/map_n_flame_01`) | 0.00008 | `TODO: no catalog evidence` | 1,3 | -- | -- | -- |
-| accent | 501538206 | `general_obj_bigtower06.gr2` (Building, `zone/n/obj/map_n_flame_01`) | 0.00008 | `TODO: no catalog evidence` | 1,3 | -- | -- | -- |
-| accent | 885871462 | `general_obj_bigtower07.gr2` (Building, `zone/n/obj/map_n_flame_01`) | 0.00008 | `TODO: no catalog evidence` | 1,3 | -- | -- | -- |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 974491171 | `IvySpy_Winter2` (Tree, `tree/b2`) | 0.00445 | 1274 | 1,3,4,7 | 46 | 200 | (-72, 0) | 33/164/574 **(33, inf)** |
+| signature | 3449844455 | `IvySpy_Winter1` (Tree, `tree/b2`) | 0.00290 | 1467 | 1,3,4,7 | 45 | 0 | (-120, 0) | 37/102/228 **(37, inf)** |
+| signature | 1178450968 | `volcano_greatsmoke.mse` (Effect, `effect/background`) | 0.00100 | 1628 | 5,4 | 67 | 0 | (-200, 0) | 85/134/524 **(85, inf)** |
+| signature | 1253733280 | `volcano_biglongsmoke.mse` (Effect, `effect/background`) | 0.00030 | `TODO: no catalog evidence` (outside the 420-row per-CRC block) | 5,4 | -- | -- | -- | n/a |
+| filler | 163114965 | `general_obj_bigtower03.gr2` (Building, `zone/n/obj/map_n_flame_01`) | 0.00050 | 2270 | 1,2,3 | 20 | 0 | (-15, 0) | 212/656/666 **(212, inf)** |
+| filler | 1484581411 | `flame_fence_01` (Building, `zone/dungeon/flame_dungeon`) | 0.00020 | 867 | 3,4,7 | 57 | 447 | (0, 47) | 89/101/102 **(89, inf)** |
+| accent | 1013185983 | `warpgate02_01` (Building, `zone/b/obj`) | 0.00023 | 12363 | 6 | 3 | 0 | (-10, 0) | 14/127/202 **(14, inf)** |
+| accent | 2077239231 | `warpgate02` (Building, `zone/b/obj`) | 0.00023 | 23176 | 6 | 5 | 0 | (-5, 0) | 35/166/327 **(35, inf)** |
+| accent | 1812446801 | `warpgate03` (Effect, `effect/background`) | 0.00015 | 7800 | 6 | 5 | 0 | (-20, 0) | 78/128/199 **(78, inf)** |
+| accent | 929619867 | `warpgate01` (Effect, `effect/background`) | 0.00008 | 5512 | 6 | 3 | 0 | (55, 55) | 31/123/225 **(31, inf)** |
+| accent | 2406144081 | `Pagoda_Winter2` (Tree, `tree/b3`) | 0.00015 | 0 | 1,3 | 43 | 1247 | (-165, -4) | 9/65/142 (0, inf) |
+| accent | 2399981002 | `Pagoda_Winter1` (Tree, `tree/b3`) | 0.00013 | 0 | 1,3 | 45 | 860 | (-165, 0) | 10/90/165 (0, inf) |
+| accent | 4083482882 | `bigstone_bridge.GR2` (Building, `zone/n/flame`) | 0.00018 | `TODO: no catalog evidence` | 1,3 | -- | -- | -- | n/a |
+| accent | 1753372283 | `general_obj_bigtower05.gr2` (Building, `zone/n/obj/map_n_flame_01`) | 0.00013 | `TODO: no catalog evidence` | 1,3 | -- | -- | -- | n/a |
+| accent | 2750674910 | `boss_d_gate_01` (Building, `zone/dungeon/boss_dungeon_awake`) | 0.00010 | `TODO: no catalog evidence` | 3 | -- | -- | -- | n/a |
+| accent | 1370453778 | `stone02` (Building, `zone/dungeon/flame_dungeon`) | 0.00010 | `TODO: no catalog evidence` | 3,7 | -- | -- | -- | n/a |
+| accent | 1877709817 | `dragon_gate` (Building, `zone/dungeon/flame_dragon`) | 0.00008 | `TODO: no catalog evidence` | 3 | -- | -- | -- | n/a |
+| accent | 123351605 | `general_obj_stonedoor.gr2` (Building, `zone/n/obj/map_n_flame_01`) | 0.00008 | `TODO: no catalog evidence` | 1,3 | -- | -- | -- | n/a |
+| accent | 501538206 | `general_obj_bigtower06.gr2` (Building, `zone/n/obj/map_n_flame_01`) | 0.00008 | `TODO: no catalog evidence` | 1,3 | -- | -- | -- | n/a |
+| accent | 885871462 | `general_obj_bigtower07.gr2` (Building, `zone/n/obj/map_n_flame_01`) | 0.00008 | `TODO: no catalog evidence` | 1,3 | -- | -- | -- | n/a |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 The CRCs marked `TODO` are real and used, but their placement counts fall below the
 420-row cutoff at which `stats-objects.json.by_crc` publishes per-CRC spacing, rotation,
@@ -305,6 +308,17 @@ hills, which block 96.5 % of their cells.
 10. **Zero water, four attr bytes, no paint convention.**
 
 ---
+
+## Road grammar confidence
+
+**1 of 2 road-bearing maps here are confirmed roads (50%.)** The rest are
+`terrain_ribbon` or `ambiguous` -- soft-edged regions the corridor detector picks
+up as tracks. `roads.json.by_archetype` is now filtered to the confirmed set, but
+with n=1 the width, curvature and junction figures are **indicative, not
+measured**. Treat them as a starting point and check the result by eye.
+
+The path-texture identification and the `d(road)` setbacks are unaffected: both
+come from per-slot and per-CRC statistics, not from corridor detection.
 
 ## Sources
 

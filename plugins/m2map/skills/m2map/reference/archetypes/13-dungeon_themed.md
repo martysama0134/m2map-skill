@@ -221,17 +221,20 @@ otherwise the slot is named in the note.
 
 **Pick one theme block.** These families do not co-occur.
 
-| tier | crc | name | theme | density | spacing_cm | max_slope | height_bias |
-|---|---|---|---|---|---|---|---|
-| signature | 2352670231 | `otherworld_skelleton_00` (DungeonBlock, `zone/otherworld`) | lava | 0.00204 | 113 | 30 | (0, 0) |
-| signature | 2391912034 | `otherworld_skelleton_01` (DungeonBlock, same) | lava | 0.00135 | 172 | 33 | (0, 0) |
-| signature | 3625228596 | `otherworld_skelleton_02` (DungeonBlock, same) | lava | 0.00055 | 285 | 36 | (-12, 0) |
-| signature | 2324583116 | `flower_01` (Building, `zone/secretdungeon`) | water garden | 0.00118 | 141 | 34 | (-24, -7) |
-| signature | 752518565 | `flower_02` (Building, same) | water garden | 0.00061 | 218 | 32 | (-32, -3) |
-| signature | 883725486 | `flower_05` (Building, same) | water garden | 0.00048 | 223 | 32 | (-7, -7) |
-| signature | 4090524507 | `WDC_01_door_02` (DungeonBlock, `zone/whitedragoncave/whitedragoncave_01`) | black cave | 0.00077 | **3000** | 0 | (0, 0) |
-| signature | 1727101311 | `WDC_01_Line_02` (DungeonBlock, same) | black cave | 0.00049 | **6000** | 0 | (0, 0) |
-| filler | 646376885 | `c1-038-wall-lin2` (Building, `zone/c/building`) | any | 0.00066 | **900** | 20 | (0, +5) |
+| tier | crc | name | theme | density | spacing_cm | max_slope | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|
+| signature | 2352670231 | `otherworld_skelleton_00` (DungeonBlock, `zone/otherworld`) | lava | 0.00204 | 113 | 30 | (0, 0) | ~0/0/0 (0, inf) |
+| signature | 2391912034 | `otherworld_skelleton_01` (DungeonBlock, same) | lava | 0.00135 | 172 | 33 | (0, 0) | ~0/0/0 (0, inf) |
+| signature | 3625228596 | `otherworld_skelleton_02` (DungeonBlock, same) | lava | 0.00055 | 285 | 36 | (-12, 0) | ~0/0/0 (0, inf) |
+| signature | 2324583116 | `flower_01` (Building, `zone/secretdungeon`) | water garden | 0.00118 | 141 | 34 | (-24, -7) | 0/0/0 (0, inf) |
+| signature | 752518565 | `flower_02` (Building, same) | water garden | 0.00061 | 218 | 32 | (-32, -3) | 0/0/0 (0, inf) |
+| signature | 883725486 | `flower_05` (Building, same) | water garden | 0.00048 | 223 | 32 | (-7, -7) | ~0/0/0 (0, inf) |
+| signature | 4090524507 | `WDC_01_door_02` (DungeonBlock, `zone/whitedragoncave/whitedragoncave_01`) | black cave | 0.00077 | **3000** | 0 | (0, 0) | n/a |
+| signature | 1727101311 | `WDC_01_Line_02` (DungeonBlock, same) | black cave | 0.00049 | **6000** | 0 | (0, 0) | n/a |
+| filler | 646376885 | `c1-038-wall-lin2` (Building, `zone/c/building`) | any | 0.00066 | **900** | 20 | (0, +5) | 9/13/51 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 `c1-038-wall-lin2` is the same 10 m wall module as `arena_pvp`'s
 `a1-038-wall-lin2_duel`, in the Empire-C skin: NN p5 900, p25 = p50 = 1,000 cm, yaw 0 in
@@ -331,6 +334,17 @@ any archetype.**
     loads.
 
 ---
+
+## Road grammar confidence
+
+**2 of 6 road-bearing maps here are confirmed roads (33%.)** The rest are
+`terrain_ribbon` or `ambiguous` -- soft-edged regions the corridor detector picks
+up as tracks. `roads.json.by_archetype` is now filtered to the confirmed set, but
+with n=2 the width, curvature and junction figures are **indicative, not
+measured**. Treat them as a starting point and check the result by eye.
+
+The path-texture identification and the `d(road)` setbacks are unaffected: both
+come from per-slot and per-CRC statistics, not from corridor detection.
 
 ## Sources
 

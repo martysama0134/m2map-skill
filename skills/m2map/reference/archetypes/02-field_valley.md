@@ -179,28 +179,31 @@ landmark tree, not a forest.
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 `on_tiles` indexes the 10-slot palette above.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00255 | 2025 | 1,3,4 | 45 | 282 | (-91, -9) |
-| signature | 3193282972 | `Sassafras_Fall1` (Tree, `tree/b1`) | 0.00245 | 4603 | 1,3,4 | 28 | 0 | (-45, -30) |
-| signature | 2376089798 | `Pagoda2` (Tree, `tree/b1`) | 0.00187 | 2397 | 1,3,4 | 46 | 600 | (-273, -20) |
-| signature | 1289994135 | `MontereyCypress4` (Tree, `tree/b1`) | 0.00167 | 3095 | 1,3,4 | 45 | 0 | (-92, -17) |
-| signature | 569394331 | `Pagoda1` (Tree, `tree/b1`) | 0.00143 | 1709 | 1,3,4 | 47 | 565 | (-358, -25) |
-| signature | 1671224775 | `MontereyCypress5` (Tree, `tree/b1`) | 0.00143 | 2469 | 1,3,4 | 47 | 200 | (-92, -5) |
-| signature | 3748653682 | `MontereyCypress3` (Tree, `tree/b1`) | 0.00143 | 2794 | 1,3,4 | 46 | 200 | (-152, -5) |
-| signature | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | 0.00135 | 1503 | 1,3,4 | 46 | 565 | (-152, -20) |
-| signature | 2399205967 | `Beech2` (Tree, `tree/b1`) | 0.00118 | 2934 | 1,3,4 | 44 | 600 | (-91, -13) |
-| signature | 4138381346 | `Sassafras_Fall2` (Tree, `tree/b1`) | 0.00116 | 6213 | 1,3,4 | 29 | 0 | (-45, -35) |
-| signature | 486960621 | `MontereyCypress2` (Tree, `tree/b1`) | 0.00112 | 2447 | 1,3,4 | 34 | 282 | (-60, 0) |
-| filler | 2679105379 | `general_obj_stone07` (Building, `zone/b/obj`) | 0.00173 | 2089 | 1,3,4 | 29 | 0 | (-60, -20) |
-| filler | 2767369424 | `general_obj_stone11` (Building, `zone/b/obj`) | 0.00149 | 228 | 1,3,4 | 26 | 0 | (-20, 28) |
-| filler | 3280855028 | `general_obj_stone08` (Building, `zone/b/obj`) | 0.00145 | 944 | 1,3,4 | 26 | 0 | (-55, -20) |
-| filler | 865570388 | `general_obj_stone10` (Building, `zone/b/obj`) | 0.00143 | 1001 | 1,3,4 | 30 | 0 | (-100, -20) |
-| filler | 2534098066 | `general_obj_stone06` (Building, `zone/b/obj`) | 0.00139 | 2334 | 1,3,4 | 29 | 0 | (-55, -9) |
-| filler | 2233363945 | `general_obj_stone12` (Building, `zone/b/obj`) | 0.00131 | 604 | 1,3,4 | 25 | 0 | (-59, -20) |
-| filler | 2763472928 | `general_obj_stone09` (Building, `zone/b/obj`) | 0.00122 | 1654 | 1,3,4 | 25 | 0 | (-40, -20) |
-| filler | 4122892297 | `general_obj_stone04` (Building, `zone/b/obj`) | 0.00110 | 1008 | 1,3,4 | 32 | 0 | (-30, 0) |
-| accent | 3455398876 | `Beech3` (Tree, `tree/b3`) | 0.00169 | 2662 | 1,3,4 | 41 | 400 | (-60, -5) |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00255 | 2025 | 1,3,4 | 45 | 282 | (-91, -9) | 27/64/143 (0, inf) |
+| signature | 3193282972 | `Sassafras_Fall1` (Tree, `tree/b1`) | 0.00245 | 4603 | 1,3,4 | 28 | 0 | (-45, -30) | 28/42/71 (0, inf) |
+| signature | 2376089798 | `Pagoda2` (Tree, `tree/b1`) | 0.00187 | 2397 | 1,3,4 | 46 | 600 | (-273, -20) | 18/61/181 (0, inf) |
+| signature | 1289994135 | `MontereyCypress4` (Tree, `tree/b1`) | 0.00167 | 3095 | 1,3,4 | 45 | 0 | (-92, -17) | 12/43/117 (0, inf) |
+| signature | 569394331 | `Pagoda1` (Tree, `tree/b1`) | 0.00143 | 1709 | 1,3,4 | 47 | 565 | (-358, -25) | 14/75/187 (0, inf) |
+| signature | 1671224775 | `MontereyCypress5` (Tree, `tree/b1`) | 0.00143 | 2469 | 1,3,4 | 47 | 200 | (-92, -5) | 10/37/98 (0, inf) |
+| signature | 3748653682 | `MontereyCypress3` (Tree, `tree/b1`) | 0.00143 | 2794 | 1,3,4 | 46 | 200 | (-152, -5) | 4/43/105 (0, inf) |
+| signature | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | 0.00135 | 1503 | 1,3,4 | 46 | 565 | (-152, -20) | 17/68/178 (0, inf) |
+| signature | 2399205967 | `Beech2` (Tree, `tree/b1`) | 0.00118 | 2934 | 1,3,4 | 44 | 600 | (-91, -13) | 21/61/149 (0, inf) |
+| signature | 4138381346 | `Sassafras_Fall2` (Tree, `tree/b1`) | 0.00116 | 6213 | 1,3,4 | 29 | 0 | (-45, -35) | 15/39/74 (0, inf) |
+| signature | 486960621 | `MontereyCypress2` (Tree, `tree/b1`) | 0.00112 | 2447 | 1,3,4 | 34 | 282 | (-60, 0) | 6/47/98 (0, inf) |
+| filler | 2679105379 | `general_obj_stone07` (Building, `zone/b/obj`) | 0.00173 | 2089 | 1,3,4 | 29 | 0 | (-60, -20) | 23/43/72 (0, inf) |
+| filler | 2767369424 | `general_obj_stone11` (Building, `zone/b/obj`) | 0.00149 | 228 | 1,3,4 | 26 | 0 | (-20, 28) | 0/47/93 (0, inf) |
+| filler | 3280855028 | `general_obj_stone08` (Building, `zone/b/obj`) | 0.00145 | 944 | 1,3,4 | 26 | 0 | (-55, -20) | 27/60/101 (0, inf) |
+| filler | 865570388 | `general_obj_stone10` (Building, `zone/b/obj`) | 0.00143 | 1001 | 1,3,4 | 30 | 0 | (-100, -20) | 26/56/133 (0, inf) |
+| filler | 2534098066 | `general_obj_stone06` (Building, `zone/b/obj`) | 0.00139 | 2334 | 1,3,4 | 29 | 0 | (-55, -9) | 16/43/81 (0, inf) |
+| filler | 2233363945 | `general_obj_stone12` (Building, `zone/b/obj`) | 0.00131 | 604 | 1,3,4 | 25 | 0 | (-59, -20) | 31/48/86 (0, inf) |
+| filler | 2763472928 | `general_obj_stone09` (Building, `zone/b/obj`) | 0.00122 | 1654 | 1,3,4 | 25 | 0 | (-40, -20) | 25/61/99 (0, inf) |
+| filler | 4122892297 | `general_obj_stone04` (Building, `zone/b/obj`) | 0.00110 | 1008 | 1,3,4 | 32 | 0 | (-30, 0) | 22/48/97 (0, inf) |
+| accent | 3455398876 | `Beech3` (Tree, `tree/b3`) | 0.00169 | 2662 | 1,3,4 | 41 | 400 | (-60, -5) | 22/71/168 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 The `general_obj_stone04..12` boulder run is this archetype's signature more than any
 tree is: nine distinct boulder CRCs, together ~7 per hectare, all sunk 20-60 cm, all

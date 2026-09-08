@@ -184,20 +184,23 @@ nine warpgates, one per spawn point.
 
 Use **one** seasonal block, not all three.
 
-| tier | crc | name | skin | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|---|
-| signature | 2384266347 | `snow-bigdam-02` (Building, `zone/n/obj/snow.m`) | snow | 0.00560 | **1000** | 1,3,4 | 0 | 626 | (-10, -10) |
-| signature | 695307364 | `snow-bigdam-04` (Building, `zone/n/obj/snow.m`) | snow | 0.00280 | **3000** | 1,3,4,9 | 0 | 697 | (-10, -10) |
-| signature | 2289739122 | `desert-bigdam-02` (Building, `zone/n/desert`) | desert | 0.00381 | **1000** | 1,9 | 0 | 450 | (0, 0) |
-| signature | 2698076810 | `desert-bigdam-04` (Building, `zone/n/desert`) | desert | 0.00242 | `TODO: no catalog evidence` | 1,9 | -- | -- | -- |
-| signature | 178856905 | `ob-bigdam-03` (Building, `zone/b/obj`) | summer | 0.00254 | **2000** | 1,3,4,9 | 54 | 400 | (-10, -10) |
-| signature | 3476577188 | `ob-bigdam-04` (Building, `zone/b/obj`) | summer | 0.00242 | **3000** | 1,3,4 | 49 | 1122 | (-10, -10) |
-| signature | 589233579 | `ob-bigdam-02` (Building, `zone/b/obj`) | summer | 0.00216 | `TODO: no catalog evidence` | 1,3,4 | -- | -- | -- |
-| filler | 1401373405 | `ob-7-03-01` (Building, `zone/b/obj`) | summer | 0.00254 | 336 | 4,9 | 29 | 3248 | (-50, 0) |
-| filler | 1861988977 | `desert_woodfence03` (Building, `zone/n/desert`) | desert | 0.00165 | 394 | 1,9 | 31 | -- | (-46, 0) |
-| accent | 1609982784 | `JoshuaTree_RT_03` (Tree, `tree/n2`) | desert | 0.00178 | 636 | 1,6,8 | 55 | 50 | (-879, -60) |
-| accent | 333987398 | `Palmetto_RT_03` (Tree, `tree/n2`) | desert | 0.00165 | 3817 | 1,3 | 36 | 1135 | (-95, -28) |
-| accent | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | summer | 0.00165 | 1503 | 1,3,4 | 47 | 565 | (-152, -20) |
+| tier | crc | name | skin | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|---|
+| signature | 2384266347 | `snow-bigdam-02` (Building, `zone/n/obj/snow.m`) | snow | 0.00560 | **1000** | 1,3,4 | 0 | 626 | (-10, -10) | 0/4/11 (0, inf) |
+| signature | 695307364 | `snow-bigdam-04` (Building, `zone/n/obj/snow.m`) | snow | 0.00280 | **3000** | 1,3,4,9 | 0 | 697 | (-10, -10) | 0/2/8 (0, inf) |
+| signature | 2289739122 | `desert-bigdam-02` (Building, `zone/n/desert`) | desert | 0.00381 | **1000** | 1,9 | 0 | 450 | (0, 0) | 31/76/177 (0, inf) |
+| signature | 2698076810 | `desert-bigdam-04` (Building, `zone/n/desert`) | desert | 0.00242 | `TODO: no catalog evidence` | 1,9 | -- | -- | -- | n/a |
+| signature | 178856905 | `ob-bigdam-03` (Building, `zone/b/obj`) | summer | 0.00254 | **2000** | 1,3,4,9 | 54 | 400 | (-10, -10) | 0/0/4 (0, inf) |
+| signature | 3476577188 | `ob-bigdam-04` (Building, `zone/b/obj`) | summer | 0.00242 | **3000** | 1,3,4 | 49 | 1122 | (-10, -10) | 0/2/10 (0, inf) |
+| signature | 589233579 | `ob-bigdam-02` (Building, `zone/b/obj`) | summer | 0.00216 | `TODO: no catalog evidence` | 1,3,4 | -- | -- | -- | n/a |
+| filler | 1401373405 | `ob-7-03-01` (Building, `zone/b/obj`) | summer | 0.00254 | 336 | 4,9 | 29 | 3248 | (-50, 0) | 2/27/63 (0, inf) |
+| filler | 1861988977 | `desert_woodfence03` (Building, `zone/n/desert`) | desert | 0.00165 | 394 | 1,9 | 31 | -- | (-46, 0) | 39/101/535 **(39, inf)** |
+| accent | 1609982784 | `JoshuaTree_RT_03` (Tree, `tree/n2`) | desert | 0.00178 | 636 | 1,6,8 | 55 | 50 | (-879, -60) | 180/350/592 **(180, inf)** |
+| accent | 333987398 | `Palmetto_RT_03` (Tree, `tree/n2`) | desert | 0.00165 | 3817 | 1,3 | 36 | 1135 | (-95, -28) | 6/96/163 (0, inf) |
+| accent | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | summer | 0.00165 | 1503 | 1,3,4 | 47 | 565 | (-152, -20) | 17/68/178 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 **The dam kit is the whole archetype.** `snow-bigdam-02` has NN(same CRC) at exactly
 1,000 cm for p25, p50 *and* p75 -- a wall segment laid on a 10 m module.

@@ -181,18 +181,21 @@ Trees are decoration only -- 192 records, 12.7 %, at 25-33 m spacing.
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 `on_tiles` indexes the 17-slot palette above.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 3967461885 | `double_01` (Building, `zone/eastplain`) | 0.00220 | 629 | 1,2,8,10 | 33 | 282 | (-273, -17) |
-| signature | 732124720 | `double_02` (Building, `zone/eastplain`) | 0.00198 | 307 | 1,2,8,10 | 31 | 400 | (-91, 0) |
-| signature | 3999910207 | `double_04` (Building, `zone/eastplain`) | 0.00198 | 647 | 1,2,8,10 | 45 | 282 | (-31, 0) |
-| signature | 2221821084 | `double_03` (Building, `zone/eastplain`) | 0.00183 | 417 | 1,2,8,10 | 32 | 282 | (-15, 5) |
-| signature | 513101969 | `gaint_fence05_d` (Building, `zone/eastplain`) | 0.00162 | 900 | 5,8,10,11 | 26 | 565 | (0, 34) |
-| signature | 4171822572 | `gaint_fence04_d` (Building, `zone/eastplain`) | 0.00085 | 655 | 7,8,10 | 30 | 1827 | (-72, 0) |
-| signature | 2788543263 | `gaint_pillar00_d` (Building, `zone/eastplain`) | 0.00085 | 617 | 5,8,10,14 | 49 | 400 | (0, 51) |
-| filler | 921849695 | `deadwood_05` (Building, `zone/eastplain`) | 0.00092 | 4997 | 2,3,10,11 | 47 | 400 | (-284, 0) |
-| filler | 1502496769 | `deadwood_01` (Building, `zone/eastplain`) | 0.00082 | 1983 | 1,2,5,10 | 52 | 241 | (-62, 0) |
-| accent | 196033080 | `anthill_05` (Building, `zone/eastplain`) | 0.00085 | 8902 | 2,3,10,11 | 53 | 659 | (-275, -31) |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 3967461885 | `double_01` (Building, `zone/eastplain`) | 0.00220 | 629 | 1,2,8,10 | 33 | 282 | (-273, -17) | 111/234/372 **(111, inf)** |
+| signature | 732124720 | `double_02` (Building, `zone/eastplain`) | 0.00198 | 307 | 1,2,8,10 | 31 | 400 | (-91, 0) | 85/160/342 **(85, inf)** |
+| signature | 3999910207 | `double_04` (Building, `zone/eastplain`) | 0.00198 | 647 | 1,2,8,10 | 45 | 282 | (-31, 0) | 101/181/323 **(101, inf)** |
+| signature | 2221821084 | `double_03` (Building, `zone/eastplain`) | 0.00183 | 417 | 1,2,8,10 | 32 | 282 | (-15, 5) | 78/157/287 **(78, inf)** |
+| signature | 513101969 | `gaint_fence05_d` (Building, `zone/eastplain`) | 0.00162 | 900 | 5,8,10,11 | 26 | 565 | (0, 34) | 36/100/315 **(36, inf)** |
+| signature | 4171822572 | `gaint_fence04_d` (Building, `zone/eastplain`) | 0.00085 | 655 | 7,8,10 | 30 | 1827 | (-72, 0) | 49/69/192 (0, inf) |
+| signature | 2788543263 | `gaint_pillar00_d` (Building, `zone/eastplain`) | 0.00085 | 617 | 5,8,10,14 | 49 | 400 | (0, 51) | 52/156/363 **(52, inf)** |
+| filler | 921849695 | `deadwood_05` (Building, `zone/eastplain`) | 0.00092 | 4997 | 2,3,10,11 | 47 | 400 | (-284, 0) | 202/314/393 **(202, inf)** |
+| filler | 1502496769 | `deadwood_01` (Building, `zone/eastplain`) | 0.00082 | 1983 | 1,2,5,10 | 52 | 241 | (-62, 0) | 82/234/300 **(82, inf)** |
+| accent | 196033080 | `anthill_05` (Building, `zone/eastplain`) | 0.00085 | 8902 | 2,3,10,11 | 53 | 659 | (-275, -31) | 208/294/430 **(208, inf)** |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 `double_01..04` are the archetype's silhouette: broken twin pillars, 262 records
 combined, planted 8-14 m apart on grass and rock. All four have **roll zero-share of
@@ -294,6 +297,17 @@ object halo 4.3 %, residual 0.8 %. 72.4 % of cells blocked.
 10. **`sungma_attr.txt` in every map root.**
 
 ---
+
+## Road grammar confidence
+
+**2 of 3 road-bearing maps here are confirmed roads (67%.)** The rest are
+`terrain_ribbon` or `ambiguous` -- soft-edged regions the corridor detector picks
+up as tracks. `roads.json.by_archetype` is now filtered to the confirmed set, but
+with n=2 the width, curvature and junction figures are **indicative, not
+measured**. Treat them as a starting point and check the result by eye.
+
+The path-texture identification and the `d(road)` setbacks are unaffected: both
+come from per-slot and per-CRC statistics, not from corridor detection.
 
 ## Sources
 

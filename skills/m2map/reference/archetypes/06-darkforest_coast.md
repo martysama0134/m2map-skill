@@ -218,28 +218,31 @@ records -- JoshuaTrees on the black sand and the mtthunder scarps -- alongside 1
 `road_clearance_cm` = per-CRC d(road) p25; `height_bias` = (bias p25, bias p75).
 `on_tiles` indexes the 12-slot `metin2_CapeDragonHead.txt` palette above.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 1214881363 | `gaint_fence04` (Building, `.../camp`) | 0.00128 | 515 | 2,3,4,11 | 41 | 0 | (-212, -30) |
-| signature | 308757728 | `thing_fire_stand_bowl_00` (Building, `zone/devils_dragon_island`) | 0.00080 | 884 | 2,3,4,11 | 21 | 0 | (-28, -1) |
-| signature | 1609982784 | `JoshuaTree_RT_03` (Tree, `tree/n2`) | 0.00209 | 636 | 4,6 | 55 | 50 | (-879, -60) |
-| signature | 3498019135 | `JoshuaTree_RT_02` (Tree, `tree/n2`) | 0.00129 | 1249 | 4,6 | 59 | 200 | (-827, -60) |
-| signature | 1105271114 | `JoshuaTree_RT_01` (Tree, `tree/n2`) | 0.00112 | 1233 | 4,6 | 49 | 200 | (-827, -35) |
-| signature | 4014868700 | `ob-bigstone03` (Building, `zone/b/obj`) | 0.00166 | 455 | 2,4,11 | 44 | 1295 | (-152, -61) |
-| signature | 1211097993 | `ob-bigstone02` (Building, `zone/b/obj`) | 0.00119 | 353 | 2,4,11 | 46 | 647 | (-152, -31) |
-| signature | 673027490 | `ob-bigstone04` (Building, `zone/b/obj`) | 0.00104 | 507 | 2,4,11 | 45 | 812 | (-152, -65) |
-| signature | 2653701801 | `ob-bigstone01` (Building, `zone/b/obj`) | 0.00103 | 471 | 2,4,11 | 48 | 1000 | (-160, -91) |
-| filler | 569394331 | `Pagoda1` (Tree, `tree/b1`) | 0.00336 | 1709 | 1,2,3,11 | 47 | 565 | (-358, -25) |
-| filler | 2376089798 | `Pagoda2` (Tree, `tree/b1`) | 0.00319 | 2397 | 1,2,3,11 | 46 | 600 | (-273, -20) |
-| filler | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | 0.00313 | 1503 | 1,2,3,11 | 46 | 565 | (-152, -20) |
-| filler | 2399205967 | `Beech2` (Tree, `tree/b1`) | 0.00209 | 2934 | 1,2,3,11 | 44 | 600 | (-91, -13) |
-| filler | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00144 | 2025 | 1,2,3,11 | 45 | 282 | (-91, -9) |
-| filler | 1353164984 | `Beech1` (Tree, `tree/b1`) | 0.00128 | 2765 | 1,2,3,11 | 46 | 262 | (-76, -16) |
-| filler | 3748653682 | `MontereyCypress3` (Tree, `tree/b1`) | 0.00119 | 2794 | 1,2,3,11 | 46 | 200 | (-152, -5) |
-| filler | 3455398876 | `Beech3` (Tree, `tree/b3`) | 0.00118 | 2662 | 1,2,3,11 | 41 | 400 | (-60, -5) |
-| filler | 1289994135 | `MontereyCypress4` (Tree, `tree/b1`) | 0.00082 | 3095 | 1,2,3,11 | 45 | 0 | (-92, -17) |
-| filler | 358206493 | `ob-b1-005-woodbarrel` (Building, `zone/b/obj`) | 0.00110 | 73 | 3,6 | 10 | 0 | (-5, 0) |
-| accent | 1471924893 | `ob-7-02-01` (Building, `zone/b/obj`) | 0.00085 | 213 | 3,7 | 22 | 0 | (-20, 108) |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 1214881363 | `gaint_fence04` (Building, `.../camp`) | 0.00128 | 515 | 2,3,4,11 | 41 | 0 | (-212, -30) | 180/282/353 **(180, inf)** |
+| signature | 308757728 | `thing_fire_stand_bowl_00` (Building, `zone/devils_dragon_island`) | 0.00080 | 884 | 2,3,4,11 | 21 | 0 | (-28, -1) | 144/256/314 **(144, inf)** |
+| signature | 1609982784 | `JoshuaTree_RT_03` (Tree, `tree/n2`) | 0.00209 | 636 | 4,6 | 55 | 50 | (-879, -60) | 180/350/592 **(180, inf)** |
+| signature | 3498019135 | `JoshuaTree_RT_02` (Tree, `tree/n2`) | 0.00129 | 1249 | 4,6 | 59 | 200 | (-827, -60) | 183/304/452 **(183, inf)** |
+| signature | 1105271114 | `JoshuaTree_RT_01` (Tree, `tree/n2`) | 0.00112 | 1233 | 4,6 | 49 | 200 | (-827, -35) | 200/389/589 **(200, inf)** |
+| signature | 4014868700 | `ob-bigstone03` (Building, `zone/b/obj`) | 0.00166 | 455 | 2,4,11 | 44 | 1295 | (-152, -61) | 86/174/287 **(86, inf)** |
+| signature | 1211097993 | `ob-bigstone02` (Building, `zone/b/obj`) | 0.00119 | 353 | 2,4,11 | 46 | 647 | (-152, -31) | 59/206/281 **(59, inf)** |
+| signature | 673027490 | `ob-bigstone04` (Building, `zone/b/obj`) | 0.00104 | 507 | 2,4,11 | 45 | 812 | (-152, -65) | 58/164/274 **(58, inf)** |
+| signature | 2653701801 | `ob-bigstone01` (Building, `zone/b/obj`) | 0.00103 | 471 | 2,4,11 | 48 | 1000 | (-160, -91) | 94/178/273 **(94, inf)** |
+| filler | 569394331 | `Pagoda1` (Tree, `tree/b1`) | 0.00336 | 1709 | 1,2,3,11 | 47 | 565 | (-358, -25) | 14/75/187 (0, inf) |
+| filler | 2376089798 | `Pagoda2` (Tree, `tree/b1`) | 0.00319 | 2397 | 1,2,3,11 | 46 | 600 | (-273, -20) | 18/61/181 (0, inf) |
+| filler | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | 0.00313 | 1503 | 1,2,3,11 | 46 | 565 | (-152, -20) | 17/68/178 (0, inf) |
+| filler | 2399205967 | `Beech2` (Tree, `tree/b1`) | 0.00209 | 2934 | 1,2,3,11 | 44 | 600 | (-91, -13) | 21/61/149 (0, inf) |
+| filler | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00144 | 2025 | 1,2,3,11 | 45 | 282 | (-91, -9) | 27/64/143 (0, inf) |
+| filler | 1353164984 | `Beech1` (Tree, `tree/b1`) | 0.00128 | 2765 | 1,2,3,11 | 46 | 262 | (-76, -16) | 19/68/167 (0, inf) |
+| filler | 3748653682 | `MontereyCypress3` (Tree, `tree/b1`) | 0.00119 | 2794 | 1,2,3,11 | 46 | 200 | (-152, -5) | 4/43/105 (0, inf) |
+| filler | 3455398876 | `Beech3` (Tree, `tree/b3`) | 0.00118 | 2662 | 1,2,3,11 | 41 | 400 | (-60, -5) | 22/71/168 (0, inf) |
+| filler | 1289994135 | `MontereyCypress4` (Tree, `tree/b1`) | 0.00082 | 3095 | 1,2,3,11 | 45 | 0 | (-92, -17) | 12/43/117 (0, inf) |
+| filler | 358206493 | `ob-b1-005-woodbarrel` (Building, `zone/b/obj`) | 0.00110 | 73 | 3,6 | 10 | 0 | (-5, 0) | 20/85/261 (0, inf) |
+| accent | 1471924893 | `ob-7-02-01` (Building, `zone/b/obj`) | 0.00085 | 213 | 3,7 | 22 | 0 | (-20, 108) | 51/119/230 **(51, inf)** |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 The **bone set** deserves its own note even though its individual CRCs fall below the
 420-row per-CRC cutoff. `zone/devils_dragon_island/bone` is 242 records here (234 of them
@@ -354,6 +357,17 @@ out-of-bounds 8.0 %, residual 3.0 %. 68.8 % of cells blocked.
     region mosaic, essentially no stipple.
 
 ---
+
+## Road grammar confidence
+
+**4 of 5 road-bearing maps here are confirmed roads (80%.)** The rest are
+`terrain_ribbon` or `ambiguous` -- soft-edged regions the corridor detector picks
+up as tracks. `roads.json.by_archetype` is now filtered to the confirmed set, but
+with n=4 the width, curvature and junction figures are **indicative, not
+measured**. Treat them as a starting point and check the result by eye.
+
+The path-texture identification and the `d(road)` setbacks are unaffected: both
+come from per-slot and per-CRC statistics, not from corridor detection.
 
 ## Sources
 

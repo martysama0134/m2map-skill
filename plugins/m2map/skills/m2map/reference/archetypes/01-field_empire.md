@@ -221,28 +221,31 @@ than chance. Everything else clumps.
 `height_bias` = (p25, p75) of the stored bias, sampled uniformly.
 `on_tiles` refers to the 17-slot palette above.
 
-| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias |
-|---|---|---|---|---|---|---|---|---|
-| signature | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00224 | 2025 | 1,4,5,6,7 | 45 | 280 | (-91, -9) |
-| signature | 569394331 | `Pagoda1` (Tree, `tree/b1`) | 0.00201 | 1709 | 1,4,5,6,7 | 47 | 565 | (-358, -25) |
-| signature | 2376089798 | `Pagoda2` (Tree, `tree/b1`) | 0.00186 | 2397 | 1,4,5,6,7 | 46 | 600 | (-273, -20) |
-| signature | 3748653682 | `MontereyCypress3` (Tree, `tree/b1`) | 0.00185 | 2794 | 1,4,5,6,7 | 46 | 200 | (-152, -5) |
-| signature | 3455398876 | `Beech3` (Tree, `tree/b3`) | 0.00185 | 2662 | 1,4,5,6,7 | 41 | 400 | (-60, -5) |
-| signature | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | 0.00183 | 1503 | 1,4,5,6,7 | 46 | 565 | (-152, -20) |
-| signature | 2399205967 | `Beech2` (Tree, `tree/b1`) | 0.00169 | 2934 | 1,4,5,6,7 | 44 | 600 | (-91, -13) |
-| signature | 1289994135 | `MontereyCypress4` (Tree, `tree/b1`) | 0.00157 | 3095 | 1,4,5,6,7 | 45 | 0 | (-92, -17) |
-| signature | 2188671155 | `MontereyCypress1` (Tree, `tree/b1`) | 0.00157 | 3039 | 1,4,5,6,7 | 41 | 282 | (-100, -3) |
-| signature | 486960621 | `MontereyCypress2` (Tree, `tree/b1`) | 0.00148 | 2447 | 1,4,5,6,7 | 34 | 282 | (-60, 0) |
-| signature | 1353164984 | `Beech1` (Tree, `tree/b1`) | 0.00140 | 2765 | 1,4,5,6,7 | 46 | 262 | (-76, -16) |
-| signature | 1671224775 | `MontereyCypress5` (Tree, `tree/b1`) | 0.00112 | 2469 | 1,4,5,6,7 | 47 | 200 | (-92, -5) |
-| filler | 1401373405 | `ob-7-03-01` (Building, `zone/b/obj`) | 0.00197 | 336 | 4,5,6,7 | 29 | 3248 | (-50, 0) |
-| filler | 538957537 | `general_obj_fence03` (Building, `zone/b/obj`) | 0.00143 | 335 | 1,4,5,6,14 | 24 | 447 | (-15, 0) |
-| filler | 358206493 | `ob-b1-005-woodbarrel` (Building, `zone/b/obj`) | 0.00121 | 73 | 1,4,5,6 | 10 | 0 | (-5, 0) |
-| filler | 1535330398 | `general_obj_fence01` (Building, `zone/b/obj`) | 0.00121 | 427 | 4,5,6,8 | 24 | 447 | (-30, 0) |
-| filler | 1817296008 | `general_obj_fence02` (Building, `zone/b/obj`) | 0.00099 | 299 | 4,5,6 | 18 | 400 | (-30, 0) |
-| filler | 1167113627 | `ob-b1-001-box02` (Building, `zone/b/obj`) | 0.00095 | 86 | 1,4,5,6 | 10 | 0 | (-5, 0) |
-| accent | 1985750273 | `b1-middledam-02` (Building, `zone/b/building`) | 0.00110 | 996 | 5,6,12 | 0 | 730 | (0, 0) |
-| accent | 3193282972 | `Sassafras_Fall1` (Tree, `tree/b1`) | 0.00099 | 4603 | 1,4,5,6 | 28 | 0 | (-45, -30) |
+| tier | crc | name | density | spacing_cm | on_tiles | max_slope | road_clear_cm | height_bias | water_m |
+|---|---|---|---|---|---|---|---|---|---|
+| signature | 3689520799 | `Beech4` (Tree, `tree/b1`) | 0.00224 | 2025 | 1,4,5,6,7 | 45 | 280 | (-91, -9) | 27/64/143 (0, inf) |
+| signature | 569394331 | `Pagoda1` (Tree, `tree/b1`) | 0.00201 | 1709 | 1,4,5,6,7 | 47 | 565 | (-358, -25) | 14/75/187 (0, inf) |
+| signature | 2376089798 | `Pagoda2` (Tree, `tree/b1`) | 0.00186 | 2397 | 1,4,5,6,7 | 46 | 600 | (-273, -20) | 18/61/181 (0, inf) |
+| signature | 3748653682 | `MontereyCypress3` (Tree, `tree/b1`) | 0.00185 | 2794 | 1,4,5,6,7 | 46 | 200 | (-152, -5) | 4/43/105 (0, inf) |
+| signature | 3455398876 | `Beech3` (Tree, `tree/b3`) | 0.00185 | 2662 | 1,4,5,6,7 | 41 | 400 | (-60, -5) | 22/71/168 (0, inf) |
+| signature | 1107711305 | `Pagoda3` (Tree, `tree/b1`) | 0.00183 | 1503 | 1,4,5,6,7 | 46 | 565 | (-152, -20) | 17/68/178 (0, inf) |
+| signature | 2399205967 | `Beech2` (Tree, `tree/b1`) | 0.00169 | 2934 | 1,4,5,6,7 | 44 | 600 | (-91, -13) | 21/61/149 (0, inf) |
+| signature | 1289994135 | `MontereyCypress4` (Tree, `tree/b1`) | 0.00157 | 3095 | 1,4,5,6,7 | 45 | 0 | (-92, -17) | 12/43/117 (0, inf) |
+| signature | 2188671155 | `MontereyCypress1` (Tree, `tree/b1`) | 0.00157 | 3039 | 1,4,5,6,7 | 41 | 282 | (-100, -3) | 10/46/126 (0, inf) |
+| signature | 486960621 | `MontereyCypress2` (Tree, `tree/b1`) | 0.00148 | 2447 | 1,4,5,6,7 | 34 | 282 | (-60, 0) | 6/47/98 (0, inf) |
+| signature | 1353164984 | `Beech1` (Tree, `tree/b1`) | 0.00140 | 2765 | 1,4,5,6,7 | 46 | 262 | (-76, -16) | 19/68/167 (0, inf) |
+| signature | 1671224775 | `MontereyCypress5` (Tree, `tree/b1`) | 0.00112 | 2469 | 1,4,5,6,7 | 47 | 200 | (-92, -5) | 10/37/98 (0, inf) |
+| filler | 1401373405 | `ob-7-03-01` (Building, `zone/b/obj`) | 0.00197 | 336 | 4,5,6,7 | 29 | 3248 | (-50, 0) | 2/27/63 (0, inf) |
+| filler | 538957537 | `general_obj_fence03` (Building, `zone/b/obj`) | 0.00143 | 335 | 1,4,5,6,14 | 24 | 447 | (-15, 0) | 12/51/134 (0, inf) |
+| filler | 358206493 | `ob-b1-005-woodbarrel` (Building, `zone/b/obj`) | 0.00121 | 73 | 1,4,5,6 | 10 | 0 | (-5, 0) | 20/85/261 (0, inf) |
+| filler | 1535330398 | `general_obj_fence01` (Building, `zone/b/obj`) | 0.00121 | 427 | 4,5,6,8 | 24 | 447 | (-30, 0) | 0/36/126 (0, inf) |
+| filler | 1817296008 | `general_obj_fence02` (Building, `zone/b/obj`) | 0.00099 | 299 | 4,5,6 | 18 | 400 | (-30, 0) | 2/30/91 (0, inf) |
+| filler | 1167113627 | `ob-b1-001-box02` (Building, `zone/b/obj`) | 0.00095 | 86 | 1,4,5,6 | 10 | 0 | (-5, 0) | 44/98/263 (0, inf) |
+| accent | 1985750273 | `b1-middledam-02` (Building, `zone/b/building`) | 0.00110 | 996 | 5,6,12 | 0 | 730 | (0, 0) | 0/20/55 (0, inf) |
+| accent | 3193282972 | `Sassafras_Fall1` (Tree, `tree/b1`) | 0.00099 | 4603 | 1,4,5,6 | 28 | 0 | (-45, -30) | 28/42/71 (0, inf) |
+
+`water_m` = observed distance to the nearest water, p25/p50/p75 in metres (`affinity.json` `by_crc[crc].d_water_cm`; `~` = the family's figure where the CRC has none). The bold `(min, inf)` is the suggested `MapSpec.water_distance_m` for species that measurably avoid water. A species that tolerates it gets no constraint; give oasis or shore decoration a `(0, max)` band instead -- do NOT try to pin it to the shore texture, which is a stipple and covers only a handful of tiles.
+
 
 The empire discriminator is not in this table because it is small and map-specific: add
 **one** house family and only one -- `zone/a/building` (86 records archetype-wide, NN
@@ -384,6 +387,17 @@ generic green terrain.
    longer starts to read as `desert` or `darkforest_coast`.
 
 ---
+
+## Road grammar confidence
+
+**10 of 14 road-bearing maps here are confirmed roads (71%.)** The rest are
+`terrain_ribbon` or `ambiguous` -- soft-edged regions the corridor detector picks
+up as tracks. `roads.json.by_archetype` is now filtered to the confirmed set, but
+with n=10 the width, curvature and junction figures are **indicative, not
+measured**. Treat them as a starting point and check the result by eye.
+
+The path-texture identification and the `d(road)` setbacks are unaffected: both
+come from per-slot and per-CRC statistics, not from corridor detection.
 
 ## Sources
 
