@@ -31,7 +31,7 @@ from dataclasses import dataclass, field
 from typing import List, Optional
 
 from .textfile import (BlockItem, FlatDoc, KeyItem, atof, atoi, encode, fmt_f,
-                       parse_flat, quote)
+                       parse_flat, quote, SourcePreserving)
 
 __all__ = ["TextureEntry", "TextureSet", "MAX_TERRAIN_TEXTURES",
            "MAX_USABLE_TEXTURES", "TERRAIN_TEXCOORD_BASE"]
@@ -90,7 +90,7 @@ class TextureEntry:
 
 
 @dataclass
-class TextureSet:
+class TextureSet(SourcePreserving):
     """A parsed texture set.
 
     :attr:`slots` is indexed the way ``tile.raw`` is: ``slots[0]`` is always
@@ -130,6 +130,7 @@ class TextureSet:
                 continue                              # engine: `continue`
             ts.slots[i] = TextureEntry.from_tokens(blk.values)
         ts.ignored_blocks += [b.name for b in by_key.values()]
+        ts._snapshot()
         return ts
 
     @classmethod
@@ -178,7 +179,9 @@ class TextureSet:
 
     # -- write -------------------------------------------------------------
     def render(self) -> str:
-        return self.doc.render() if self.doc is not None else self.render_canonical()
+        if self.doc is not None and not self.dirty:
+            return self.doc.render()
+        return self.render_canonical()
 
     def to_bytes(self) -> bytes:
         return encode(self.render())

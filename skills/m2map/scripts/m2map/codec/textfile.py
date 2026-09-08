@@ -33,7 +33,7 @@ must not be transcoded.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields as dc_fields, is_dataclass
 from typing import Iterable, Iterator, List, Optional, Sequence, Tuple
 
 __all__ = [
@@ -589,3 +589,76 @@ def atof(s: str) -> float:
 def fmt_f(v: float) -> str:
     """C ``printf("%f")``: always six decimals, keeps the sign of -0.0."""
     return "%f" % v
+
+
+# ---------------------------------------------------------------------------
+# Source preservation vs. mutation
+# ---------------------------------------------------------------------------
+#
+# Every text container here keeps the parsed document so an untouched file
+# round-trips byte-for-byte -- original float formatting, key order, whitespace
+# and all. Replaying it unconditionally, however, means an edit to the semantic
+# model never reaches the output: the caller sets `setting.map_size`, the stored
+# document is re-emitted verbatim, and the change is silently dropped.
+#
+# That matters because every mode this skill offers is a mutation. The mixin
+# below keeps both properties: replay the source while the model still matches
+# what was parsed, re-render from the model once it does not.
+
+#: Attribute names that carry source formatting rather than meaning, at any
+#: nesting depth. Excluded from the comparison so that re-rendering a value
+#: (which legitimately drops its captured token) does not read as a change.
+FORMATTING_ATTRS = frozenset({
+    "doc", "source", "raw", "_raw", "_src_state",
+    "rotation_token", "crc_token", "token_count",
+    "layout", "block_layout", "trailing",
+})
+
+
+def _value_state(v):
+    """Value identity, recursing into dataclasses and sequences."""
+    if is_dataclass(v) and not isinstance(v, type):
+        return "{" + ",".join(
+            "%s=%s" % (f.name, _value_state(getattr(v, f.name, None)))
+            for f in dc_fields(v) if f.name not in FORMATTING_ATTRS
+        ) + "}"
+    if isinstance(v, (list, tuple)):
+        return "[" + ",".join(_value_state(x) for x in v) + "]"
+    if isinstance(v, dict):
+        return "{" + ",".join("%r:%s" % (k, _value_state(v[k]))
+                              for k in sorted(v, key=repr)) + "}"
+    return repr(v)
+
+
+def semantic_state(obj, exclude=()) -> str:
+    """Comparable value identity of a container, ignoring formatting."""
+    skip = FORMATTING_ATTRS | frozenset(exclude)
+    return "|".join("%s=%s" % (k, _value_state(v))
+                    for k, v in sorted(vars(obj).items()) if k not in skip)
+
+
+class SourcePreserving:
+    """Replay the parsed source byte-for-byte until the model diverges.
+
+    Containers call :meth:`_snapshot` at the end of ``parse`` and gate their
+    ``render`` on :attr:`dirty`::
+
+        def render(self):
+            if self.doc is not None and not self.dirty:
+                return self.doc.render()
+            return self.render_canonical()
+    """
+
+    #: Extra attribute names this class treats as formatting-only.
+    _SNAPSHOT_EXCLUDE: tuple = ()
+
+    def _snapshot(self) -> None:
+        self._src_state = semantic_state(self, self._SNAPSHOT_EXCLUDE)
+
+    @property
+    def dirty(self) -> bool:
+        """True once the semantic model differs from what was parsed."""
+        src = getattr(self, "_src_state", None)
+        if src is None:
+            return True
+        return src != semantic_state(self, self._SNAPSHOT_EXCLUDE)

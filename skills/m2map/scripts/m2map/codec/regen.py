@@ -42,7 +42,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, Iterator, List, Optional, Tuple
 
-from .textfile import ENCODING, decode, encode
+from .textfile import ENCODING, decode, encode, SourcePreserving
 
 __all__ = ["RegenRow", "RegenFile", "TownFile", "MapIndex", "DungeonFile",
            "MonsterArrange", "REGEN_TYPES", "parse_duration", "format_duration"]
@@ -251,7 +251,7 @@ HEADER_COMMENT = "//type\tcx\tcy\tsx\tsy\tz\tdir\ttime\tpercent\tcount\tvnum"
 
 
 @dataclass
-class RegenFile:
+class RegenFile(SourcePreserving):
     """``regen.txt`` / ``npc.txt`` / ``boss.txt`` / ``stone.txt``."""
 
     rows: List[RegenRow] = field(default_factory=list)
@@ -291,6 +291,7 @@ class RegenFile:
                 row.vnum = _str_to_number(vals[10])
             f.rows.append(row)
             i += need
+        f._snapshot()
         return f
 
     @classmethod
@@ -322,7 +323,9 @@ class RegenFile:
         return out
 
     def render(self) -> str:
-        return self.source if self.source is not None else self.render_canonical()
+        if self.source is not None and not self.dirty:
+            return self.source
+        return self.render_canonical()
 
     def to_bytes(self) -> bytes:
         return encode(self.render())
@@ -338,7 +341,7 @@ class RegenFile:
 
 
 @dataclass
-class TownFile:
+class TownFile(SourcePreserving):
     """``Town.txt`` -- spawn points, map-local units of 100 (metres).
 
     ``LoadMapRegion`` (sectree_manager.cpp:373-448) uses ``fscanf``, so the
@@ -362,6 +365,7 @@ class TownFile:
             t.x, t.y = nums[0], nums[1]
         if len(nums) >= 8:
             t.empire = [(nums[2], nums[3]), (nums[4], nums[5]), (nums[6], nums[7])]
+        t._snapshot()
         return t
 
     @classmethod
@@ -373,7 +377,9 @@ class TownFile:
         return base_x + self.x * 100, base_y + self.y * 100
 
     def render(self) -> str:
-        return self.source if self.source is not None else self.render_canonical()
+        if self.source is not None and not self.dirty:
+            return self.source
+        return self.render_canonical()
 
     def to_bytes(self) -> bytes:
         return encode(self.render())
@@ -386,7 +392,7 @@ class TownFile:
 
 
 @dataclass
-class MapIndex:
+class MapIndex(SourcePreserving):
     """``<MapPath>/index`` -- ``<mapIndex> <mapFolderName>`` per line."""
 
     entries: List[Tuple[int, str]] = field(default_factory=list)
@@ -404,6 +410,7 @@ class MapIndex:
             if len(parts) < 2:
                 continue
             idx.entries.append((_str_to_number(parts[0]), parts[1]))
+        idx._snapshot()
         return idx
 
     @classmethod
@@ -424,7 +431,9 @@ class MapIndex:
         return out
 
     def render(self) -> str:
-        return self.source if self.source is not None else self.render_canonical()
+        if self.source is not None and not self.dirty:
+            return self.source
+        return self.render_canonical()
 
     def to_bytes(self) -> bytes:
         return encode(self.render())
@@ -451,7 +460,7 @@ class DungeonArea:
 
 
 @dataclass
-class DungeonFile:
+class DungeonFile(SourcePreserving):
     """``dungeon.txt`` -- ``<name> <x> <y> <sx> <sy> <dir>`` named areas."""
 
     areas: List[DungeonArea] = field(default_factory=list)
@@ -469,6 +478,7 @@ class DungeonFile:
                 continue                       # ins.fail() -> skipped
             d.areas.append(DungeonArea(parts[0], *[_str_to_number(p)
                                                    for p in parts[1:6]]))
+        d._snapshot()
         return d
 
     @classmethod
@@ -477,7 +487,9 @@ class DungeonFile:
             return cls.parse(fh.read())
 
     def render(self) -> str:
-        return self.source if self.source is not None else self.render_canonical()
+        if self.source is not None and not self.dirty:
+            return self.source
+        return self.render_canonical()
 
     def to_bytes(self) -> bytes:
         return encode(self.render())
@@ -489,7 +501,7 @@ class DungeonFile:
 
 
 @dataclass
-class MonsterArrange:
+class MonsterArrange(SourcePreserving):
     """``MonsterArrange.txt`` -- deduplicated vnum list the WorldEditor emits
     alongside ``regen.txt`` (MapAccessorOutdoor.cpp:1620-1655).  Nothing in the
     engine or the server reads it; it is a content-pipeline aid."""
@@ -502,7 +514,9 @@ class MonsterArrange:
         text = decode(data) if isinstance(data, (bytes, bytearray)) else data
         vnums = [_str_to_number(w.text) for w in _get_words(text)
                  if not w.is_comment and w.text.strip()]
-        return cls(vnums, text)
+        obj = cls(vnums, text)
+        obj._snapshot()
+        return obj
 
     @classmethod
     def load(cls, path) -> "MonsterArrange":
@@ -520,7 +534,9 @@ class MonsterArrange:
         return cls(out)
 
     def render(self) -> str:
-        return self.source if self.source is not None else self.render_canonical()
+        if self.source is not None and not self.dirty:
+            return self.source
+        return self.render_canonical()
 
     def to_bytes(self) -> bytes:
         return encode(self.render())

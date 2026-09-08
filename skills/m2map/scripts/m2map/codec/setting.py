@@ -21,7 +21,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional, Tuple
 
-from .textfile import FlatDoc, KeyItem, atof, atoi, encode, parse_flat, quote
+from .textfile import FlatDoc, KeyItem, atof, atoi, encode, parse_flat, quote, SourcePreserving
 
 __all__ = ["Setting", "MapProperty", "AreaProperty"]
 
@@ -40,7 +40,7 @@ def _norm_texture_set(path: str) -> str:
 
 
 @dataclass
-class Setting:
+class Setting(SourcePreserving):
     """``setting.txt`` -- the map root descriptor.
 
     The server opens this file as ``Setting.txt`` (capital S,
@@ -97,6 +97,7 @@ class Setting:
                 s.environment = v[0] if v else ""
             elif k == "terrainvisible":
                 s.terrain_visible = atoi(v[0]) if v else 1
+        s._snapshot()
         return s
 
     @classmethod
@@ -141,7 +142,9 @@ class Setting:
     # -- write -------------------------------------------------------------
     def render(self) -> str:
         """Byte-exact re-render of the parsed source (canonical if built fresh)."""
-        return self.doc.render() if self.doc is not None else self.render_canonical()
+        if self.doc is not None and not self.dirty:
+            return self.doc.render()
+        return self.render_canonical()
 
     def to_bytes(self) -> bytes:
         return encode(self.render())
@@ -171,7 +174,7 @@ class Setting:
 
 
 @dataclass
-class MapProperty:
+class MapProperty(SourcePreserving):
     """``mapproperty.txt`` -- client-only map kind descriptor."""
 
     script_type: str = "MapProperty"
@@ -196,6 +199,7 @@ class MapProperty:
                 p.parent_map_name = item.values[0]
                 raw = doc.lines[item.line].tokens
                 p.parent_quoted = len(raw) > 1 and raw[1].startswith('"')
+        p._snapshot()
         return p
 
     @classmethod
@@ -214,7 +218,9 @@ class MapProperty:
         return self.map_type.lower() == "indoor"
 
     def render(self) -> str:
-        return self.doc.render() if self.doc is not None else self.render_canonical()
+        if self.doc is not None and not self.dirty:
+            return self.doc.render()
+        return self.render_canonical()
 
     def to_bytes(self) -> bytes:
         return encode(self.render())
@@ -234,7 +240,7 @@ class MapProperty:
 
 
 @dataclass
-class AreaProperty:
+class AreaProperty(SourcePreserving):
     """``<map>/<XXXYYY>/areaproperty.txt`` -- the "this sector exists" marker."""
 
     script_type: str = "AreaProperty"
@@ -255,6 +261,7 @@ class AreaProperty:
                 a.area_name = item.values[0] if item.values else ""
             elif item.key == "numwater":
                 a.num_water = atoi(item.values[0]) if item.values else 0
+        a._snapshot()
         return a
 
     @classmethod
@@ -267,7 +274,9 @@ class AreaProperty:
         return self.script_type.lower() == "areaproperty"
 
     def render(self) -> str:
-        return self.doc.render() if self.doc is not None else self.render_canonical()
+        if self.doc is not None and not self.dirty:
+            return self.doc.render()
+        return self.render_canonical()
 
     def to_bytes(self) -> bytes:
         return encode(self.render())

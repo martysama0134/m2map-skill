@@ -29,7 +29,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional, Sequence, Tuple
 
-from .textfile import GroupDoc, GroupNode, atof, atoi, encode, parse_groups, quote
+from .textfile import GroupDoc, GroupNode, atof, atoi, encode, parse_groups, quote, SourcePreserving
 
 __all__ = ["Color", "DirLight", "SkyBox", "Environment",
            "ENV_KEY_INVENTORY", "SCRIPT_TYPE_TYPO"]
@@ -102,7 +102,7 @@ class SkyBox:
 
 
 @dataclass
-class Environment:
+class Environment(SourcePreserving):
     """A parsed ``.msenv``.  Field defaults are ``Environment_Init``'s."""
 
     script_type: str = SCRIPT_TYPE_TYPO
@@ -211,6 +211,7 @@ class Environment:
             e.wind_enable = wind.get_int("enable", 0)
             e.wind_strength = wind.get_float("strength", 0.0)
             e.wind_random = wind.get_float("random", 0.0)
+        e._snapshot()
         return e
 
     @staticmethod
@@ -271,7 +272,9 @@ class Environment:
 
     # -- write -------------------------------------------------------------
     def render(self) -> str:
-        return self.doc.render() if self.doc is not None else self.render_canonical()
+        if self.doc is not None and not self.dirty:
+            return self.doc.render()
+        return self.render_canonical()
 
     def to_bytes(self) -> bytes:
         return encode(self.render())

@@ -118,9 +118,15 @@ class ObjectRecord:
 
     @property
     def engine_rotation(self) -> Tuple[int, int, int]:
-        """What the client actually applies, defect and all."""
-        return _engine_rotation(self.rotation_token if self.rotation_token
-                                else "%f#%f#%f" % self.rotation)
+        """What the client actually applies, defect and all.
+
+        Uses the source token only while it still matches ``rotation`` -- after
+        an edit it would report the OLD heading, which is worse than useless for
+        an audit check asking "what will the player see".
+        """
+        tok = (self.rotation_token if self._rotation_token_is_current()
+               else "%f#%f#%f" % self.rotation)
+        return _engine_rotation(tok)
 
     @property
     def final_z(self) -> float:
@@ -153,13 +159,41 @@ class ObjectRecord:
             r.portals = [atoi(x) for x in t[6:]]
         return r
 
+    # -- token freshness ---------------------------------------------------
+    #
+    # The source tokens are kept so an untouched record round-trips byte-for-byte
+    # (they preserve the original float formatting, and the rotation token also
+    # carries the engine's substr defect). But a token that no longer agrees with
+    # its semantic field is STALE, and emitting it silently discards the edit --
+    # which is what `improve`, `reskin` and any CRC remap do. So each token is
+    # used only while it still decodes to the current value.
+
+    def _crc_token_is_current(self) -> bool:
+        tok = self.crc_token
+        if tok is None:
+            return False
+        if (atoi(tok) & 0xFFFFFFFF) != (self.crc & 0xFFFFFFFF):
+            return False
+        if "#" in tok:
+            parts = tok.split("#")[1:]
+            while len(parts) < 3:
+                parts.append("1")
+            return self.scale == (atof(parts[0]), atof(parts[1]), atof(parts[2]))
+        return self.scale is None
+
+    def _rotation_token_is_current(self) -> bool:
+        tok = self.rotation_token
+        return tok is not None and _split_rotation(tok) == self.rotation
+
     def render(self, index: int) -> str:
         """``__SaveObjects`` block layout (MapAccessorArea.cpp:1075-1099)."""
-        rot = self.rotation_token
-        if rot is None:
+        if self._rotation_token_is_current():
+            rot = self.rotation_token
+        else:
             rot = "%s#%s#%s" % (fmt_f(self.yaw), fmt_f(self.pitch), fmt_f(self.roll))
-        crc = self.crc_token
-        if crc is None:
+        if self._crc_token_is_current():
+            crc = self.crc_token
+        else:
             crc = "%u" % (self.crc & 0xFFFFFFFF)
             if self.scale is not None:
                 crc += "#%s#%s#%s" % tuple(fmt_f(s) for s in self.scale)
@@ -266,6 +300,7 @@ class _AreaFileBase:
             used.add(key)
             obj.records.append(cls.RECORD.from_tokens(blk.values))
         obj.orphan_blocks = [b.name for b in doc.blocks if b.key not in used]
+        obj._snapshot()
         return obj
 
     @classmethod
@@ -274,8 +309,44 @@ class _AreaFileBase:
             return cls.parse(fh.read(), strict=strict)
 
     # -- write -------------------------------------------------------------
+    #
+    # Replaying the parsed document preserves the source byte-for-byte, which is
+    # what the round-trip guarantee rests on. But it also means an edit to a
+    # record never reaches the output: the caller changes `rec.x`, the document
+    # is re-emitted unchanged, and the mutation is silently lost. Every mode this
+    # skill offers is a mutation, so the container tracks whether the semantic
+    # model still matches what was parsed, and re-renders from the records once
+    # it does not.
+
+    @staticmethod
+    def _fingerprint(rec) -> str:
+        """Value identity of a record, ignoring the source-formatting tokens."""
+        state = {k: v for k, v in vars(rec).items()
+                 if k not in ("rotation_token", "crc_token", "token_count")}
+        return repr(sorted(state.items(), key=lambda kv: kv[0]))
+
+    def _snapshot(self) -> None:
+        self._src_state = (
+            [self._fingerprint(r) for r in self.records],
+            self.declared_count,
+            self.header,
+        )
+
+    @property
+    def dirty(self) -> bool:
+        """True once the records diverge from what was parsed."""
+        if self.doc is None:
+            return True
+        src = getattr(self, "_src_state", None)
+        if src is None:
+            return True
+        return src != ([self._fingerprint(r) for r in self.records],
+                       self.declared_count, self.header)
+
     def render(self) -> str:
-        return self.doc.render() if self.doc is not None else self.render_canonical()
+        if self.doc is not None and not self.dirty:
+            return self.doc.render()
+        return self.render_canonical()
 
     def to_bytes(self) -> bytes:
         return encode(self.render())
