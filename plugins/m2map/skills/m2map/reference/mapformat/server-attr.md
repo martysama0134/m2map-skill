@@ -58,7 +58,15 @@ Element type is DWORD on disk always; the server internally re-packs to byte/wor
 Reference implementation: `WorldEditor/DataCtrl/ServerAttrGenerator.cpp:109-160`. For each server sector `(sx, sy)`:
 1. Locate client sectree `(sx >> 2, sy >> 2)` and its `attr.atr` grid.
 2. The server sector covers a 64×64-cell quadrant of the client 256×256 grid: offset `((sx & 3) * 64, (sy & 3) * 64)`.
-3. Copy each client attr byte **verbatim** into a DWORD and upsample to 2×2 cells → 128×128 DWORD grid. No object/`.mdatr` processing happens — the `0x80` server-collision bit is already present in the painted attr bytes (see [attr-atr.md](attr-atr.md), the `0xC0`-family paints carry it). The generator optionally masks bits ≥ `0x100` (`sanitizeWeirdFlags`), never the low byte.
+3. Copy each client attr byte, **masked to `& 0x07`**, into a DWORD and upsample to 2×2 cells → 128×128 DWORD grid. No object/`.mdatr` processing happens.
+
+> **ERRATUM (m2map, 2026-09-08) — this step is corrected against Ymir's shipped output.**
+>
+> `ServerAttrGenerator.cpp:118-130` copies the byte **verbatim** and masks only bits ≥ `0x100` (`sanitizeWeirdFlags`), never the low byte. Ymir's own shipped `server_attr` files disagree with the editor that supposedly produced them: in `D:/map_a2/server_attr` and `D:/map_n_snowm_01/server_attr`, **no** cell matches `attr.atr` on the full byte and **every** cell matches on `& 0x07`.
+>
+> The difference is not cosmetic. The server blocks movement on `ATTR_BLOCK|ATTR_OBJECT` = `0x01|0x80`, and the paint convention puts `0x80` on **walkable** mountain ground (`0xC8` = mountain walkable, `0xC9` = mountain blocked — bit 0 already carries the collision). Copying the whole byte therefore marks walkable terrain as an object blocker. Measured on `map_a2`: verbatim blocks **9,437,184 of 9,437,184** server cells; the shipped file blocks 6,246,724, which `& 0x07` reproduces byte-for-byte across all 576 blocks. 17 corpus maps carry `0x80` on 100% of their cells.
+>
+> Follow the shipped data, not the editor source. See `reference/failure-atlas.md` D2 and audit rule `M2MAP-ATR-004`.
 4. `lzo1x` compress, prefix with `uint32` size, append.
 
 ## Validation (map_a2, 589,506 bytes)
@@ -69,4 +77,4 @@ Header `18 00 00 00 18 00 00 00` = 24×24. Block walk `off += 4 + size` chains e
 
 - Iteration order is **y-major** (row by row), x inner — opposite nesting from what the folder naming (`X*1000+Y`) might suggest.
 - A map without `server_attr` loads server-side with no collision at all (walk-through-everything); the file is required for production maps.
-- Regenerating server_attr from the sectrees' `attr.atr` files is lossless **as long as the attr bytes are preserved in full** — the `0x80` collision bit lives in those bytes, not in a separate object pass.
+- Regenerating server_attr from the sectrees' `attr.atr` files is lossless for the bits the server actually reads (0..2). **Mask to `& 0x07`** — see the erratum under "Generation recipe". Keeping the paint bits is what bricks the map; there is no separate object pass either way.

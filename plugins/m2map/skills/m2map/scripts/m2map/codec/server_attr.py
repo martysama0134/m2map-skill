@@ -217,23 +217,39 @@ class ServerAttr:
             (self.width, self.height) + self.sectree_size)
 
 
-def from_attr_maps(attr_grids, map_w, map_h, mask=None):
+#: Bits the shipped Ymir ``server_attr`` files actually carry.  ``Terrain.h:70-72``
+#: defines only ATTRIBUTE_BLOCK (0x01), WATER (0x02) and BANPK (0x04); everything
+#: above bit 2 is client-side paint bookkeeping with no server meaning.
+SERVER_ATTR_MASK = 0x07
+
+
+def from_attr_maps(attr_grids, map_w, map_h, mask=SERVER_ATTR_MASK):
     """Generate a ``server_attr`` from client ``attr.atr`` grids.
 
     ``attr_grids`` maps ``(cx, cy)`` sectree coordinates to a 256x256 ``uint8``
     array (or an :class:`~m2map.codec.attr.AttrMap`); missing sectrees become
-    zero-filled blocks.  Each client attr byte is copied into a DWORD and
+    zero-filled blocks.  Each masked client attr byte is copied into a DWORD and
     upsampled 2x2, per ServerAttrGenerator.cpp:109-160.
 
-    ``mask`` (default ``None`` = copy the whole byte, what the WorldEditor
-    source does) exists because the shipped Ymir files disagree with that
-    source: in ``D:/map_a2/server_attr`` and ``D:/map_n_snowm_01/server_attr``
-    every cell holds only bits 0..2 even though those maps' ``attr.atr`` bytes
-    are paint values like 0xC9 (measured: 0/2,359,296 cells match on the full
-    byte, 2,359,296/2,359,296 match on ``& 0x07``).  Maps whose attr bytes are
-    already plain flags (``metin2_map_n_flame_01``,
-    ``metin2_map_n_snow_dungeon_01``, ``metin2_map_privatewar``) match exactly
-    with no mask.  Pass ``mask=0x07`` to reproduce the Ymir-style output.
+    **The default mask is not optional in practice.**  The server reads bit 7 as
+    ``ATTR_OBJECT`` and blocks movement on ``ATTR_BLOCK|ATTR_OBJECT``
+    (``char.cpp:5648``, ``char_manager.cpp:290``, ``sectree_manager.cpp:823``).
+    Ymir's paint convention puts bit 7 on *walkable* "mountain" cells, so copying
+    the whole byte -- which is literally what ``ServerAttrGenerator.cpp:118-130``
+    does -- turns walkable terrain into server-blocked terrain.  Measured on
+    ``map_a2``: the shipped ``server_attr`` has 1,561,681 server-blocked cells;
+    the whole-byte copy produces 2,359,296, i.e. *every cell on the map*, while
+    ``mask=0x07`` reproduces the shipped 1,561,681 exactly.  17 corpus maps carry
+    0x80 on 100% of their cells and would be bricked outright.
+
+    Shipped files agree with the mask, not with the editor source: in
+    ``map_a2`` and ``map_n_snowm_01`` no cell matches ``attr.atr`` on the full
+    byte and every cell matches on ``& 0x07``.  Maps whose attr bytes are already
+    plain flags (``metin2_map_n_flame_01``, ``metin2_map_n_snow_dungeon_01``,
+    ``metin2_map_privatewar``) match either way.
+
+    Pass ``mask=None`` to opt into the raw whole-byte copy.  Only do that to
+    reproduce the editor's behaviour for comparison; it is not a shippable map.
     """
     width = map_w * SECTORS_PER_SECTREE
     height = map_h * SECTORS_PER_SECTREE

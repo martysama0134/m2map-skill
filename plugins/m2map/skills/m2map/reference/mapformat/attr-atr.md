@@ -44,7 +44,13 @@ Ymir's own maps carry byte values way beyond `0x07` — map_a2's first sector is
 | `0xCA` (202) | Bridge, walkable | `WATER` |
 | `0xCC` (204) | Safezone on mountain | `BANPK` |
 
-The "engine sees" column is the client view (bits 0–2). Server-side these bytes matter more: server_attr generation copies the **full byte** into the server grid (`WorldEditor/DataCtrl/ServerAttrGenerator.cpp:109-138`), and the server reads bit 7 (`0x80`) as `ATTR_OBJECT` — a movement blocker. So the `0xC0`-family paint values also encode server collision. **Preserve the full byte when editing**; never mask bits off on save.
+The "engine sees" column is the client view (bits 0–2). Bits 3–7 are editor paint conventions with no client meaning. **Preserve the full byte when editing `attr.atr`** — a rewrite that drops values loses information the editor's overlay depends on.
+
+> **ERRATUM (m2map, 2026-09-08).** An earlier revision of this paragraph said server_attr generation copies the **full byte** (`ServerAttrGenerator.cpp:109-138`) and concluded that the `0xC0`-family paints "also encode server collision". The editor source does do that; Ymir's shipped `server_attr` files do not, and following the source bricks the map.
+>
+> `0xC8` is mountain **walkable** and `0xC9` is mountain **blocked** — bit 0 already carries the collision, bit 7 only marks "mountain". Since the server blocks on `ATTR_BLOCK|ATTR_OBJECT` (`0x01|0x80`), an unmasked copy turns every walkable mountain cell into a blocker. Measured on `map_a2`: verbatim blocks 9,437,184 of 9,437,184 cells vs the shipped 6,246,724, which `& 0x07` reproduces exactly.
+>
+> **Preserve the full byte in `attr.atr`; mask to `& 0x07` when generating `server_attr`.** See [server-attr.md](server-attr.md) and audit rule `M2MAP-ATR-004`.
 
 ## Resolution
 
@@ -68,7 +74,7 @@ const isBlocked = (x, y) => (attr[y * 256 + x] & 0x01) !== 0;
 ## Pitfalls
 
 - Unlike height/tile there is **no border padding** — grid is exactly the sector's 256×256 cells, no ±1 skirt.
-- Never strip the high bits "for cleanliness" — bit 7 feeds server collision via server_attr generation, and bits 3–6 carry the paint conventions above.
+- Never strip the high bits of `attr.atr` "for cleanliness" — bits 3–7 carry the paint conventions above and the editor overlay reads them. (Do strip them on the way into `server_attr`: mask `& 0x07`. See the erratum above.)
 - Keep `ATTRIBUTE_WATER` consistent with `water.wtr` — the client trusts the flag, the renderer trusts the watermap; desync = invisible water collision or dry "water".
 
 ## Validation (map_a2)

@@ -673,12 +673,54 @@ def test_server_attr_generation_roundtrip():
     blob = sa.to_bytes()
     back = server_attr.ServerAttr.from_bytes(blob)
     assert back.to_bytes() == blob
+    # The DEFAULT masks to 0x07 -- see from_attr_maps' docstring. Asserting
+    # equality with the raw grid here is what let the whole-byte default ship.
     for (cx, cy), grid in grids.items():
-        assert np.array_equal(back.to_attr_grid(cx, cy), grid)
-    # masked generation drops the paint bits, matching Ymir's own files
-    masked = server_attr.from_attr_maps(grids, w, h, mask=0x07)
+        assert np.array_equal(back.to_attr_grid(cx, cy), grid & 0x07)
+    # opting out reproduces the editor's (unshippable) whole-byte copy
+    raw = server_attr.from_attr_maps(grids, w, h, mask=None)
     for (cx, cy), grid in grids.items():
-        assert np.array_equal(masked.to_attr_grid(cx, cy), grid & 0x07)
+        assert np.array_equal(raw.to_attr_grid(cx, cy), grid)
+
+
+def test_from_attr_maps_default_reproduces_shipped_server_attr():
+    """The generator's DEFAULT must reproduce Ymir's own file byte-for-byte.
+
+    Regression guard for the critical bug found in review: the default copied
+    the whole client attr byte, but the server reads bit 7 as ATTR_OBJECT and
+    blocks on ATTR_BLOCK|ATTR_OBJECT (char.cpp:5648). Ymir paints bit 7 on
+    *walkable* mountain cells, so the whole-byte copy server-blocked every cell
+    of map_a2 -- 9,437,184 of 9,437,184 -- against the shipped 6,246,724.
+    17 corpus maps carry 0x80 on 100% of cells and were all bricked.
+    """
+    root = SERVER_ATTR_ROOT / "map_a2"
+    if not (root / "server_attr").exists():
+        pytest.skip("no map_a2 server_attr")
+    shipped = server_attr.read_server_attr(str(root / "server_attr"))
+    cw, ch = shipped.sectree_size
+
+    grids = {}
+    for cy in range(ch):
+        for cx in range(cw):
+            f = root / ("%03d%03d" % (cx, cy)) / "attr.atr"
+            if f.exists():
+                grids[(cx, cy)] = attr.read_attr(str(f)).cells
+    assert len(grids) == cw * ch, "map_a2 should have every sector"
+
+    built = server_attr.from_attr_maps(grids, cw, ch)
+    for sy in range(shipped.height):
+        for sx in range(shipped.width):
+            assert np.array_equal(shipped.block(sx, sy), built.block(sx, sy)), \
+                "block (%d,%d) differs from the shipped file" % (sx, sy)
+
+    # and the failure mode itself: whole-byte blocks the entire map
+    def blocked(sa):
+        return sum(int(np.count_nonzero(sa.block(x, y) & 0x81))
+                   for y in range(sa.height) for x in range(sa.width))
+
+    total = shipped.width * shipped.height * 128 * 128
+    assert blocked(built) == blocked(shipped)
+    assert blocked(server_attr.from_attr_maps(grids, cw, ch, mask=None)) == total
 
 
 def test_server_attr_rejects_truncated():

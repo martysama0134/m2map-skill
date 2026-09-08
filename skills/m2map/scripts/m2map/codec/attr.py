@@ -12,10 +12,20 @@ Flag bits
 ---------
 Only bits 0..2 are engine-defined client-side (``PRTerrainLib/Terrain.h:68-72``);
 ``MAX_ATTRIBUTE_NUM = 8`` is the usable bit count.  The remaining bits are
-editor/paint conventions that the server *does* consume: `server_attr`
-generation copies the whole byte and the server reads bit 7 as ``ATTR_OBJECT``
-(a movement blocker, ``sectree.h:25-31``).  Names for bits 3..7 follow the
-WorldEditor overlay / community tooling (M2-MapForge ``index.html:311-319``).
+editor/paint conventions with no client meaning.
+
+**Bits 3..7 must NOT reach ``server_attr``.**  ``ServerAttrGenerator.cpp:118-130``
+does copy the whole byte, but Ymir's own shipped files do not: in ``map_a2`` and
+``map_n_snowm_01`` every server cell holds only bits 0..2.  That difference is
+load-bearing, because the server reads bit 7 as ``ATTR_OBJECT`` and blocks
+movement on ``ATTR_BLOCK|ATTR_OBJECT`` (``char.cpp:5648``,
+``sectree_manager.cpp:823``), while the paint convention puts bit 7 on
+*walkable* "mountain" cells.  Copying the whole byte server-blocks the entire
+map: measured on ``map_a2``, 9,437,184 of 9,437,184 cells against the shipped
+6,246,724.  17 corpus maps carry 0x80 on 100% of their cells.
+:func:`m2map.codec.server_attr.from_attr_maps` therefore masks to 0x07 by
+default.  Names for bits 3..7 follow the WorldEditor overlay / community tooling
+(M2-MapForge ``index.html:311-319``).
 
 ============  ======  ==============  ==========================================
 Constant      Hex     Bit             Defined by
@@ -27,11 +37,17 @@ ATTR_BANSHOP  0x08    3               editor convention
 ATTR_FLAG5    0x10    4               unused / editor convention
 ATTR_FLAG6    0x20    5               unused / editor convention
 ATTR_FLAG7    0x40    6               paint convention: "ground" family bit
-ATTR_OBJECT   0x80    7               server ATTR_OBJECT (via server_attr)
+ATTR_OBJECT   0x80    7               paint convention; would mean server
+                                      ATTR_OBJECT if leaked into server_attr
 ============  ======  ==============  ==========================================
 
-Never mask bits off on save: official maps use values like 0xC9 (mountain +
-block) whose high bits carry server collision.
+Never mask bits off when saving *this* file: official maps use values like 0xC9
+(mountain + block) whose high bits carry the editor's paint conventions, and a
+rewrite that drops them loses information the overlay depends on.
+
+The opposite rule applies one step downstream: mask to 0x07 when generating
+``server_attr``.  The two are not in tension -- ``attr.atr`` keeps everything,
+the server file keeps only what the server reads.
 """
 
 from __future__ import annotations

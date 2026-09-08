@@ -111,9 +111,11 @@ Severity key: **BLOCKER** = map or sector will not load · **MAJOR** = loads but
 
 **Detection.** Walk the file: `int32 W`, `int32 H` at offset 0/4, then `W*H` blocks of `uint32 size` + `size` bytes. Assert (a) `W == MapSizeX*4 && H == MapSizeY*4`, (b) the offset chain lands exactly on EOF, (c) each block decompresses (LZO1X) to 65,536. Iteration is **y-major**: `for y in 0..H-1: for x in 0..W-1`.
 
-**Fix.** Regenerate from the `attr.atr` files. Recipe (`ServerAttrGenerator.cpp:109-160`, and MapForge `generateServerAttr`, `index.html:1136-1165`): for server sector `(sx, sy)`, take client sectree `(sx>>2, sy>>2)`, offset `((sx&3)*64, (sy&3)*64)` into its 256×256 grid, and copy each attr **byte verbatim into a uint32**, upsampled 2×2 into the 128×128 server grid. No object pass is needed — the `0x80` `ATTR_OBJECT` bit already lives in the painted attr bytes.
+**Fix.** Regenerate from the `attr.atr` files. Recipe (`ServerAttrGenerator.cpp:109-160`, and MapForge `generateServerAttr`, `index.html:1136-1165`): for server sector `(sx, sy)`, take client sectree `(sx>>2, sy>>2)`, offset `((sx&3)*64, (sy&3)*64)` into its 256×256 grid, and copy each attr byte **masked to `& 0x07`** into a uint32, upsampled 2×2 into the 128×128 server grid.
 
-**Corpus.** 0 of 142 client maps ship `server_attr`. Its absence in an extracted client map is expected; its absence in a map you are about to deploy is fatal.
+> **Mask to 0x07 — do not copy the whole byte.** `ServerAttrGenerator.cpp` and MapForge both copy the full byte, and both are wrong against Ymir's own output. See D2: the whole-byte copy server-blocks the entire map. Verified: `from_attr_maps` with the 0x07 default reproduces `D:/map_a2/server_attr` byte-for-byte across all 576 blocks.
+
+**Corpus.** No map under the corpus dir ships `server_attr` — it is a server-side file, absent from an extracted client, and that absence is expected. Six real ones do exist beside their map folders on `D:/` (`map_a2`, `map_n_snowm_01`, `metin2_map_c1`, `metin2_map_n_flame_01`, `metin2_map_n_snow_dungeon_01`, `metin2_map_privatewar`) and are the ground truth for generation. Its absence in a map you are about to deploy is fatal.
 
 ---
 
@@ -329,7 +331,7 @@ The height-aware rule goes to zero false positives on single-layer maps and isol
 
 **The reverse direction** (attr `0x02` set where there is no water cell → the player swims in mid-air / can't run) is rarer and should stay an error: 16 sectors corpus-wide, worst `metin2_map_duel/000000` with 2,611 cells, then `metin2_map_dawnmist_dungeon_01/000002` with 51.
 
-**Fix.** After any water edit, recompute the attr `0x02` bit from the height-aware predicate above, then **OR** it into the existing byte. Never mask — see D2.
+**Fix.** After any water edit, recompute the attr `0x02` bit from the height-aware predicate above, then **OR** it into the existing byte. Do not mask `attr.atr` itself when doing so — this is the client file, and its paint bits must survive. (Distinct from the `server_attr` rule in D2, which masks on the way *out* to the server file.)
 
 ---
 
@@ -345,11 +347,24 @@ The height-aware rule goes to zero false positives on single-layer maps and isol
 
 ---
 
-#### D2 — Buildings become walk-through after a "cleanup" pass · `M2MAP-ATR-004` · MAJOR
+#### D2 — Entire map is impassable on the server · `M2MAP-ATR-004` · BLOCKER
 
-**Cause.** Masking the high bits of `attr.atr`. Bits 0–2 are the only ones the *client* reads, so `attr &= 0x07` looks harmless — but `server_attr` generation copies the **full byte**, and the server reads bit 7 (`0x80` `ATTR_OBJECT`) as a movement blocker. Ymir's paint convention puts building/mountain collision in the `0xC0` family.
+> Earlier revisions of this entry said the opposite — that masking the high bits causes walk-through buildings, and that you must "never strip" them. That was wrong, and it was wrong in the dangerous direction. Corrected against Ymir's shipped files.
 
-**Detection.** If any byte in the map has bit 7 set, assert the corresponding `server_attr` DWORDs still carry it. Simpler generator-side rule: assert the byte histogram of a rewritten `attr.atr` is a superset of the original's — a rewrite that drops values is masking.
+**Cause.** Copying the **whole** `attr.atr` byte into `server_attr` instead of masking to `& 0x07`. The server blocks movement on `ATTR_BLOCK|ATTR_OBJECT` = `0x01|0x80` (`char.cpp:5648`, `char_manager.cpp:290`, `sectree_manager.cpp:823`). Ymir's paint convention puts bit 7 on **walkable** mountain ground, so an unmasked copy marks that ground as an object blocker.
+
+Read the paint values and it is immediate — bit 0 already carries the real collision, bit 7 only says "this is mountain":
+
+| Byte | Meaning | `& 0x07` | Server sees (masked) | Server sees (unmasked) |
+|---|---|---|---|---|
+| `0x40` | land walkable | `0x00` | walkable ✓ | walkable ✓ |
+| `0x41` | building footprint blocked | `0x01` | blocked ✓ | blocked ✓ |
+| `0xC8` | **mountain walkable** | `0x00` | walkable ✓ | **blocked ✗** |
+| `0xC9` | mountain blocked | `0x01` | blocked ✓ | blocked ✓ |
+
+**Detection.** Regenerate `server_attr` from the current `attr.atr` with the 0x07 mask and diff block-by-block. Generator-side: assert no server DWORD exceeds `0x07`. Corpus check: `to_attr_grid()` of any shipped `server_attr` has `max() <= 0x07`.
+
+**Measured.** On `map_a2` the whole-byte copy blocks 9,437,184 of 9,437,184 server cells; the shipped file blocks 6,246,724, which `mask=0x07` reproduces exactly. **17 corpus maps carry `0x80` on 100% of their cells** (`map_a2`, `map_n_snowm_01`, `map_n_threeway`, `guild_war1/2`, `metin2_map_a3`, `metin2_map_c3`, `guild_01/03`, `monkeydungeon` ×3, `t1`–`t4`, `trent`) — every one of them is bricked outright by the unmasked copy.
 
 **Corpus.** 36 distinct attr byte values, max 205. The `0x80` bit appears **only** in the `0xC0` family (192–195, 200–205) — never as bare `0x80`. Documented meanings: `0x40` land walkable · `0x41` building footprint blocked · `0x44` safezone · `0xC8` mountain walkable · `0xC9` mountain blocked · `0xCA` bridge (water) · `0xCB` water-on-mountain blocked · `0xCC` safezone on mountain.
 
@@ -797,7 +812,7 @@ Every Pitfalls section in `reference/mapformat/`, deduplicated against the atlas
 
 **tile.raw** — Same +1 border trap (`[(ty+1)*258+(tx+1)]`). Painting an edge tile requires mirroring into the adjacent sector's border row/column. Indices above `TextureCount` render as error texture.
 
-**attr.atr** — **No border padding** (exactly 256×256, unlike height/tile). Never strip the high bits: bit 7 feeds server collision, bits 3-6 carry paint conventions. Keep `ATTRIBUTE_WATER` consistent with `water.wtr`.
+**attr.atr** — **No border padding** (exactly 256×256, unlike height/tile). Keep the high bits *in `attr.atr`* (bits 3-6 carry paint conventions the editor relies on), but **mask to `& 0x07` when generating `server_attr`** — bit 7 marks walkable mountain, and letting it through makes the server treat it as `ATTR_OBJECT` and block the whole map (see D2). Keep `ATTRIBUTE_WATER` consistent with `water.wtr`.
 
 **water.wtr** — Cell indices must be `< N` or `0xFF`. Height element size differs between legacy and current — never assume 4 bytes without the size check. No border padding.
 
