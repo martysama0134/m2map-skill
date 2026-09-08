@@ -296,17 +296,57 @@ slope p50 0.92 deg, p75 9.77 deg, p95 29.45 deg.
 
 ## The oasis, built
 
-The archetype notes say an oasis is a prop arrangement, which is right about the
-planting and wrong about the water: the shipped desert oasis is a **two-level
-water feature with a waterfall between the levels**, and it is the one place a
-desert map uses `water.wtr` in earnest.
+**`metin2_map_n_desert_01` ships exactly one `fall_7`. Copy its geometry rather
+than deriving one.** Read off that placement and the terrain under it:
 
-The waterfall is `property/b/eff/fall_7.pre`, **crc 780392666** — an Effect, 44
-placements across 19 maps. Its measured context is unusually tight for an
-effect:
-
-| measure | value |
+| | |
 |---|---|
+| anchor z | **24,618** — the UPPER basin's bed, at its lip |
+| `height_bias` | **+130** |
+| top | 24,748 — **42 cm below** the upper water surface |
+| upper surface | **24,790** |
+| lower surface | **20,122** — a **46.7 m** drop, 24 m away horizontally |
+| roll | **270** |
+| slope beneath it | **85.4°** |
+
+The thing that is easy to get wrong: **the anchor sits in the upper water, at the
+lip** — not at the top of the visible sheet, and not scaled to the drop. The
+effect hangs from the lip and the cliff below is as tall as it likes; the sheet
+does not have to reach the bottom, and a 46.7 m drop proves it cannot. Chasing a
+`height_bias` that makes the sheet span the wall is chasing a relationship the
+corpus does not have.
+
+So the parts, in order:
+
+1. **A shelf**, carrying the upper basin. `ScarpSpec` with `crest_cm` raises the
+   standing side to the shelf level while `drop_cm` cuts the floor below it; the
+   step between them is the cliff.
+2. **The upper basin** on the shelf, as a lake with an explicit `surface_z`. The
+   shipped basin is **172 cm** deep over its bed, so use that. Its western edge
+   is the lip.
+3. **The lower pool** at the foot, `surface_z=None` so it levels in its own bowl
+   (`taste.md` §1.12).
+4. **The fall at the lip**, `ObjectTier.positions`, biased so its origin sits a
+   few tens of cm under the upper surface.
+5. **Green and palms at the lower waterline only.**
+
+Two traps, both of which cost a rebuild:
+
+- **Anchor where the cliff IS the local slope.** `align_to_slope` reads the
+  gradient at the anchor tile. Two tiles back on the shelf that gradient is the
+  shelf's own tilt and the roll came out **75**; at the lip it reads **270**,
+  matching the shipped fall.
+- **Clip the upper plane to the shelf.** A water plane overruns its basin by
+  design (§1.12), and a perched basin's overrun runs straight over the lip and
+  renders as a slab hanging in the air. `gen/water.py` clips the overrun to
+  ground within `PLANE_MAX_DEPTH_CM` of the surface — the overrun is for
+  beaches, not for cliffs.
+
+**On a small map, scale the ratios, not the numbers.** The corpus drop is 46.7 m;
+a 1×1 map walled by a 40 m ridge has about 30 m between rim and floor, and
+`map_skill_test_04` builds the same shape at 18.4 m.
+
+---|---|
 | ground class under it | **rock 72.7 %**, field 13.6 %, grass 6.8 %, sand 4.5 % |
 | never on | lava, snow, tile, `(none)`, other |
 | slope beneath | p50 **71.4°**, p75 86.6°, 26 of 44 above 45° |
