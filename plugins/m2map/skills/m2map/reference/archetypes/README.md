@@ -147,3 +147,33 @@ Every figure in these files carries its source inline. A few conventions:
 - Collision grammar -> [`../attributes.md`](../attributes.md)
 - Asset vocabulary by family -> [`../objects.md`](../objects.md)
 - The spec these tables feed -> `../../scripts/m2map/gen/spec.py`
+
+---
+
+## Using the tables: pooled weights are not one map's weights
+
+The `weight` column in each palette table is the archetype's **pooled** ground
+share -- measured across every member map. That is the right number for "what
+does this biome look like on average", and it is *not* what any single map does.
+
+Verified by building one: `field_empire`'s pooled 17-slot palette produces a
+brown-grey blend with a base share of 0.38, because pooling spreads coverage
+across slots that individual maps use in different proportions. A real
+`metin2_map_a1` uses about 12 of those slots with a base share near 0.5 and
+reads distinctly greener.
+
+So when you fill a `MapSpec`:
+
+- **Take the paths, roles and UV scales verbatim** -- those are per-slot facts
+  and they transfer.
+- **Treat the weights as a starting distribution, not a target.** Pick the 6-10
+  slots the map actually needs and concentrate the weight: one `base` around
+  0.45-0.55 (the corpus median base share is 0.52), two or three `mid` slots
+  sharing most of the rest, and `cliff`/`shore`/`accent` small.
+- Slots with a pooled weight near 0.000 are dither partners or rarities. Include
+  them only if you want that texture present at all; they will never form
+  geometry.
+
+The generator fits the achieved coverage to whatever weights you give it, so
+the weights mean exactly what they say -- which is why getting them right
+matters more than it would if they were only a nudge.

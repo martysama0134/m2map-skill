@@ -145,7 +145,20 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     # measures a median run of 2 with half of all components a single tile,
     # which is a lightly smoothed draw, not an independent one.
     draw = rng.random((h, w))
-    draw = _soften(draw)
+    # More slots means more chances for neighbouring tiles to disagree, so a
+    # fixed softening that gives run length 2 on a 6-slot palette gives 1 on a
+    # 17-slot one. Scale with the EFFECTIVE slot count (Simpson diversity of the
+    # mean probabilities), not the declared count -- a map declaring 17 while
+    # three slots hold 90% of the ground behaves like a 3-slot map.
+    mean_p = prob.mean(axis=(1, 2))
+    effective = 1.0 / max(1e-9, float((mean_p ** 2).sum()))
+    # One softening pass is not enough past ~6 effective slots: with 16 bins each
+    # spanning about 1/16 of the draw range, neighbouring tiles cross a boundary
+    # even when their draws are close. Passes, not weight, is the lever -- each
+    # pass widens the correlation radius by a tile.
+    passes = int(np.clip(round(effective / 3.0), 1, 5))
+    for _ in range(passes):
+        draw = _soften(draw, weight=0.65)
     cum = np.cumsum(prob, axis=0)
     idx = (draw[None, :, :] > cum).sum(axis=0)
     tiles = np.clip(idx, 0, len(spec.textures) - 1).astype(np.uint8) + 1
