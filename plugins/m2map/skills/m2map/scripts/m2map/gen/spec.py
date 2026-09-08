@@ -85,6 +85,14 @@ class ObjectTier:
     max_slope: float = 25.0
     #: keep this far from a road corridor edge, cm
     road_clearance_cm: float = 0.0
+    #: allowed distance band to the nearest water, metres, as (min, max).
+    #: This is a first-class filter because the corpus measures it per CRC and
+    #: the two ends mean opposite things: desert flora AVOIDS water (tree/n2
+    #: d(water) p50 = 20,009 cm, so a min), while anything decorating an oasis
+    #: or a shore hugs it (a max). Pinning shore props to a texture instead does
+    #: not work -- the splat is a stipple, so only a handful of tiles near the
+    #: water actually carry the shore slot.
+    water_distance_m: Tuple[float, float] = (0.0, float("inf"))
     height_bias: Tuple[float, float] = (0.0, 0.0)     # sampled uniformly
 
 
@@ -198,12 +206,21 @@ class MapSpec:
     def validate(self) -> List[str]:
         """Everything wrong with this spec, worst first. Empty = buildable."""
         out: List[str] = []
+        # The `metin2_map_*` prefix is a CONVENTION, not a requirement, and the
+        # corpus disproves treating it as one: gm_guild_build, map_a2,
+        # map_b_fielddungeon, map_n_snowm_01 and map_n_threeway all ship without
+        # it -- map_a2 is the very file used as ground truth for server_attr.
+        # What actually matters is that the name works as a folder and as an
+        # index key.
         if not self.name:
             out.append("name is empty")
-        elif not self.name.startswith("metin2_map_") and not self.name.startswith("metin2_"):
-            out.append("name %r does not follow the metin2_map_* convention "
-                       "(the client does not care, but every tool and the "
-                       "server index do)" % self.name)
+        elif any(c in self.name for c in '/\\:*?"<>|') or \
+                any(c.isspace() or ord(c) < 32 for c in self.name):
+            # Whitespace and control characters matter as much as the obvious
+            # path separators: the server index is line-based, so a name with a
+            # newline in it silently truncates or corrupts the entry.
+            out.append("name %r contains a character that is illegal in a "
+                       "folder name or breaks the server index lookup" % self.name)
         sx, sy = self.size
         if not (1 <= sx <= 256 and 1 <= sy <= 256):
             out.append("size %r outside 1..256 (MAX_MAPSIZE)" % (self.size,))

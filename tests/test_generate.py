@@ -262,3 +262,33 @@ def test_box_style_produces_a_flat_interior():
     blocked = (b.attr_cells & ac.ATTR_BLOCK).astype(bool)
     assert blocked.mean() > 0.3, "painted_box paints, then carves"
     assert not blocked.all(), "a fully blocked interior cannot be entered"
+
+
+# --- naming: convention, not requirement ---------------------------------
+
+@pytest.mark.parametrize("name", [
+    "map_a2",              # shipped, and the server_attr ground-truth file
+    "gm_guild_build",      # shipped
+    "map_b_fielddungeon",  # shipped
+    "map_n_snowm_01",      # shipped
+    "map_n_threeway",      # shipped
+    "metin2_map_a1",       # the common form
+    "map_skill_test_01",
+])
+def test_map_names_without_the_metin2_prefix_are_valid(name):
+    """5 of 142 shipped maps have no `metin2_` prefix. It is a convention.
+
+    An earlier validator rejected these outright, which would have refused to
+    build a map named after one of the corpus's own files.
+    """
+    spec = make_spec(name=name)
+    assert [p for p in spec.validate() if "name" in p] == []
+    spec.require_valid()
+
+
+@pytest.mark.parametrize("name", [
+    "bad name", "bad/name", "bad\\name", "a:b", "", "trailing\n", "tab\there",
+])
+def test_names_that_break_a_folder_or_index_are_rejected(name):
+    spec = make_spec(name=name)
+    assert [p for p in spec.validate() if "name" in p]

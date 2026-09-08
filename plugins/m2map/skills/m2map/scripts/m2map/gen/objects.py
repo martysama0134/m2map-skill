@@ -104,6 +104,17 @@ def _candidate_mask(spec: MapSpec, lay: Layout, tier: ObjectTier,
     if tier.road_clearance_cm > 0 and lay.corridors:
         ok &= lay.road_distance >= (tier.road_clearance_cm / 100.0)
 
+    # Distance to water, both directions. The corpus measures d(water) per CRC
+    # and the two ends are genuinely different rules: desert flora keeps AWAY
+    # (tree/n2 p50 20,009 cm) while oasis and shore decoration hugs the edge.
+    lo, hi = tier.water_distance_m
+    if (lo > 0 or hi != float("inf")) and wet is not None and wet.any():
+        dist = _water_distance(wet)
+        if lo > 0:
+            ok &= dist >= lo
+        if hi != float("inf"):
+            ok &= dist <= hi
+
     # Keep placements off the sealed border band.
     b = max(1, int(spec.border_band_m))
     ok[:b, :] = ok[-b:, :] = False
@@ -243,6 +254,37 @@ def _upsample(grid: np.ndarray, h: int, w: int) -> np.ndarray:
     ys = np.clip((np.arange(h) * gh) // max(1, h), 0, gh - 1)
     xs = np.clip((np.arange(w) * gw) // max(1, w), 0, gw - 1)
     return grid[np.ix_(ys, xs)]
+
+
+def _water_distance(wet: np.ndarray, cap: float = 260.0) -> np.ndarray:
+    """Distance in tiles (metres) to the nearest wet cell, capped.
+
+    Vectorised dilation rather than a per-cell chamfer: each step is one numpy
+    pass, and the loop stops at ``cap``, so a 1024x1024 map costs the same as a
+    256x256 one for the same threshold. Cells beyond the cap read as ``cap``,
+    which is fine because every rule using this is a threshold, not a metric --
+    "at least 200 m from water" does not care whether the true answer is 300 or
+    3,000.
+    """
+    if not wet.any():
+        return np.full(wet.shape, cap, np.float32)
+    d = np.where(wet, 0.0, np.inf).astype(np.float32)
+    frontier = wet.copy()
+    step = 0.0
+    while step < cap:
+        step += 1.0
+        grown = frontier.copy()
+        grown[1:, :] |= frontier[:-1, :]
+        grown[:-1, :] |= frontier[1:, :]
+        grown[:, 1:] |= frontier[:, :-1]
+        grown[:, :-1] |= frontier[:, 1:]
+        new = grown & ~np.isfinite(d)
+        if not new.any():
+            break
+        d[new] = step
+        frontier = grown
+    d[~np.isfinite(d)] = cap
+    return d
 
 
 def split_by_sector(records: Sequence[ad.ObjectRecord], spec: MapSpec
