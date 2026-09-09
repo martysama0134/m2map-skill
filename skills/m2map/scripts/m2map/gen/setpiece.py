@@ -26,7 +26,8 @@ So this module does two small things and refuses to do a third:
   different source.
 
 Two facts about the copied compound the caller should know: the source stands
-on one plane (all 32 records of that camp share ``z`` to the centimetre), so
+on one plane (31 of 32 records of that camp share ``z``; the outlying palm is
+58 cm lower), so
 level a pad under the target with ``PlazaSpec(tile_index=0, safezone=False)``
 -- :func:`relief_cm` reports how flat the source was; and its parts share a
 handful of headings (105 / 285 / 315 there, trees included), which is the

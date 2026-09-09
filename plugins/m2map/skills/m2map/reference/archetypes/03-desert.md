@@ -490,7 +490,7 @@ an arc at the median pitch, a run chained from nearby records) each failed in a
 way the numbers did not show. The shipped camp at **(333, 307)** in
 `metin2_map_n_desert_01` is 32 records within 32 m of that point — two fence
 rails of 5 and 6 panels flanking three tents, a brazier with its stall clutter,
-banana trees, ferns and aloes — all on one plane at z 17,826, sharing three
+banana trees, ferns and aloes — 31 of 32 on one plane at z 17,826, sharing three
 headings (105 / 285 / 315, trees included). `gen/setpiece.py` reads it
 (`extract(map, (333, 307), 32)`) and stamps it at an anchor on the new map,
 translate only, each record keeping its roll and bias; a 34 m levelling pad

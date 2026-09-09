@@ -523,7 +523,8 @@ Three rules when reusing one:
   and camera exposed it in one frame. Two rails and three tents cannot be told
   from one 20-panel run by spacing percentiles.
 
-The source stands on one plane (all 32 records at z 17,826): level a pad under
+The source stands on one plane (31 of 32 records at z 17,826; the outlying palm
+58 cm lower): level a pad under
 the target with `PlazaSpec(tile_index=0, safezone=False)` sized to `extent_m`,
 and check `relief_cm` of the source before assuming any other piece was flat.
 
