@@ -431,6 +431,65 @@ filling a bowl. Cut a scarp and let the fall come off the face as a spring —
 
 ---
 
+## Filling the open ground
+
+A desert map is not empty sand with a feature in one corner. Composition per
+sector, measured on the three shipped desert maps:
+
+| family | `n_desert_01` | `wl_01` | `nusluck01` |
+|---|---|---|---|
+| `tree_speedtree` | 31.9 | 28.2 | 35.5 |
+| `wall_fence` | **8.1** | 3.9 | — |
+| `clutter` | 6.4 | **9.2** | 1.5 |
+| `opaque_serial` | 4.0 | **15.1** | 10.2 |
+| `vegetation` (cacti) | — | 3.6 | 5.8 |
+| `rock` | 0.2 | 3.8 | 3.0 |
+| `light_fire` | 0.4 | 1.6 | 1.8 |
+| `building` (tents) | 0.8 | 1.6 | 2.2 |
+| `bone_debris` | — | — | **16.0** |
+
+Totals are 52, 70 and 80 objects per sector across **101, 173 and 49** distinct
+CRCs. A generated map that hits the count with ten CRCs is the right density and
+the wrong map: flora is only 60 % of what is out there.
+
+### The caravan camp
+
+Authored, not scattered — scattering the same CRCs at the same densities puts
+tents in three corners and a fire on its own. The measured constraints:
+
+| | slope p50 / p95 | d(road) p50 | nn same p50 |
+|---|---|---|---|
+| `tent01` / `tent02` | 0.0 / **0.1** | **0 cm** | 3,154 cm |
+| `general_obj_charcoa` | 0.0 / 7.0 | 283 cm | — |
+| `ob-b1-005-woodbarrel` | 0.0 / 9.8 | 400 cm | **135 cm** |
+| `ob-b1-001-box02` | 0.0 / 9.9 | 447 cm | — |
+| `general_obj_fence03` | 0.0 / 10.1 | 200 cm | **975 cm** |
+
+Two things fall out. **Tents stand on the road**, not near it — a d(road)
+median of 0 across 43 placements is not rounding. And they want ground flatter
+than a generated desert has anywhere off the corridor: p95 **0.1°** against a
+best-case 0.8 mean / 2.9 max at the flattest site. So level a pad first.
+
+> **A `PlazaSpec` with `tile_index=0` and `safezone=False` is a levelling pad.**
+> It paints nothing and flags nothing; all it does is cut a flat platform, which
+> is exactly what a building group needs. The camp pad measures 0.00°.
+
+Then: a fence ring at the 975 cm pitch with one bearing left open for the way
+in, two tents either side of a fire, and the stores heaped — barrels at their
+own 135 cm spacing, not spread.
+
+### The warp gate is three objects
+
+`warpgate02_01` is only the dais. Its companions within 15 m are `warpgate02`
+the **Building** at obs 24 / **lift 241.7** and `warpgate02` the **Effect** at
+obs 6 / lift 138.8 — the arch and the glow inside it. Place all three at one
+position; measured height biases are −5, 0 and 0.
+
+Like the tents, it sits **on the road**: d(road) p50 **0 cm** over 56
+placements, on ground of slope p50 0.1 / p95 2.9.
+
+---
+
 ## Attr policy
 
 **Mixed, and the split matters**: `slope_driven` on `metin2_map_n_desert_01`,
