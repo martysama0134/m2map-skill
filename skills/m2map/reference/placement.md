@@ -490,8 +490,14 @@ metres and rolls in degrees from its first panel, spans 33 m and turns through
 15° steps; `map_skill_test_04` stamps it at the camp and a 5-panel one at the
 oasis. Two things to get right when reusing one:
 
-- **Rotate offsets and rolls by the same angle.** Turn one without the other and
-  the panels stop meeting.
+- **Do not rotate a copied run — stamp it as it stands.** Rotating one turns the
+  offsets *and* the rolls, which looks correct and is not: the offsets are
+  y-down tile coordinates and `roll` is a compass heading, and the two frames do
+  not agree in handedness. The panels come apart, and **no measurement of the
+  template alone shows it** — the rotated template still reports a 2.4 m median
+  spacing against the corpus's 3.0. It only shows in a render. Until the
+  relationship between the two frames is pinned down, `rot_deg` stays 0 and a
+  run is placed where its own shape suits the ground.
 - **Anchor on the run's centroid, not its first panel.** Anchoring on panel 0
   put a 33 m enclosure trailing off across the sand with the camp at one end.
 

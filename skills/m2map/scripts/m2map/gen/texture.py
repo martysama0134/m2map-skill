@@ -100,6 +100,10 @@ def _suitability(spec: MapSpec, lay: Layout, slope: np.ndarray,
         if role == "path":
             s *= 0.0
 
+        if slot.region:
+            gate = lay.regions.get(slot.region)
+            s = s * gate if gate is not None else s * 0.0
+
         for kind, mask in lay.regions.items():
             if kind == "forest" and role in ("base", "mid"):
                 s = np.where(mask, s * 1.25, s)
@@ -262,7 +266,29 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
         rate = float(np.clip(slot.weight, 0.0, 1.0))
         norm = field / max(1e-9, float(field[allowed].mean()))
         p_hit = np.clip(norm * rate, 0.0, 1.0)
-        hit = allowed & (rng.random((h, w)) < p_hit)
+        # Threshold a COHERENT field, not per-tile noise. Independent draws give
+        # a 50/50 pepper that reads as green dust settled on sand rather than as
+        # grass growing in patches.
+        #
+        # Softening the draw instead does not work and the reason is worth
+        # keeping: smoothing compresses a uniform field toward 0.5, so a
+        # threshold of 0.22 fires far less often than 22% of the time -- the
+        # apron came out completely empty. An fbm field keeps a broad marginal
+        # while being spatially correlated, so the share survives the coherence.
+        patch = fbm(rng, h, w, octaves=3, base_cells=10, gain=0.55)
+        # RANK-transform it. `fbm` returns [0, 1] but its marginal is bunched
+        # around the middle, so comparing it against a probability under-fires
+        # badly -- a target share of 22% came out at 4%. Replacing each value by
+        # its rank among the allowed cells makes the marginal uniform by
+        # construction, so the threshold means what it says while the field
+        # stays spatially correlated.
+        rank = np.zeros((h, w))
+        vals = patch[allowed]
+        order = np.argsort(vals, kind="stable")
+        r = np.empty(vals.size)
+        r[order] = np.linspace(0.0, 1.0, vals.size, endpoint=False)
+        rank[allowed] = r
+        hit = allowed & (rank < p_hit)
         tiles = np.where(hit, np.uint8(i), tiles)
 
     # The rock skin is region fill, not stipple -- see `cliff_massif`. Inside

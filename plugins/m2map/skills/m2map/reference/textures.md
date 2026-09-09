@@ -211,6 +211,27 @@ the ground. `shore` and `accent` are overlays gated by their own suitability --
 shore near water, accent as speckle -- and never fill the space the carpet leaves,
 which would turn them into ground cover they are not.
 
+**(c3) An overlay needs a REGION and a coherent field, not a suitability term.**
+Two failures of the same shape, both visible only in a render:
+
+*Green dust.* An `accent` with no region is sprinkled wherever its role permits,
+so grass on a desert appeared as flecks across open sand from one edge of the
+map to the other — 4.6 % of the whole surface. A suitability term cannot fix it
+because the term says *how much*, never *where*. `TextureSlot.region` names a
+`RegionSpec.kind` and confines the slot to it; the apron then measures 0 tiles
+outside the oasis.
+
+*Mottling.* Even inside a region, an independent per-tile draw gives a 50/50
+pepper that reads as dust settled on sand rather than as grass growing. Overlays
+now threshold a **rank-transformed fbm field**: coherent by construction, and
+the rank transform is what keeps the share honest — thresholding the raw fbm
+under-fires badly (a 22 % target came out at 4 %) because its marginal is
+bunched around the middle, and smoothing a uniform draw fails the same way for
+the same reason, only worse: it emptied the apron completely.
+
+Result on `map_skill_test_04`: 37 % of the oasis basin under grass at **71 %**
+solid, and none anywhere else.
+
 **(d) A palette carries far more than it uses.** 17.3% of all declared slots are
 never painted, and the tail sets are worse: `metin2_map_t2.txt` paints 6 of 17,
 `metin2_b_fielddungeon.txt` 5 of 17, `metin2_map_treasure_hunt.txt` 10 of 17.

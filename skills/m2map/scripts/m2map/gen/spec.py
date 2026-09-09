@@ -74,6 +74,13 @@ class TextureSlot:
     #: Relative weight in the stipple field. Ignored for `path`/`shore`, which
     #: are painted as solid features from the layout splines.
     weight: float = 1.0
+    #: Confine this slot to a named `RegionSpec.kind`. Empty = the whole map.
+    #:
+    #: An `accent` with no region is sprinkled over everything the role allows,
+    #: which for grass on a desert means green flecks across open sand from one
+    #: side of the map to the other. Grass belongs to the oasis; naming the
+    #: region says so, instead of relying on a suitability term to imply it.
+    region: str = ""
 
 
 @dataclass
