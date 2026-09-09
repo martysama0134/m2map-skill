@@ -76,6 +76,16 @@ stones (`ob-bigstone01` 38.2 % / 37.4 %) and the `eastplain` leaning pillars
 1,021 records and `zone/dungeon/mt_thunder_dungeon` in **0 %** of 604
 (`placement.md` sec 1.1).
 
+**Which way it turns.** Over **1,681** corpus fences whose nearest neighbour is within
+6 m, `roll + atan2(Δy_tile, Δx_tile)` is constant (circular concentration **0.84**, mean
+179° mod 180) while `roll − bearing` is noise (0.08). Tile y grows south, so **roll
+increases counter-clockwise seen from above with north up**: a fence at roll 0 lies
+along x, at 90 it lies north–south. Turning a block of records by θ therefore adds θ to
+every roll and turns the y-down offsets *clockwise* — `dx' = dx·cos θ + dy·sin θ`,
+`dy' = −dx·sin θ + dy·cos θ`. Turn both the same way and a copied rail comes apart
+while its spacing statistics still pass. Verified in the editor on the desert camp
+turned 90° (`gen/setpiece.py`, `placement.md` §6.w).
+
 > **Rule:** write the heading into roll. Leave yaw and pitch at 0 for buildings, dungeon
 > blocks, trees and effects. Use +/-15 deg or +/-30 deg yaw/pitch **only** on rocks, bones,
 > shipwrecks and thorns, and only in the archetypes whose files say so.

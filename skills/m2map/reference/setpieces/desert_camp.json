@@ -1,0 +1,327 @@
+{
+ "format": "m2map-setpiece/1",
+ "name": "desert_camp",
+ "source_map": "metin2_map_n_desert_01",
+ "source_point_m": [
+  333.0,
+  307.0
+ ],
+ "radius_m": 32.0,
+ "pivot": "centroid",
+ "pivot_m": [
+  326.906,
+  319.3281
+ ],
+ "rotation_deg": 0.0,
+ "notes": "Fenced caravan camp: two fence rails of 5 and 6 panels flanking three tents, a brazier with its stall clutter, banana trees, ferns and aloes. 31 of 32 records on one plane; level a pad of ~34 m under the pivot. Turn only by multiples of 15.",
+ "count": 32,
+ "extent_m": [
+  -22.35,
+  23.93,
+  -22.83,
+  18.8
+ ],
+ "relief_cm": 58.0,
+ "headings": {
+  "105": 12,
+  "315": 6,
+  "285": 5,
+  "300": 2,
+  "210": 2,
+  "150": 1,
+  "60": 1,
+  "225": 1,
+  "195": 1,
+  "75": 1
+ },
+ "pieces": [
+  {
+   "dx": -8.0118,
+   "dy": 1.4687,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 1030411250,
+   "z": 17826.5,
+   "name": "AloeVera_RT_Flowers_01"
+  },
+  {
+   "dx": -8.3738,
+   "dy": 6.2622,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 1030411250,
+   "z": 17826.5,
+   "name": "AloeVera_RT_Flowers_01"
+  },
+  {
+   "dx": -9.9187,
+   "dy": 3.6231,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 2958806645,
+   "z": 17826.5,
+   "name": "CinnamonFern_RT_01"
+  },
+  {
+   "dx": -8.353,
+   "dy": 6.8315,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 2958806645,
+   "z": 17826.5,
+   "name": "CinnamonFern_RT_01"
+  },
+  {
+   "dx": 3.0493,
+   "dy": 12.3804,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 2958806645,
+   "z": 17826.5,
+   "name": "CinnamonFern_RT_01"
+  },
+  {
+   "dx": -12.7955,
+   "dy": -3.4946,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 1099929426,
+   "z": 17826.5,
+   "name": "general_obj_tent01.GR2"
+  },
+  {
+   "dx": -12.6427,
+   "dy": 4.4052,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 2711469579,
+   "z": 17826.5,
+   "name": "BananaTree_RT_02"
+  },
+  {
+   "dx": -5.4626,
+   "dy": 12.2515,
+   "roll": 315.0,
+   "bias": 0.0,
+   "crc": 4052187378,
+   "z": 17826.5,
+   "name": "general_obj_brazier.gr2"
+  },
+  {
+   "dx": -11.5905,
+   "dy": 7.0449,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 2883885560,
+   "z": 17826.5,
+   "name": "general_obj_tent02.GR2"
+  },
+  {
+   "dx": -4.0442,
+   "dy": 13.4834,
+   "roll": 315.0,
+   "bias": 0.0,
+   "crc": 3984470208,
+   "z": 17826.5,
+   "name": "B_general_obj_22.gr2"
+  },
+  {
+   "dx": 14.5854,
+   "dy": -1.8629,
+   "roll": 285.0,
+   "bias": -5.0,
+   "crc": 1099929426,
+   "z": 17826.5,
+   "name": "general_obj_tent01.GR2"
+  },
+  {
+   "dx": -5.6566,
+   "dy": 13.6203,
+   "roll": 315.0,
+   "bias": -15.0,
+   "crc": 2143294403,
+   "z": 17826.5,
+   "name": "B_general_obj_07.GR2"
+  },
+  {
+   "dx": -5.052,
+   "dy": 14.3556,
+   "roll": 285.0,
+   "bias": 0.0,
+   "crc": 3984470208,
+   "z": 17826.5,
+   "name": "B_general_obj_22.gr2"
+  },
+  {
+   "dx": 1.9582,
+   "dy": 16.1228,
+   "roll": 315.0,
+   "bias": -15.0,
+   "crc": 713999295,
+   "z": 17826.5,
+   "name": "B_general_obj_21.gr2"
+  },
+  {
+   "dx": -2.5997,
+   "dy": 16.3859,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 2958806645,
+   "z": 17826.5,
+   "name": "CinnamonFern_RT_01"
+  },
+  {
+   "dx": 7.9265,
+   "dy": 15.2858,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 2958806645,
+   "z": 17826.5,
+   "name": "CinnamonFern_RT_01"
+  },
+  {
+   "dx": -14.0096,
+   "dy": 11.0952,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 2711469579,
+   "z": 17826.5,
+   "name": "BananaTree_RT_02"
+  },
+  {
+   "dx": -1.1867,
+   "dy": 18.7971,
+   "roll": 150.0,
+   "bias": -5.0,
+   "crc": 602880188,
+   "z": 17826.5,
+   "name": "B_general_obj_06.GR2"
+  },
+  {
+   "dx": -13.3485,
+   "dy": -14.7748,
+   "roll": 60.0,
+   "bias": -5.0,
+   "crc": 1339763610,
+   "z": 17826.5,
+   "name": "general_obj_fence01.gr2"
+  },
+  {
+   "dx": 17.5961,
+   "dy": -12.1619,
+   "roll": 315.0,
+   "bias": -5.0,
+   "crc": 3248083804,
+   "z": 17826.5,
+   "name": "general_obj_fence04.GR2"
+  },
+  {
+   "dx": -10.1604,
+   "dy": -18.8896,
+   "roll": 225.0,
+   "bias": -5.0,
+   "crc": 2600313213,
+   "z": 17826.5,
+   "name": "general_obj_fence02.gr2"
+  },
+  {
+   "dx": 16.3622,
+   "dy": -14.2201,
+   "roll": 300.0,
+   "bias": -5.0,
+   "crc": 311819914,
+   "z": 17826.5,
+   "name": "general_obj_fence05.GR2"
+  },
+  {
+   "dx": -7.0557,
+   "dy": -20.7605,
+   "roll": 210.0,
+   "bias": -5.0,
+   "crc": 2157974046,
+   "z": 17826.462891,
+   "name": "general_obj_fence03.gr2"
+  },
+  {
+   "dx": -4.8319,
+   "dy": -21.4178,
+   "roll": 195.0,
+   "bias": -5.0,
+   "crc": 3248083804,
+   "z": 17826.5,
+   "name": "general_obj_fence04.GR2"
+  },
+  {
+   "dx": 19.3113,
+   "dy": -10.5219,
+   "roll": 315.0,
+   "bias": -5.0,
+   "crc": 2157974046,
+   "z": 17826.5,
+   "name": "general_obj_fence03.gr2"
+  },
+  {
+   "dx": -2.7547,
+   "dy": -22.5736,
+   "roll": 210.0,
+   "bias": -5.0,
+   "crc": 311819914,
+   "z": 17826.5,
+   "name": "general_obj_fence05.GR2"
+  },
+  {
+   "dx": 2.2867,
+   "dy": -22.8313,
+   "roll": 285.0,
+   "bias": -5.0,
+   "crc": 4066986805,
+   "z": 17826.5,
+   "name": "DatePalm_RT_03"
+  },
+  {
+   "dx": 21.9603,
+   "dy": -7.9159,
+   "roll": 300.0,
+   "bias": -5.0,
+   "crc": 2600313213,
+   "z": 17826.5,
+   "name": "general_obj_fence02.gr2"
+  },
+  {
+   "dx": 23.4796,
+   "dy": 2.2728,
+   "roll": 75.0,
+   "bias": -5.0,
+   "crc": 2157974046,
+   "z": 17826.5,
+   "name": "general_obj_fence03.gr2"
+  },
+  {
+   "dx": 23.9264,
+   "dy": -3.2617,
+   "roll": 285.0,
+   "bias": -5.0,
+   "crc": 1339763610,
+   "z": 17826.5,
+   "name": "general_obj_fence01.gr2"
+  },
+  {
+   "dx": 17.7568,
+   "dy": 17.408,
+   "roll": 105.0,
+   "bias": -5.0,
+   "crc": 2433319492,
+   "z": 17826.5,
+   "name": "B_general_obj_21_1.gr2"
+  },
+  {
+   "dx": -22.3503,
+   "dy": -18.4078,
+   "roll": 285.0,
+   "bias": -5.0,
+   "crc": 1067302678,
+   "z": 17768.525391,
+   "name": "CurlyPalm_RT_02"
+  }
+ ]
+}

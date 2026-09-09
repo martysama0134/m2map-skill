@@ -1,9 +1,12 @@
 """Set-piece copying: a compound read off one map reappears on another with
-its spatial relationships intact.
+its spatial relationships intact -- translated, and turned about its centre.
 
 The property under test is not "the records exist" but "the panels still
 meet": every pairwise distance and every heading of the source is reproduced,
 because that is exactly what three generated versions of the same camp lost.
+For rotation the check is the measured invariant, roll + bearing-to-neighbour
+(mod 180): a turn with the right sign keeps it, a turn with the wrong sign
+scatters it.
 """
 
 from __future__ import annotations
@@ -35,8 +38,10 @@ RAIL = [
     (32207.0, -29791.0, 195.0, -5.0, 3248083804),
     (32415.0, -29675.0, 210.0, -5.0, 311819914),
 ]
+RAIL_CRCS = {r[4] for r in RAIL}
 TENT = (31411.0, -31583.0, 105.0, -5.0, 1099929426)      # 11 m off, other side
 FAR = (40000.0, -40000.0, 0.0, 0.0, 1099929426)          # 122 m off: excluded
+PATTERN = REPO_ROOT / "skills" / "m2map" / "reference" / "setpieces" / "desert_camp.json"
 
 
 def _write_map(root: pathlib.Path, recs, sector=(1, 1)) -> pathlib.Path:
@@ -62,57 +67,164 @@ def source(tmp_path_factory):
 
 
 def test_extract_reads_the_radius_and_de_negates_y(source):
-    pieces = setpiece.extract(source, (333, 307), 32)
-    assert len(pieces) == 6                              # FAR is outside
-    by_crc = {p.crc: p for p in pieces if p.crc != 1099929426}
+    sp = setpiece.extract(source, (333, 307), 32, pivot="centre")
+    assert len(sp.pieces) == 6                           # FAR is outside
+    assert sp.source_map == "metin2_map_fake" and sp.pivot_m == (333.0, 307.0)
+    by_crc = {p.crc: p for p in sp.pieces if p.crc != 1099929426}
     first = by_crc[1339763610]
     # world (31356, terrain_y 30455) is 19.44 m west, 2.45 m north of (333, 307)
     assert first.dx == pytest.approx(-19.44, abs=0.01)
     assert first.dy == pytest.approx(-2.45, abs=0.01)
     assert first.roll == 60.0 and first.height_bias == -5.0
     # ordered by distance, so the table is stable
-    ds = [math.hypot(p.dx, p.dy) for p in pieces]
+    ds = [math.hypot(p.dx, p.dy) for p in sp.pieces]
     assert ds == sorted(ds)
-    assert setpiece.relief_cm(pieces) == 0.0             # one plane in the source
-    assert setpiece.headings(pieces)[210.0] == 2
+    assert sp.relief_cm() == 0.0                         # one plane in the source
+    assert sp.headings()[210.0] == 2
 
 
-def test_stamp_keeps_every_roll_and_bias_and_never_rotates(source):
-    pieces = setpiece.extract(source, (333, 307), 32)
-    tiers = setpiece.stamp(pieces, anchor=(88.0, 108.0), label="camp")
+def test_centroid_pivot_is_the_blocks_own_centre(source):
+    sp = setpiece.extract(source, (333, 307), 32)
+    assert sp.pivot == "centroid"
+    assert sum(p.dx for p in sp.pieces) == pytest.approx(0.0, abs=1e-9)
+    assert sum(p.dy for p in sp.pieces) == pytest.approx(0.0, abs=1e-9)
+    # the pivot is where the mean of the records sits on the source map
+    xs = [r[0] for r in RAIL + [TENT]]
+    ys = [-r[1] for r in RAIL + [TENT]]
+    assert sp.pivot_m[0] == pytest.approx(sum(xs) / len(xs) / 100.0)
+    assert sp.pivot_m[1] == pytest.approx(sum(ys) / len(ys) / 100.0)
+    # and the geometry is the same block as about the centre
+    sc = setpiece.extract(source, (333, 307), 32, pivot="centre")
+    assert _pair_distances([(p.dx, p.dy) for p in sp.pieces]) == \
+        _pair_distances([(p.dx, p.dy) for p in sc.pieces])
+
+
+def test_stamp_keeps_every_roll_and_bias(source):
+    sp = setpiece.extract(source, (333, 307), 32)
+    tiers = sp.stamp(anchor=(88.0, 108.0), label="camp")
     # one tier per (crc, bias); the rail's five CRCs plus the tent
     assert len(tiers) == 6
     assert all(t.height_bias == (-5.0, -5.0) for t in tiers)
     assert all(t.max_slope == 90.0 and t.density == 0.0 for t in tiers)
     placed = [pos for t in tiers for pos in t.positions]
     assert all(len(pos) == 3 for pos in placed)
-    src = [(p.dx, p.dy) for p in pieces]
+    src = [(p.dx, p.dy) for p in sp.pieces]
     dst = [(x - 88.0, y - 108.0) for x, y, _ in placed]
     assert _pair_distances(src) == _pair_distances(dst)
-    assert sorted(p.roll for p in pieces) == sorted(r for _, _, r in placed)
+    assert sorted(p.roll for p in sp.pieces) == sorted(r for _, _, r in placed)
 
 
-def test_stamped_piece_survives_the_pipeline_with_its_geometry(source):
-    """Build a map with the copied rail and read the records back: the panel
-    steps must be the fixture's 520 / 362 / 232 / 238 cm and the rolls the
-    source's, at the anchor, on the levelled pad."""
-    pieces = [p for p in setpiece.extract(source, (333, 307), 32)
-              if p.crc != 1099929426]
+@pytest.mark.parametrize("deg", [90.0, 45.0, 180.0, 270.0, 15.0])
+def test_rotation_is_rigid_and_keeps_the_roll_bearing_invariant(source, deg):
+    sp = setpiece.extract(source, (333, 307), 32)
+    rail = [p for p in sp.pieces if p.crc in RAIL_CRCS]
+    turned = setpiece.rotate(rail, deg)
+    # rigid about the pivot
+    assert _pair_distances([(p.dx, p.dy) for p in rail]) == \
+        pytest.approx(_pair_distances([(p.dx, p.dy) for p in turned]), abs=1e-6)
+    assert [math.hypot(p.dx, p.dy) for p in rail] == \
+        pytest.approx([math.hypot(p.dx, p.dy) for p in turned])
+    # every roll gains deg
+    assert [(p.roll - q.roll) % 360.0 for p, q in zip(turned, rail)] == \
+        pytest.approx([deg % 360.0] * len(rail))
+    # the measured invariant: roll + bearing to the neighbour is unchanged
+    c0, m0, n0 = setpiece.alignment(rail)
+    c1, m1, n1 = setpiece.alignment(turned)
+    assert n0 == n1 == 5 and c0 > 0.9
+    assert c1 == pytest.approx(c0, abs=1e-6)
+    assert m1 == pytest.approx(m0, abs=1e-6)
+
+
+def test_the_wrong_handedness_would_fail_the_invariant(source):
+    """The check has teeth: rotating offsets one way and rolls the other
+    (what an earlier template stamper did) shifts roll + bearing by twice the
+    angle. At 45 that is 90 -- every panel across its own line. (At 90 or 180
+    the shift is 0 mod 180 and the check is blind; the sign comes from the
+    corpus measurement, not from here.)"""
+    sp = setpiece.extract(source, (333, 307), 32)
+    rail = [p for p in sp.pieces if p.crc in RAIL_CRCS]
+    a = math.radians(45.0)
+    wrong = [setpiece.Piece(dx=p.dx * math.cos(a) - p.dy * math.sin(a),
+                            dy=p.dx * math.sin(a) + p.dy * math.cos(a),
+                            roll=(p.roll + 45.0) % 360.0, height_bias=p.height_bias,
+                            crc=p.crc) for p in rail]
+    c0, m0, _ = setpiece.alignment(rail)
+    c1, m1, _ = setpiece.alignment(wrong)
+    assert c1 == pytest.approx(c0, abs=1e-6)             # still a rail, but...
+    assert abs(((m1 - m0) + 90.0) % 180.0 - 90.0) == pytest.approx(90.0, abs=1e-6)
+    # ...while the right turn leaves it where it was
+    c2, m2, _ = setpiece.alignment(setpiece.rotate(rail, 45.0))
+    assert m2 == pytest.approx(m0, abs=1e-6)
+
+
+def test_rotations_compose_and_undo(source):
+    sp = setpiece.extract(source, (333, 307), 32)
+    twice = sp.rotated(45.0).rotated(45.0)
+    once = sp.rotated(90.0)
+    for p, q in zip(twice.pieces, once.pieces):
+        assert (p.dx, p.dy, p.roll) == pytest.approx((q.dx, q.dy, q.roll))
+    back = sp.rotated(90.0).rotated(-90.0)
+    for p, q in zip(back.pieces, sp.pieces):
+        assert (p.dx, p.dy, p.roll % 360.0) == pytest.approx((q.dx, q.dy, q.roll % 360.0))
+    assert once.rotation_deg == 90.0 and back.rotation_deg == 0.0
+
+
+def test_pattern_round_trips_through_json(source, tmp_path):
+    sp = setpiece.extract(source, (333, 307), 32, name="fake_camp")
+    sp.notes = "test"
+    path = sp.save(tmp_path / "fake_camp.json")
+    back = setpiece.load(path)
+    assert back.name == "fake_camp" and back.notes == "test"
+    assert back.source_map == sp.source_map and back.pivot_m == pytest.approx(sp.pivot_m)
+    assert back.source_point_m == (333.0, 307.0) and back.radius_m == 32.0
+    for p, q in zip(back.pieces, sp.pieces):
+        assert (p.dx, p.dy) == pytest.approx((q.dx, q.dy), abs=1e-4)
+        assert (p.roll, p.height_bias, p.crc, p.z) == (q.roll, q.height_bias, q.crc, q.z)
+    with pytest.raises(ValueError):
+        setpiece.SetPiece.from_dict({"format": "something-else", "name": "x", "pieces": []})
+
+
+def test_shipped_desert_camp_pattern_is_intact():
+    """The saved pattern is the 32-record camp about its centroid."""
+    sp = setpiece.load(PATTERN)
+    assert sp.source_map == "metin2_map_n_desert_01"
+    assert sp.source_point_m == (333.0, 307.0) and len(sp.pieces) == 32
+    assert sp.pivot == "centroid"
+    assert sum(p.dx for p in sp.pieces) == pytest.approx(0.0, abs=1e-3)
+    assert sum(p.dy for p in sp.pieces) == pytest.approx(0.0, abs=1e-3)
+    heads = sp.headings()
+    assert heads[105.0] == 12 and heads[315.0] == 6 and heads[285.0] == 5
+    assert sp.relief_cm() == pytest.approx(58.0, abs=1.0)
+    fences = [p.crc for p in sp.pieces if "fence" in p.name.lower()]
+    conc, mean, n = setpiece.alignment(sp.pieces, only=fences)
+    assert n == 11 and conc > 0.8                        # both rails, linked
+
+
+def test_stamped_piece_survives_the_pipeline_turned_or_not(source):
+    """Build a map with the copied rail, turned 90, and read the records back:
+    the panel steps must be the fixture's 520 / 362 / 232 / 238 cm, every roll
+    90 more than the source's, and the pivot on the anchor."""
+    sp = setpiece.extract(source, (333, 307), 32)
+    sp.pieces = [p for p in sp.pieces if p.crc in RAIL_CRCS]
     anchor = (88.0, 108.0)
     spec = make_spec(
-        objects=setpiece.stamp(pieces, anchor, label="rail"),
+        objects=sp.rotated(90.0).stamp(anchor, label="rail"),
         plazas=[PlazaSpec(centre=anchor, radius_m=30.0, tile_index=0, safezone=False)],
     )
     b = pipeline.run(spec)
-    recs = sorted((r for r in b.records if r.crc in {p.crc for p in pieces}),
-                  key=lambda r: r.x)
+    recs = [r for r in b.records if r.crc in RAIL_CRCS]
     assert len(recs) == 5
+    # order them as the source rail: by the source roll sequence via crc
+    order = {crc: i for i, (_, _, _, _, crc) in enumerate(RAIL)}
+    recs.sort(key=lambda r: order[r.crc])
     steps = [round(math.hypot(b_.x - a.x, b_.y - a.y))
              for a, b_ in zip(recs, recs[1:])]
     assert steps == [520, 362, 232, 238]
-    assert [r.roll for r in recs] == [60.0, 225.0, 210.0, 195.0, 210.0]
+    assert [r.roll for r in recs] == [150.0, 315.0, 300.0, 285.0, 300.0]
     assert all(r.height_bias == -5.0 for r in recs)
-    # the anchor really is where the source point landed
+    # a 90 turn in the sense of roll (counter-clockwise with north up) sends an
+    # offset (dx, dy) to (dy, -dx) in y-down tile terms: east goes north
+    src = next(p for p in sp.pieces if p.crc == 1339763610)
     first = recs[0]
-    assert first.x / 100.0 == pytest.approx(anchor[0] - 19.44, abs=0.02)
-    assert first.terrain_y / 100.0 == pytest.approx(anchor[1] - 2.45, abs=0.02)
+    assert first.x / 100.0 == pytest.approx(anchor[0] + src.dy, abs=0.02)
+    assert first.terrain_y / 100.0 == pytest.approx(anchor[1] - src.dx, abs=0.02)

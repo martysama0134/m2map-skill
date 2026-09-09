@@ -475,7 +475,9 @@ density with a per-record roll it reads as scattered debris, which is what it
 was on the first pass.
 
 > **Rule:** copy a shipped set-piece whole rather than generating one —
-> `gen/setpiece.py` `extract` + `stamp`. `ObjectTier.positions` takes
+> `gen/setpiece.py` `extract` → a `SetPiece` about its **centroid**, kept as a
+> pattern under `reference/setpieces/`, turned as one block with `rotated()`
+> and placed by that centroid with `stamp()`. `ObjectTier.positions` takes
 > `(x, y, roll)` triples precisely for this.
 
 **A computed pitch leaves gaps, and the reason is the models.** The six fence
@@ -497,9 +499,10 @@ like. The dump that settled it was the plain one: every record within 32 m of
 the point, as the file has them.
 
 `gen/setpiece.py` does exactly that and nothing cleverer: `extract(map_dir,
-(333, 307), 32)` returns the 32 records as offsets with their own roll and
-`height_bias`; `stamp(pieces, anchor)` turns them into one authored tier per
-`(crc, bias)` at the new anchor. Rendered from the same camera as the source,
+(333, 307), 32)` returns the 32 records as offsets **from their centroid** with
+their own roll and `height_bias` — a `SetPiece`, saved as
+`reference/setpieces/desert_camp.json`; `sp.stamp(anchor)` turns them into one
+authored tier per `(crc, bias)` with the centroid on the anchor. Rendered from the same camera as the source,
 the copy is indistinguishable — rail A steps match the source's 520 / 362 /
 231 / 237 cm to the centimetre the pasted table rounds to, rolls identical.
 Three rules when reusing one:
@@ -509,15 +512,25 @@ Three rules when reusing one:
   radius — the source stamps its trees with the same headings as its buildings
   (105 / 285 / 315 across all 32 records), which is the tell that the whole
   thing was turned as a unit.
-- **Do not rotate a copied piece — stamp it as it stands.** Rotating one turns
-  the offsets *and* the rolls, which looks correct and is not: the offsets are
-  y-down tile coordinates and `roll` is a compass heading, and the two frames do
-  not agree in handedness. The panels come apart, and **no measurement of the
-  template alone shows it** — the rotated template still reports a 2.4 m median
-  spacing against the corpus's 3.0. It only shows in a render. Until the
-  relationship between the two frames is pinned down, `setpiece` has no
-  rotation argument, and a piece that must face another way needs a different
-  source.
+- **Turn it only as a block, about its own centre, with the measured sign.**
+  The offsets are y-down tile coordinates and `roll` is a compass heading, and
+  the two frames disagree in handedness: turn both the same way and the panels
+  come apart while **no measurement of the template alone shows it** — that
+  version still reported a 2.4 m median spacing against the corpus's 3.0, and
+  only the render gave it away. The sign is measured, not guessed. Over
+  **1,681** corpus fences whose nearest neighbour is within 6 m,
+  `roll + atan2(Δy_tile, Δx_tile)` is constant (circular concentration
+  **0.84**, mean 179° mod 180) and `roll − bearing` is noise (0.08). So **roll
+  increases counter-clockwise with north up**, and a turn of θ adds θ to every
+  roll while turning the offsets *clockwise* in tile space:
+  `dx' = dx·cos θ + dy·sin θ`, `dy' = −dx·sin θ + dy·cos θ`.
+  `SetPiece.rotated(θ)` does this about the pattern's pivot — its centroid, so
+  the block stays on its pad — and `alignment()` checks the invariant on the
+  fences (it is blind at exactly 90° and 180°, where the wrong sign shifts it
+  by a full 180; the sign comes from the corpus, not from the check). Keep θ a
+  multiple of 15 so the copied rolls stay on the ladder. **Verified in the
+  editor:** the camp turned 90° renders with both rails connected and the whole
+  compound facing the new way.
 - **Render the reference before comparing.** The blob passed every statistic it
   was checked against; a headless render of `n_desert_01` at the same target
   and camera exposed it in one frame. Two rails and three tents cannot be told
@@ -525,7 +538,8 @@ Three rules when reusing one:
 
 The source stands on one plane (31 of 32 records at z 17,826; the outlying palm
 58 cm lower): level a pad under
-the target with `PlazaSpec(tile_index=0, safezone=False)` sized to `extent_m`,
+the target with `PlazaSpec(tile_index=0, safezone=False)` sized to `extent_m` and
+centred on the pivot (so a turned block stays on it),
 and check `relief_cm` of the source before assuming any other piece was flat.
 
 **Pool the family for this question.** Any *single* fence model is **84 %**

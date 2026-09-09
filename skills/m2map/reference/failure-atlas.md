@@ -919,7 +919,9 @@ turn, chain length — because those are properties of runs and it is made of
 runs.
 
 **Fix.** `gen/setpiece.py`: every record within a radius, offsets and rolls
-verbatim, no chaining, no rotation. And render the reference at the same
+verbatim, no chaining; turned, if at all, as one block about its centroid with
+`SetPiece.rotated`, whose sign is measured (`placement.md` §6.w — turn offsets
+and rolls the same way and the rails come apart). And render the reference at the same
 target and camera before judging the copy; the blob was invisible to
 measurement and obvious in one frame. `placement.md` §6.w.
 
