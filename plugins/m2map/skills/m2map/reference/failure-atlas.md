@@ -855,6 +855,33 @@ After **any** merge or reskin, four artefacts are stale by construction: `server
 
 ---
 
+## 3.9 A pooled statistic hides a per-CRC rule
+
+Not a map fault — a *method* fault, and it produced two wrong placements in one
+session. Both times a figure aggregated over a `property_type` or a family was
+read as if it applied to one prop.
+
+| the pooled figure | what it says | the prop's own figure |
+|---|---|---|
+| Effects have roll 0 in **90.2 %** of records | leave a waterfall unrotated | `fall_7` has roll 0 in **13.6 %** — it is deliberately turned |
+| Warp buildings carry an effect **58 %** of the time | an arch may stand alone | `warpgate02` the arch: **93 %**, offset p50 35 cm |
+
+Both aggregates are correct and both are useless for the decision at hand. The
+Effect class is dominated by ambient emitters that genuinely never rotate; the
+warp figure is dragged down by the bare landing dais, which is a warp
+destination without an arch.
+
+> **Rule:** before acting on a number from `by_type` or `by_family`, look up the
+> CRC in `catalog/stats-objects.json.by_crc` or `catalog/affinity.json.by_crc`.
+> If the two disagree, the per-CRC figure is the one that describes the object
+> you are placing. Where a family really is homogeneous the two agree and the
+> check costs nothing.
+
+The same shape appears in the texture catalog and is already recorded there:
+`textures.md` §3 warns that a slot's role is per `(textureset, slot)` and not a
+property of the file, because `b/stone/stone01.dds` is `base` in one map and
+`cliff` in another.
+
 ## 4. Unit boundaries — the faults a round trip cannot see
 
 Every entry above describes a file that is wrong in a way some check can notice.

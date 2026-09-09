@@ -457,6 +457,23 @@ recipe: three Pagoda variants + Beech + Cypress + the occasional boulder.
 
 ---
 
+### 6.x A compound is placed as a unit, not sampled
+
+Everything above this point describes **scatter**: a density, a spacing, a set
+of filters, and the engine picks the spots. A set-piece is the opposite, and
+trying to express one as a density fails in three specific ways, all measured:
+
+| | what scatter does | what the piece needs |
+|---|---|---|
+| position | anywhere the filters allow | `ObjectTier.positions` — "steep and near water" cannot say *which* water; a waterfall came out at the foot of its own drop |
+| heading | one draw per record | `ObjectTier.roll_deg` — a warp gate's dais, arch and effect drew **345, 285 and 105** independently |
+| companions | independent tiers | co-located by construction — the arch carries its effect in **93 %** of corpus placements, offset p50 **35 cm** |
+
+So: author the parts, give them one heading, and put the paired effect at the
+same coordinates. `reference/structures.md` carries the kit geometry — the 10 m
+wall module, the 90° snap for structural pieces, and the rule that dressing
+inside the same compound does *not* snap.
+
 ## 7. The working vocabulary
 
 1 684 CRCs are used at all, but the distribution is steep:

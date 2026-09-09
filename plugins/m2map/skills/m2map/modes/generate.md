@@ -57,6 +57,7 @@ added because a map needed it and the alternative did not work.
 | A face of a CHOSEN height | `ScarpSpec.crest_cm` | fits terrain to a prop instead of hunting a `height_bias`. `taste.md` §1.13 |
 | A landmark at an exact spot | `ObjectTier.positions` | skips every candidate filter. A waterfall cannot be expressed as "steep and near water" — that cannot say *which* water |
 | A prop facing out of a slope | `ObjectTier.align_to_slope` | roll = fall line **+ 90°**; the plane lies along the heading |
+| An authored compound aimed deliberately | `ObjectTier.roll_deg` | one heading for every piece. Left to the sampler a warp gate's three parts drew 345, 285 and 105 |
 | A prop that needs a face | `ObjectTier.min_slope` | `fall_7` is p50 **71.4°**; with `max_slope` alone it lands on the flat |
 
 **Fit the terrain to the prop, not the prop to the terrain.** A prop's geometry
