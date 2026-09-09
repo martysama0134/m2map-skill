@@ -415,9 +415,17 @@ Assembly, in order:
    placement samples the tile grid and tiles map two to a cell, so the number at
    a tile is not the number at `cell[x // 2]`. Deriving it put the sheet 8 m
    above the crest.
-4. **Green only at the waterline.** `grass 01/02` as accents, gated to the wet
-   band. The archetype is 64% sand and a green surround at any scale stops
-   reading as desert.
+4. **A green APRON, not a waterline rim.** The shipped oasis rings its basin
+   with `grass 01` and damp `sand02` across the whole hollow — a band tens of
+   metres wide fading into dry sand, not a few tiles at the edge. Name it with a
+   `RegionSpec(kind="oasis")`; the texture stage boosts `shore` and `accent`
+   inside one, and overlay density follows the suitability field so the green is
+   dense at the water and thins outward. On `map_skill_test_04` that is **49 %**
+   of the basin's non-cliff ground.
+
+   **This is where `sand02` belongs.** It was dropped as a ground texture
+   because it blotches at ground scale (`textures.md` §4c2); confined to the
+   water margin, blotchy damp sand is exactly what it should look like.
 5. **Palms, not the archetype's flora.** `tree/n2` sits a median 200 m from water
    corpus-wide and the JoshuaTrees 350–390 m. `DatePalm`, `CoconutPalm` and
    `CurlyPalm` are the exception that belongs at the edge.
