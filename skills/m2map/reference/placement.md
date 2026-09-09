@@ -457,6 +457,35 @@ recipe: three Pagoda variants + Beech + Cypress + the occasional boulder.
 
 ---
 
+### 6.w A fence is a RUN, not a scatter
+
+Measured over **2,308** fence placements on 47 maps, pooling all 53 fence
+models:
+
+| | |
+|---|---|
+| fences living in a run of 3+ (linked at 600 cm) | **62 %** |
+| longest run | **33** segments |
+| gap between adjacent panels | p25 241 · **p50 361** · p75 392 cm |
+| turn between consecutive panels | **p50 18°** |
+
+So a fence is panels laid end to end on a **3.6 m pitch**, each rolled tangent
+to the line, turning gently — a windbreak or a stock pen, curving. Placed as a
+density with a per-record roll it reads as scattered debris, which is what it
+was on the first pass.
+
+> **Rule:** author the run. `ObjectTier.positions` takes `(x, y, roll)` triples
+> precisely for this — every panel of an arc faces a different way, so a single
+> `roll_deg` cannot express one.
+
+**Pool the family for this question.** Any *single* fence model is **84 %**
+singletons and the per-CRC nearest-neighbour reads 975 cm, which says "scatter"
+and is wrong: real runs are built from mixed models, so the chain is invisible
+until you pool them. That is the mirror image of the trap in
+`failure-atlas.md` §3.9 — there a pooled figure hid a per-CRC rule, here a
+per-CRC figure hides a family rule. Neither level is automatically right; the
+one that matches the *question* is.
+
 ### 6.x A compound is placed as a unit, not sampled
 
 Everything above this point describes **scatter**: a density, a spacing, a set

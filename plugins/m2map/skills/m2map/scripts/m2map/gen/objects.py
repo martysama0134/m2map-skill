@@ -211,7 +211,13 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
         # a landmark is put where the author wants it, and the candidate mask
         # exists to scatter fillers, not to second-guess that.
         if tier.positions:
-            for px, py in tier.positions:
+            for pos in tier.positions:
+                px, py = pos[0], pos[1]
+                # A three-tuple carries its own heading. An arc of fence panels
+                # needs one per segment: the corpus lays them at a 361 cm pitch
+                # turning about 18 degrees each, and a single tier-wide roll
+                # would point every panel the same way.
+                own_roll = pos[2] if len(pos) > 2 else None
                 tx = float(np.clip(px, 0, w - 1))
                 ty = float(np.clip(py, 0, h - 1))
                 gz = float(height_t[int(ty), int(tx)])
@@ -221,7 +227,8 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
                 records.append(ad.ObjectRecord(
                     x=tx * 100.0, y=-(ty * 100.0), z=gz, crc=tier.crc,
                     yaw=0.0, pitch=0.0,
-                    roll=_roll_for(rng, tier, height_t, int(tx), int(ty)),
+                    roll=(float(own_roll) % 360.0 if own_roll is not None
+                          else _roll_for(rng, tier, height_t, int(tx), int(ty))),
                     height_bias=round(bias, 6)))
             continue
 

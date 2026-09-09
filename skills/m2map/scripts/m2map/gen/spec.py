@@ -100,6 +100,10 @@ class ObjectTier:
     #: maximum ground slope in degrees
     max_slope: float = 25.0
     #: Exact placements, in map-local tile coordinates (1 tile = 1 m, y-down).
+    #: Either ``(x, y)`` or ``(x, y, roll)`` -- the three-tuple carries its own
+    #: heading, which is what a curving run needs: every panel of an arc points
+    #: a different way, so a single :attr:`roll_deg` cannot express one.
+    #:
     #: When set, the prop is placed HERE and every candidate filter above is
     #: skipped -- slope, water distance, road clearance, spacing.
     #:
@@ -412,7 +416,8 @@ class MapSpec:
                 out.append("water feature has too few waypoints")
         span_tiles = (self.width_tiles, self.height_tiles)
         for o in self.objects:
-            for px, py in o.positions:
+            for pos in o.positions:
+                px, py = pos[0], pos[1]
                 if not (0 <= px < span_tiles[0] and 0 <= py < span_tiles[1]):
                     out.append("object %s has a position (%.0f, %.0f) outside "
                                "the %dx%d m map"

@@ -855,6 +855,28 @@ After **any** merge or reskin, four artefacts are stale by construction: `server
 
 ---
 
+## 3.8 A distance band is not a region
+
+**Symptom.** Props stand on a cliff, on a shelf, or over open air — somewhere
+that satisfies the filter and makes no sense.
+
+**Cause.** `water_distance_m` (and any other distance filter) asks *how far*,
+never *from what*. On a map with two water bodies at different levels, "within
+1–12 m of water" is as true on the shelf beside the upper basin as on the beach
+below it, and the 25 m drop between them is invisible to the test.
+
+Measured on `map_skill_test_04`: an oasis prop ring specified as `count=12` in a
+1–12 m water band put fences on the lip above the waterfall and barrels on the
+cliff face.
+
+**Fix.** For anything that belongs to a *place* rather than to a *condition*,
+author it: `ObjectTier.positions`. Distance bands are for scatter that may
+legitimately appear anywhere the condition holds — desert flora keeping 25 m
+clear of any water is a real rule and works fine as a band.
+
+**The tell:** if you catch yourself wanting to say "near the water, but only
+*that* water", the filter is the wrong tool.
+
 ## 3.9 A pooled statistic hides a per-CRC rule
 
 Not a map fault — a *method* fault, and it produced two wrong placements in one
