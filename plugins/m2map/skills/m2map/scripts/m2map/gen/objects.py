@@ -115,6 +115,16 @@ def _downhill_roll(height_t: np.ndarray, tx: int, ty: int) -> float:
     return float(round(deg / ROLL_SNAP) * ROLL_SNAP) % 360.0
 
 
+def _roll_for(rng, tier: ObjectTier, height_t: np.ndarray,
+              tx: int, ty: int) -> float:
+    """Heading, in precedence order: explicit, slope-aligned, then sampled."""
+    if tier.roll_deg is not None:
+        return float(tier.roll_deg) % 360.0
+    if tier.align_to_slope:
+        return _downhill_roll(height_t, tx, ty)
+    return _sample_roll(rng, tier)
+
+
 def _candidate_mask(spec: MapSpec, lay: Layout, tier: ObjectTier,
                     tiles: np.ndarray, slope: np.ndarray,
                     submerged: np.ndarray, wet: np.ndarray = None) -> np.ndarray:
@@ -211,8 +221,7 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
                 records.append(ad.ObjectRecord(
                     x=tx * 100.0, y=-(ty * 100.0), z=gz, crc=tier.crc,
                     yaw=0.0, pitch=0.0,
-                    roll=(_downhill_roll(height_t, int(tx), int(ty))
-                          if tier.align_to_slope else _sample_roll(rng, tier)),
+                    roll=_roll_for(rng, tier, height_t, int(tx), int(ty)),
                     height_bias=round(bias, 6)))
             continue
 
@@ -287,8 +296,7 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
                 z=gz,
                 crc=tier.crc,
                 yaw=0.0, pitch=0.0,        # heading lives in roll
-                roll=(_downhill_roll(height_t, int(tx), int(ty))
-                      if tier.align_to_slope else _sample_roll(rng, tier)),
+                roll=_roll_for(rng, tier, height_t, int(tx), int(ty)),
                 height_bias=round(bias, 6),
             ))
             placed += 1

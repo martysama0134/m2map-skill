@@ -109,6 +109,14 @@ class ObjectTier:
     #: placement put one at the foot of the drop, beside the lower pool, 23 m
     #: below the tarn it was supposed to fall from.
     positions: List[Tuple[float, float]] = field(default_factory=list)
+    #: Explicit heading in degrees, written straight into `roll`. Overrides both
+    #: the per-family sampler and `align_to_slope`.
+    #:
+    #: For an authored landmark the heading is part of the placement, not a
+    #: sample from a distribution: a warp gate has to face the road it stands on,
+    #: and a random rung of the 15 degree ladder gives the player its side.
+    #: `None` keeps the sampled behaviour.
+    roll_deg: Optional[float] = None
     #: Turn the prop to face down the slope it stands on, instead of taking a
     #: heading from the 15 deg ladder. For anything that has to read as attached
     #: to a face -- a waterfall above all -- a random heading puts the visible

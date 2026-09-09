@@ -35,6 +35,18 @@ makes a hand-built compound look wrong.
 > yaw and pitch at 0 — `taste.md` §1.1 measures tilt as a debris channel that
 > buildings use in 5.8% of records and `zone/b/building` in 0.1%.
 
+### A compound shares ONE heading
+
+The corollary of §1, and it bites on anything placed as several CRCs at one
+spot. Left to the per-family sampler, a warp gate's dais, arch and effect drew
+**345, 285 and 105 degrees** — three independent rungs of the ladder for three
+pieces of the same object. Nothing in the scatter machinery knows they belong
+together.
+
+`ObjectTier.roll_deg` writes an explicit heading and overrides both the sampler
+and `align_to_slope`. Use it for every authored compound, and give each piece
+the same value.
+
 ---
 
 ## 2. The wall module is 10 m exactly

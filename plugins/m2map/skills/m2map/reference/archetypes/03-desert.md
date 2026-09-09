@@ -478,15 +478,39 @@ Then: a fence ring at the 975 cm pitch with one bearing left open for the way
 in, two tents either side of a fire, and the stores heaped — barrels at their
 own 135 cm spacing, not spread.
 
-### The warp gate is three objects
+### The warp gate is three objects, and they share one heading
 
 `warpgate02_01` is only the dais. Its companions within 15 m are `warpgate02`
 the **Building** at obs 24 / **lift 241.7** and `warpgate02` the **Effect** at
-obs 6 / lift 138.8 — the arch and the glow inside it. Place all three at one
+obs 6 / lift 138.8 — the arch and the spiral inside it. Place all three at one
 position; measured height biases are −5, 0 and 0.
 
-Like the tents, it sits **on the road**: d(road) p50 **0 cm** over 56
-placements, on ground of slope p50 0.1 / p95 2.9.
+**The arch always carries its effect.** Pairing rate against any Effect within
+6 m, per model:
+
+| model | n | paired | offset p50 |
+|---|---|---|---|
+| `warpgate02` (arch) | 30 | **93 %** | 35 cm |
+| `warpgate03_01` | 50 | 86 % | 13 cm |
+| `warpgate02_01` (dais) | 56 | 59 % | 146 cm |
+| `warpgate03` | 35 | 37 % | 10 cm |
+
+61 % of all pairs sit within 50 cm — concentric, not merely nearby. The dais is
+the one that stands alone, because a landing pad without an arch is still a
+warp destination; wherever the **arch** is present the spiral is too.
+
+> **Rule:** never place an arch without its effect at the same coordinates.
+
+**One heading for the whole compound.** Left to the per-family sampler these
+three drew **345, 285 and 105** — independent rungs of the 15° ladder for three
+pieces of one object. Set `ObjectTier.roll_deg` and give them all the same
+value.
+
+**Aim it at the road.** Like the tents it stands *on* the corridor — d(road) p50
+**0 cm** over 56 placements, slope p50 0.1 / p95 2.9 — and the arch has to be
+turned across the route so the player walks through the opening rather than past
+its side. On the reference map the road bears 68° there and the gate is set to
+15°.
 
 ---
 
