@@ -56,7 +56,8 @@ added because a map needed it and the alternative did not work.
 | A near-vertical rock face | `ScarpSpec` | a heightfield's steepest is one 200 cm cell of run per drop; 1,800 cm over 3 m is **81°**. `taste.md` §1.14 |
 | A face of a CHOSEN height | `ScarpSpec.crest_cm` | fits terrain to a prop instead of hunting a `height_bias`. `taste.md` §1.13 |
 | A landmark at an exact spot | `ObjectTier.positions` | `(x, y)` or `(x, y, roll)`; skips every candidate filter. A waterfall cannot be expressed as "steep and near water" — that cannot say *which* water |
-| A fence run or any curving line | `positions` with `(x, y, roll)` | corpus fences: **62 %** in runs of 3+, gap p50 **361 cm**, turn p50 **18°**, rolled tangent. `placement.md` §6.w |
+| A fence run or any curving line | `positions` with `(x, y, roll)` | corpus fences: **62 %** in runs of 3+, gap p50 **361 cm**, turn p50 **18°**, rolled tangent — but the six models are different lengths, so do not generate one; copy it. `placement.md` §6.w |
+| A camp, yard or any shipped compound | `gen/setpiece.py` `extract` + `stamp` | every record within a radius, offsets / rolls / biases verbatim, **translate only**, on a levelling pad. `python -m m2map.gen.setpiece <map> 333 307 32` prints the table |
 | A prop facing out of a slope | `ObjectTier.align_to_slope` | roll = fall line **+ 90°**; the plane lies along the heading |
 | An authored compound aimed deliberately | `ObjectTier.roll_deg` | one heading for every piece. Left to the sampler a warp gate's three parts drew 345, 285 and 105 |
 | A prop that needs a face | `ObjectTier.min_slope` | `fall_7` is p50 **71.4°**; with `max_slope` alone it lands on the flat |

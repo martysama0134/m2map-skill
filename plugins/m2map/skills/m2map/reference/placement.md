@@ -474,8 +474,9 @@ to the line, turning gently — a windbreak or a stock pen, curving. Placed as a
 density with a per-record roll it reads as scattered debris, which is what it
 was on the first pass.
 
-> **Rule:** copy a shipped run rather than generating one. `ObjectTier.positions`
-> takes `(x, y, roll)` triples precisely for this.
+> **Rule:** copy a shipped set-piece whole rather than generating one —
+> `gen/setpiece.py` `extract` + `stamp`. `ObjectTier.positions` takes
+> `(x, y, roll)` triples precisely for this.
 
 **A computed pitch leaves gaps, and the reason is the models.** The six fence
 models are *different lengths*, which is why the shipped runs mix them — the
@@ -485,21 +486,46 @@ median pitch of 361 cm with one model gives panels that do not meet, because
 `metin2_map_n_desert_01` steps **232, 232, 362, 521 cm** through
 fence05 → 04 → 03 → 02 → 01.
 
-So take the geometry verbatim. A 20-panel enclosure from that map, as offsets in
-metres and rolls in degrees from its first panel, spans 33 m and turns through
-15° steps; `map_skill_test_04` stamps it at the camp and a 5-panel one at the
-oasis. Two things to get right when reusing one:
+So take the geometry verbatim — and take **the whole set-piece**, not a run
+lifted out of it. The camp at (333, 307) is not one enclosure: it is **two
+rails, of 5 and 6 panels, one either side of three tents**, with a brazier and
+its stall clutter behind and the planting between. Chaining "the nearest
+unvisited fence within 12 m" from a seed panel walked across both rails and
+into a third, and produced a 20-panel "template" that exists on no map — a blob
+of several runs stamped over each other, which is what "no spatiality" looks
+like. The dump that settled it was the plain one: every record within 32 m of
+the point, as the file has them.
 
-- **Do not rotate a copied run — stamp it as it stands.** Rotating one turns the
-  offsets *and* the rolls, which looks correct and is not: the offsets are
+`gen/setpiece.py` does exactly that and nothing cleverer: `extract(map_dir,
+(333, 307), 32)` returns the 32 records as offsets with their own roll and
+`height_bias`; `stamp(pieces, anchor)` turns them into one authored tier per
+`(crc, bias)` at the new anchor. Rendered from the same camera as the source,
+the copy is indistinguishable — rail A steps match the source's 520 / 362 /
+231 / 237 cm to the centimetre the pasted table rounds to, rolls identical.
+Three rules when reusing one:
+
+- **Copy the compound, not the fence.** The rail is placed against the tent; on
+  its own it is a curve with nothing to curve around. Take everything inside the
+  radius — the source stamps its trees with the same headings as its buildings
+  (105 / 285 / 315 across all 32 records), which is the tell that the whole
+  thing was turned as a unit.
+- **Do not rotate a copied piece — stamp it as it stands.** Rotating one turns
+  the offsets *and* the rolls, which looks correct and is not: the offsets are
   y-down tile coordinates and `roll` is a compass heading, and the two frames do
   not agree in handedness. The panels come apart, and **no measurement of the
   template alone shows it** — the rotated template still reports a 2.4 m median
   spacing against the corpus's 3.0. It only shows in a render. Until the
-  relationship between the two frames is pinned down, `rot_deg` stays 0 and a
-  run is placed where its own shape suits the ground.
-- **Anchor on the run's centroid, not its first panel.** Anchoring on panel 0
-  put a 33 m enclosure trailing off across the sand with the camp at one end.
+  relationship between the two frames is pinned down, `setpiece` has no
+  rotation argument, and a piece that must face another way needs a different
+  source.
+- **Render the reference before comparing.** The blob passed every statistic it
+  was checked against; a headless render of `n_desert_01` at the same target
+  and camera exposed it in one frame. Two rails and three tents cannot be told
+  from one 20-panel run by spacing percentiles.
+
+The source stands on one plane (all 32 records at z 17,826): level a pad under
+the target with `PlazaSpec(tile_index=0, safezone=False)` sized to `extent_m`,
+and check `relief_cm` of the source before assuming any other piece was flat.
 
 **Pool the family for this question.** Any *single* fence model is **84 %**
 singletons and the per-CRC nearest-neighbour reads 975 cm, which says "scatter"

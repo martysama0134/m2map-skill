@@ -484,9 +484,19 @@ best-case 0.8 mean / 2.9 max at the flattest site. So level a pad first.
 > It paints nothing and flags nothing; all it does is cut a flat platform, which
 > is exactly what a building group needs. The camp pad measures 0.00°.
 
-Then: a fence ring at the 975 cm pitch with one bearing left open for the way
-in, two tents either side of a fire, and the stores heaped — barrels at their
-own 135 cm spacing, not spread.
+Then do not build the camp at all — copy one. The constraints above are true
+and insufficient: three attempts to assemble a camp from them (a ring of posts,
+an arc at the median pitch, a run chained from nearby records) each failed in a
+way the numbers did not show. The shipped camp at **(333, 307)** in
+`metin2_map_n_desert_01` is 32 records within 32 m of that point — two fence
+rails of 5 and 6 panels flanking three tents, a brazier with its stall clutter,
+banana trees, ferns and aloes — all on one plane at z 17,826, sharing three
+headings (105 / 285 / 315, trees included). `gen/setpiece.py` reads it
+(`extract(map, (333, 307), 32)`) and stamps it at an anchor on the new map,
+translate only, each record keeping its roll and bias; a 34 m levelling pad
+under the anchor stands in for the plane. Rendered from the same camera, the
+copy and the source cannot be told apart. `placement.md` §6.w;
+`failure-atlas.md` §3.10.
 
 ### The warp gate is three objects, and they share one heading
 

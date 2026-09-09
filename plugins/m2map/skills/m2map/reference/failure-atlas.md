@@ -904,6 +904,29 @@ The same shape appears in the texture catalog and is already recorded there:
 property of the file, because `b/stone/stone01.dds` is `base` in one map and
 `cliff` in another.
 
+## 3.10 A template chained from nearby records is a blob
+
+**Symptom.** A fence "run" copied from the corpus renders as panels crossing
+each other and trailing off; the compound has no spatiality even though every
+record was lifted from a shipped map.
+
+**Cause.** The run was *reconstructed*, not copied: from a seed panel, "take
+the nearest unvisited fence within 12 m" and repeat. At (333, 307) in
+`metin2_map_n_desert_01` that walk crosses from the 5-panel rail on one side of
+the tents to the 6-panel rail on the other and on into a third, and returns a
+20-panel enclosure that exists nowhere. It passes every statistic — spacing,
+turn, chain length — because those are properties of runs and it is made of
+runs.
+
+**Fix.** `gen/setpiece.py`: every record within a radius, offsets and rolls
+verbatim, no chaining, no rotation. And render the reference at the same
+target and camera before judging the copy; the blob was invisible to
+measurement and obvious in one frame. `placement.md` §6.w.
+
+**The tell:** a "template" longer than anything you can point to on the source
+map. If the source shows two rails of 5 and 6 and the table has 20 rows, the
+table is wrong.
+
 ## 4. Unit boundaries — the faults a round trip cannot see
 
 Every entry above describes a file that is wrong in a way some check can notice.

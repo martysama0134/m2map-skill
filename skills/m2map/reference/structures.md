@@ -47,6 +47,12 @@ together.
 and `align_to_slope`. Use it for every authored compound, and give each piece
 the same value.
 
+A *copied* set-piece refines this: the 32 records of the desert camp share
+**three** headings — 105, 285 and 315 — and the trees take them too. One
+heading per compound you author; a compound you copy brings its own small set,
+which is part of what is being copied. `gen/setpiece.py` keeps them, and does
+not rotate.
+
 ---
 
 ## 2. The wall module is 10 m exactly
