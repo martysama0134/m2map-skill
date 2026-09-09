@@ -181,7 +181,8 @@ class SetPiece:
     def save(self, path) -> pathlib.Path:
         path = pathlib.Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(self.to_dict(), indent=1) + "\n", encoding="utf-8")
+        path.write_text(json.dumps(self.to_dict(), indent=1) + "\n", encoding="utf-8",
+                        newline="\n")
         return path
 
 
