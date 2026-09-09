@@ -319,6 +319,65 @@ def audit(map_dir, corpus_root=None, property_crcs: Optional[Iterable[int]] = No
             except Exception:                                # noqa: BLE001
                 pass
 
+        # The plane's own edge showing as a 2 m staircase. Measured as the
+        # share of the plane's outer boundary standing over ground BELOW its
+        # surface: every such cell is a grid edge the player can see, because
+        # nothing hides it. Corpus: metin2_map_c1 0.3%, b1 0.4%,
+        # n_desert_01 1.2%, a1 2.5% -- planes run far past the shore and the
+        # terrain draws the waterline over them. The one map that measures high
+        # is metin2_map_eastplain_01 at 23.4%, which is flooded rather than
+        # shored, so the threshold sits above it and this stays quiet on the
+        # corpus.
+        #
+        # Cells on the sector's own rim are skipped: the plane usually continues
+        # into the neighbouring sector, and counting them would report a seam as
+        # a shoreline.
+        if wf.exists() and hf.exists():
+            try:
+                wm = water_codec.read_water(wf)
+                hm = height_codec.read_height(hf)
+                terrain = hm.raw[:128, :128].astype(float)
+                surf = np.full((128, 128), np.nan)
+                for i, raw in enumerate(wm.heights):
+                    surf[wm.cells == i] = float(raw)
+                plane = np.isfinite(surf)
+                if plane.sum() >= 200:
+                    b = np.zeros_like(plane)
+                    b[:-1, :] |= plane[:-1, :] & ~plane[1:, :]
+                    b[1:, :] |= plane[1:, :] & ~plane[:-1, :]
+                    b[:, :-1] |= plane[:, :-1] & ~plane[:, 1:]
+                    b[:, 1:] |= plane[:, 1:] & ~plane[:, :-1]
+                    b[0, :] = b[-1, :] = b[:, 0] = b[:, -1] = False
+                    n_b = int(b.sum())
+                    exposed = int((b & (surf > terrain)).sum())
+                    # A FLOODED sector has no shoreline to get wrong: the plane
+                    # covers everything and its boundary is bound to stand over
+                    # water. metin2_map_battleroyale and metin2_map_trent02
+                    # measure 100% exposed for exactly that reason, and
+                    # metin2_map_eastplain_01 92% submerged. The rule is about a
+                    # shore, so it needs one to exist.
+                    submerged_share = float((plane & (surf > terrain)).sum()) /                         max(1, int(plane.sum()))
+                    if n_b >= 40 and submerged_share < 0.80 and                             exposed > n_b * 0.30:
+                        out.append(Finding(
+                            "M2MAP-WTR-005", "info", "%s/water.wtr" % rel,
+                            "the shoreline is a staircase",
+                            "%d of %d cells on the water plane's outer boundary "
+                            "(%.0f%%) stand over ground below the surface, so "
+                            "the plane's own 2 m cell edge is what the player "
+                            "sees. The corpus runs 0.3-2.5%%: its planes reach "
+                            "well past the shore and the terrain that rises "
+                            "through them draws the waterline instead."
+                            % (exposed, n_b, 100.0 * exposed / n_b),
+                            "Widen the plane past the basin -- "
+                            "gen/water.py PLANE_OVERRUN is 1.2x the radius -- "
+                            "rather than clipping it to the water. INFO, not a "
+                            "defect: an interior pool set in a carved floor "
+                            "trips this legitimately, and 5 shipped maps do "
+                            "(devilscatacomb, milgyo, 12zi_stage, "
+                            "eastplain_01/03). On an outdoor shore it is real."))
+            except Exception:                                # noqa: BLE001
+                pass
+
         # water planes far below every cell they cover: invisible in game, and
         # the classic symptom of writing centimetres into a raw-unit field.
         if wf.exists() and hf.exists():

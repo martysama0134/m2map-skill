@@ -20,12 +20,23 @@ contain objects; 116 have `attr.atr`; 28 are terrain-less proxies or empty.
 
 The design brief that preceded this corpus proposed six "universal" rules. **Mining
 contradicted five of them.** 1.1-1.6 are the measured versions of those six.
-1.7-1.11 were added later, from ground-truth screenshots of `metin2_map_a1`,
-`map_a2` and `metin2_map_n_desert_01` that named conventions the first mining
-pass had measured but not connected: what the art filenames mean, what a road
-does that nothing else does, why a plaza is the one undithered thing on an
-outdoor map, and — the one that had shipped as a real defect — that the rock
-skin is region fill and §1.5 does not apply to it.
+1.7-1.14 were added later, from ground-truth review of generated maps against
+`metin2_map_a1`, `map_a2` and `metin2_map_n_desert_01`. Each names a convention
+the first mining pass had measured but not connected, and most were found by
+someone looking at a render and saying it was wrong:
+
+| | |
+|---|---|
+| 1.7 | what the art filenames mean |
+| 1.8 | what a road does that nothing else does |
+| 1.9 | the plaza, the one undithered thing on an outdoor map |
+| 1.10 | rock is exactly the ground the player cannot reach |
+| 1.11 | rock feathers out and then stops |
+| 1.12 | the terrain draws the waterline, not the water map |
+| 1.13 | fit the terrain to the prop, not the prop to the terrain |
+| 1.14 | a waterfall needs a wall, and a heightfield must be told to make one |
+
+Four of them had shipped as real defects in the generator.
 
 These are the highest-value rules in this document: break any one and the map
 reads as machine-made.
@@ -443,7 +454,7 @@ corner before the switch.
 The cliff is still region fill rather than stipple — massif ÷ raw is 0.86–0.99,
 the table below — and §1.5 still does not apply to it.
 
-### 1.10a The cliff is region fill — the one exception to §1.5
+#### 1.10a The cliff is region fill — the one exception to §1.5
 
 §1.5 says ground is a per-tile stipple and not region fill. That is a statement
 about **ground**. The rock skin is the exception, and it is the most visible

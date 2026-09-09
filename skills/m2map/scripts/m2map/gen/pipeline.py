@@ -91,6 +91,45 @@ def _note_road_gradient(b: "Build") -> None:
               "  <-- route crosses steep ground" if ratio > 0.5 else ""))
 
 
+def _note_shoreline(b: "Build") -> None:
+    """Report how much of the water plane's edge the player can see.
+
+    A water cell is 200 world units and axis-aligned, so wherever the plane's
+    outer boundary is not buried under terrain the shore renders as a staircase.
+    The measure is the share of that boundary standing over ground BELOW the
+    surface; the corpus runs **0.3-2.5%** (`metin2_map_c1` 0.3, `b1` 0.4,
+    `n_desert_01` 1.2, `a1` 2.5).
+
+    Reported rather than asserted because a perched basin pouring over a lip has
+    a genuinely exposed edge there, and on a small map that one feature is a
+    large share of a small boundary.
+    """
+    if b.water_cells is None or not b.water_heights or b.height_cm is None:
+        return
+    cells = b.water_cells
+    ch, cw = cells.shape
+    z = b.height_cm[:ch, :cw]
+    surf = np.full((ch, cw), np.nan)
+    for i, raw in enumerate(b.water_heights):
+        surf[cells == i] = float(raw)
+    plane = np.isfinite(surf)
+    if plane.sum() < 100:
+        return
+    edge = np.zeros_like(plane)
+    edge[:-1, :] |= plane[:-1, :] & ~plane[1:, :]
+    edge[1:, :] |= plane[1:, :] & ~plane[:-1, :]
+    edge[:, :-1] |= plane[:, :-1] & ~plane[:, 1:]
+    edge[:, 1:] |= plane[:, 1:] & ~plane[:, :-1]
+    n = int(edge.sum())
+    if n < 20:
+        return
+    exposed = int((edge & (surf > z)).sum())
+    share = 100.0 * exposed / n
+    b.note("  shoreline: %.1f%% of the plane edge is exposed grid "
+           "(corpus 0.3-2.5%%)%s"
+           % (share, "  <-- it will step" if share > 8.0 else ""))
+
+
 def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
         stages: Tuple[str, ...] = STAGES, build: Optional[Build] = None,
         progress: Optional[Callable[[str], None]] = None) -> Build:
@@ -149,6 +188,7 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
     if step("water"):
         cells, heights, wet, sub = water.build(spec, b.layout, b.height_cm)
         b.water_cells, b.water_heights, b.wet, b.submerged = cells, heights, wet, sub
+        _note_shoreline(b)
         b.note("water: %d layer(s), %.1f%% submerged"
                % (len(heights), 100.0 * sub.mean() if sub is not None else 0.0))
 

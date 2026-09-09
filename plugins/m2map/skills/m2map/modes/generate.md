@@ -45,6 +45,26 @@ Decisions the user's words usually leave open, with the defaults to use:
 | `attr_style` | `slope_driven` for outdoor, `painted_box` for interiors. |
 | `border_band_m` | 4 |
 
+### The features beyond scatter
+
+Four spec surfaces exist for things a density and a polygon cannot say. Each was
+added because a map needed it and the alternative did not work.
+
+| Want | Use | Key numbers |
+|---|---|---|
+| A paved safe-zone disc | `PlazaSpec` | radius **8–25 m**, painted **unmixed**, 100% `ATTR_SAFEZONE`, block cleared. `taste.md` §1.9 |
+| A near-vertical rock face | `ScarpSpec` | a heightfield's steepest is one 200 cm cell of run per drop; 1,800 cm over 3 m is **81°**. `taste.md` §1.14 |
+| A face of a CHOSEN height | `ScarpSpec.crest_cm` | fits terrain to a prop instead of hunting a `height_bias`. `taste.md` §1.13 |
+| A landmark at an exact spot | `ObjectTier.positions` | skips every candidate filter. A waterfall cannot be expressed as "steep and near water" — that cannot say *which* water |
+| A prop facing out of a slope | `ObjectTier.align_to_slope` | roll = fall line **+ 90°**; the plane lies along the heading |
+| A prop that needs a face | `ObjectTier.min_slope` | `fall_7` is p50 **71.4°**; with `max_slope` alone it lands on the flat |
+
+**Fit the terrain to the prop, not the prop to the terrain.** A prop's geometry
+is fixed; the ground is not. When a fixed-size effect has to meet a landform,
+derive the landform's dimension from the effect and build to it. Two passes
+where a water level is involved, since the level is an output: build, read it,
+set the crest, build again. `taste.md` §1.13.
+
 **Roads before everything.** Lay the corridor waypoints first; terrain flattens
 under them, texture paints them, objects clear them. A road added afterwards
 sits on terrain that ignores it.
@@ -80,6 +100,17 @@ A `!` line means a tier could not place what it was asked to — usually
 `max_slope` or `road_clearance_cm` leaving nowhere to stand. Fix the spec; do
 not ignore it, because the map will simply be emptier than intended.
 
+### Read the build log before the previews
+
+Three lines report a measurement against the corpus rather than a fact about the
+run. Each was added after a fault that looked fine in every other check:
+
+| Line | Corpus | If it is off |
+|---|---|---|
+| `road: ... ratio` | median **0.21**, worst confirmed road 0.56 | above ~0.5 means the route crosses steep ground. **Move the waypoints** — the generator levels the line it is given but does not choose one |
+| `shoreline: ...% exposed` | **0.3–2.5%** | the water plane's own 2 m cell edge is what the player sees; the shore will step. Widen `PLANE_OVERRUN`, do not clip the plane |
+| `texture: run-length, base share` | run **2**, base share **0.52** | run 1 is white noise, 4+ is region fill; a 1-mid palette legitimately reads high |
+
 ## 5. Look at the previews
 
 Non-negotiable. See SKILL.md "Verification". The specific failures worth
@@ -93,6 +124,10 @@ looking for, all of which have happened:
 - **attr.png** blocked ground that does not match the steep ground in
   **slope.png** → the threshold or the footprints are wrong.
 - **height.png** uniformly rolling with no flats → `flat_fraction` did not take.
+- **water.png** a rectangular outline → the plane stops at its basin; the shore
+  will render as a staircase.
+- **tile.png** ground texture on the high ground behind a cliff → that ground is
+  unreachable and should be rock. `gen/walkable.py` should have sealed it.
 
 ## 6. Audit and emit
 
