@@ -529,9 +529,39 @@ shore. Of the cells flagged as water, the share genuinely submerged:
 plane hidden under the beach.
 
 > **Rule:** draw the plane well past the basin — `gen/water.py.PLANE_OVERRUN`
-> extends it by 45 % of the basin's radius — and keep the authored polygon for
-> the shore texture and the object water-distance rules. A mask that is ~100 %
-> submerged has drawn the shoreline itself, and it will step.
+> extends it by **1.2× the basin's radius** — and keep the authored polygon for
+> the shore texture and the object water-distance rules.
+
+**The measure that settles it** is the share of the plane's *outer boundary*
+standing over ground below its surface, because every such cell is a 2 m grid
+edge the player can see. The corpus:
+
+| map | exposed boundary |
+|---|---|
+| `metin2_map_c1` | **0.3 %** |
+| `metin2_map_b1` | 0.4 % |
+| `metin2_map_n_desert_01` | 1.2 % |
+| `metin2_map_a1` | 2.5 % |
+| `metin2_map_eastplain_01` | 23.4 % (a flooded map — the exception) |
+
+**The overrun is the lever, and nothing else is.** Measured on two generated
+maps:
+
+| overrun | exposed |
+|---|---|
+| 0.45 | 19–25 % |
+| 0.80 | 8–9 % |
+| **1.20** | **0–1 %** |
+
+No value of the depth clip moved it below 15 %, and clipping the *authored*
+basin by depth made it worse — 8.6 % → 30.7 % — because the boundary then sits
+three metres under water, which is exposed edge everywhere. The plane simply has
+to reach far enough inland that its own edge is buried in the beach.
+
+The depth clip still matters for one case: a basin perched on a shelf, whose
+overrun would otherwise run over the lip and render as a slab hanging in the air.
+`PLANE_MAX_DEPTH_CM` trims the overrun to ground within 8 m of the surface, and
+`_fill_holes` puts back anything the trim encloses so a deep bed survives.
 
 **And the surface belongs INSIDE the bowl.** Corpus water depth is a median of
 174–410 cm. A plane at or above the rim of its basin floods outward to the

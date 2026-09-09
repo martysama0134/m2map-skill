@@ -34,13 +34,23 @@ NO_WATER = 0xFF
 
 
 #: How far the drawn water plane runs past the authored basin, as a fraction of
-#: the basin's own radius. The corpus plane is far larger than its wet area --
+#: the basin's own radius. **This is the lever for a smooth shoreline**, not the
+#: depth clip: measured against the share of a plane's outer boundary standing
+#: over ground below its surface -- every such cell being a visible 2 m grid
+#: edge -- the generator reads
+#:
+#:     overrun  0.45  ->  19-25% of the boundary exposed
+#:              0.80  ->   8-9%
+#:              1.20  ->   0-1%     <-- corpus is 0.3-2.5%
+#:
+#: while no value of the depth clip moved it below 15%. The plane has to reach
+#: far enough inland that its edge is buried in the beach. The corpus plane is far larger than its wet area --
 #: only 23% of `metin2_map_n_desert_01`'s water cells are actually submerged,
 #: 41% of `metin2_map_a1`'s, 58% over the six maps measured -- because the
 #: visible waterline is where the TERRAIN rises through the plane, not where the
 #: polygon ends. A plane that stops at the shoreline shows its own 2 m cell grid
 #: as a staircase.
-PLANE_OVERRUN = 0.45
+PLANE_OVERRUN = 1.20
 
 
 def _dilate_cells(mask: np.ndarray, steps: int) -> np.ndarray:
@@ -55,11 +65,42 @@ def _dilate_cells(mask: np.ndarray, steps: int) -> np.ndarray:
     return out
 
 
-#: How far below the surface the ground may be for the overrun to still cover
-#: it. The overrun exists to hide the plane under a beach; run it over a cliff
-#: instead and the plane hangs in the air. A basin's own bed is at most the carve
-#: depth below the surface, so anything further down is not shore.
+#: How far below the surface the ground may be for a plane cell to survive.
+#: Cells deeper than this are dropped UNLESS they are enclosed by surviving ones
+#: -- see :func:`_fill_holes` -- so a basin keeps its deep middle while a plane
+#: overhanging a lip loses the part that hangs in the air.
+#:
+#: The measure this is tuned against is the share of a plane's outer boundary
+#: whose ground is below the surface, because every such cell is a straight
+#: 2 m grid edge the player can see. The corpus runs **0.3-2.5%**
+#: (`metin2_map_c1` 0.3, `b1` 0.4, `n_desert_01` 1.2, `a1` 2.5).
 PLANE_MAX_DEPTH_CM = 800.0
+
+
+def _fill_holes(mask: np.ndarray) -> np.ndarray:
+    """Add back any region of ``~mask`` that does not touch the grid border.
+
+    A depth clip on its own would eat the middle of every basin, which is the
+    deepest part of it. Enclosure is what separates "the bed of this lake" from
+    "the ground at the bottom of the cliff this lake is pouring over": the first
+    is surrounded by water, the second opens out.
+    """
+    free = ~mask
+    seen = np.zeros_like(mask)
+    seen[0, :] |= free[0, :]
+    seen[-1, :] |= free[-1, :]
+    seen[:, 0] |= free[:, 0]
+    seen[:, -1] |= free[:, -1]
+    frontier = seen.copy()
+    while frontier.any():
+        grown = np.zeros_like(frontier)
+        grown[1:, :] |= frontier[:-1, :]
+        grown[:-1, :] |= frontier[1:, :]
+        grown[:, 1:] |= frontier[:, :-1]
+        grown[:, :-1] |= frontier[:, 1:]
+        frontier = grown & free & ~seen
+        seen |= frontier
+    return mask | (free & ~seen)
 
 
 def _plane_mask(cell_mask: np.ndarray, height_cm=None, surface=None) -> np.ndarray:
@@ -79,9 +120,15 @@ def _plane_mask(cell_mask: np.ndarray, height_cm=None, surface=None) -> np.ndarr
     radius = (area / np.pi) ** 0.5
     grown = _dilate_cells(cell_mask, max(2, int(round(radius * PLANE_OVERRUN))))
     if height_cm is not None and surface is not None:
+        # Clip the OVERRUN only. Its whole job is to reach onto the beach, where
+        # the ground is at or above the surface and hides the plane's edge; where
+        # it reaches over a lip instead, the ground falls away and the edge hangs
+        # in the air. The authored basin is exempt -- clipping that by depth cuts
+        # the plane inside the bowl, and the resulting boundary sits three metres
+        # UNDER water, which is exposed grid edge everywhere. Measured: exposed
+        # boundary went from 8.6% to 30.7% doing it that way.
         deep = height_cm < (float(surface) - PLANE_MAX_DEPTH_CM)
-        grown = grown & ~deep
-        grown |= cell_mask          # never trim the authored basin itself
+        grown = _fill_holes((grown & ~deep) | cell_mask)
     return grown
 
 
