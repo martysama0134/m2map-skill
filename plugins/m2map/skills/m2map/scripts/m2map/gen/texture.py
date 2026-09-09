@@ -123,7 +123,8 @@ def _suitability(spec: MapSpec, lay: Layout, slope: np.ndarray,
 
 
 def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
-          slope_deg: np.ndarray, wet: np.ndarray) -> np.ndarray:
+          slope_deg: np.ndarray, wet: np.ndarray,
+          submerged: np.ndarray | None = None) -> np.ndarray:
     """Whole-map tile index grid, ``(h_tiles, w_tiles)`` uint8.
 
     ``height_cm`` and ``slope_deg`` arrive on the terrain vertex grid (2 m) and
@@ -140,6 +141,10 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
 
     slope = _upsample(slope_deg, h, w)
     height = _upsample(height_cm, h, w)
+    # What is actually under water, which is wider than the authored basin once
+    # the plane overruns its shore (gen/water.py). Ground under water is not
+    # ground: no rock skin, no green apron, no damp rim.
+    water = wet if submerged is None else (wet | submerged)
 
     rng = np.random.default_rng(stream_seed("texture", spec.seed))
 
@@ -250,10 +255,14 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     # only near water (>=70% of corpus shore tiles are within 4 m of it), accent
     # anywhere, at under 1.5% cover and a corpus median solidity of 5.1%.
     for i, slot in enumerate(spec.textures, start=1):
+        if slot.fringe_of:
+            continue                    # painted as a rim, below
         if slot.role not in ("shore", "accent") or slot.weight <= 0:
             continue
         field = scores[i - 1]
         allowed = field > 1e-6
+        if water is not None:
+            allowed &= ~water
         if not allowed.any():
             continue
         # Density FOLLOWS the suitability field rather than being uniform over
@@ -291,6 +300,29 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
         hit = allowed & (rank < p_hit)
         tiles = np.where(hit, np.uint8(i), tiles)
 
+    # Fringe slots: the dithered band where one ground gives way to another.
+    # `metin2_map_n_desert_01`'s oasis is one green over a solid apron with the
+    # damp sand appearing only along its edge; painting that sand as a texture
+    # in its own right instead spreads it over the bed and the shore, which is
+    # both wrong and muddy. See `TextureSlot.fringe_of`.
+    for i, slot in enumerate(spec.textures, start=1):
+        if not slot.fringe_of:
+            continue
+        target = np.uint8(np.clip(slot.fringe_of, 1, len(spec.textures)))
+        core = tiles == target
+        if not core.any():
+            continue
+        steps = max(1, int(round(slot.fringe_width_m)))
+        band = _dilate(core, steps) & ~_erode(core, 1)
+        if water is not None:
+            band &= ~water
+        if slot.region:
+            gate = lay.regions.get(slot.region)
+            if gate is not None:
+                band &= gate
+        coin = rng.random((h, w)) < float(np.clip(slot.fringe_mix, 0.0, 1.0))
+        tiles = np.where(band & coin, np.uint8(i), tiles)
+
     # The rock skin is region fill, not stipple -- see `cliff_massif`. Inside
     # the massif the cliff slots still dither AMONG THEMSELVES, which is how the
     # corpus reads: metin2_a2's stone01/stone02 pair is 45% / 20% of the same
@@ -302,6 +334,14 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
         massif = cliff_massif(spec, slope, rng,
                               slope_deg_src=slope_deg,
                               road_mask=lay.road_mask)
+        # A LAKE BED IS NOT ROCK. `taste.md` 1.10 says rock covers the ground the
+        # player cannot walk on, and a basin floor qualifies -- it is blocked,
+        # and after a scarp cuts it, steep. The rule was written about mountains
+        # and it swallowed the water: 76% of the oasis bed came out stone03
+        # against a hand-painted reference that is plainly sand. The bed keeps
+        # whatever the ground carpet gave it.
+        if water is not None and water.any():
+            massif &= ~water
         if massif.any():
             # ONE texture, flat across the whole face. See `dominant_cliff`.
             tiles = np.where(massif, np.uint8(dominant_cliff(spec)), tiles)

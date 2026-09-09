@@ -415,17 +415,19 @@ Assembly, in order:
    placement samples the tile grid and tiles map two to a cell, so the number at
    a tile is not the number at `cell[x // 2]`. Deriving it put the sheet 8 m
    above the crest.
-4. **A green APRON, not a waterline rim.** The shipped oasis rings its basin
-   with `grass 01` and damp `sand02` across the whole hollow — a band tens of
-   metres wide fading into dry sand, not a few tiles at the edge. Name it with a
-   `RegionSpec(kind="oasis")`; the texture stage boosts `shore` and `accent`
-   inside one, and overlay density follows the suitability field so the green is
-   dense at the water and thins outward. On `map_skill_test_04` that is **49 %**
-   of the basin's non-cliff ground.
+4. **The oasis palette is four slots and a rule.** Hand-painted and read back:
 
-   **This is where `sand02` belongs.** It was dropped as a ground texture
-   because it blotches at ground scale (`textures.md` §4c2); confined to the
-   water margin, blotchy damp sand is exactly what it should look like.
+   | zone | slot |
+   |---|---|
+   | lake bed, and the desert around | `sand01` (the base — the bed is not its own texture) |
+   | the apron | `grass 02` alone, as a carpet inside a `RegionSpec(kind="oasis")` |
+   | where the green gives way | `sand02` as the carpet's dithered rim — `fringe_of` |
+
+   One green, not two: two greens dithering make it mottled. And `sand02` is a
+   *transition*, never a zone — as a zone it spreads over bed and shore and
+   muddies both, which is the same reason it fails as a ground texture
+   (`textures.md` §4c2). Measured on `map_skill_test_04`: 40 % of the dry basin
+   under grass at 79 % solid, bed **98.8 %** sand01.
 5. **Palms, not the archetype's flora.** `tree/n2` sits a median 200 m from water
    corpus-wide and the JoshuaTrees 350–390 m. `DatePalm`, `CoconutPalm` and
    `CurlyPalm` are the exception that belongs at the edge.

@@ -232,6 +232,40 @@ the same reason, only worse: it emptied the apron completely.
 Result on `map_skill_test_04`: 37 % of the oasis basin under grass at **71 %**
 solid, and none anywhere else.
 
+**(c4) One composition rule, three features: carpet, rim, ground beneath.**
+The base carpet (c2), the rock massif (k) and an oasis apron are the same shape,
+and once that is seen the palette almost writes itself. Taken from a
+hand-painted oasis:
+
+| zone | texture | how |
+|---|---|---|
+| the ground everything sits on | `sand01` | the base carpet — **also the lake bed** |
+| the feature | `grass 02`, and only that | a coherent carpet inside its region |
+| where the feature gives way | `sand02` | a dithered band on the carpet's rim, nothing else |
+
+Three things that look like details and are not:
+
+- **One green, not two.** Two greens dithering against each other is what makes
+  an apron read as mottled. The hand-painted reference uses `grass 02` alone.
+- **The bed is not a texture.** It is the ground the basin was cut into, so it
+  keeps the base. Giving water its own bed texture, or letting the rock skin
+  claim it, both look wrong immediately.
+- **Damp sand is a transition, not a zone.** Painted as a zone, `sand02` spreads
+  over the bed and the shore and muddies both. Painted as the rim of the green
+  it is exactly right — which is also the answer to why it was unusable as a
+  ground texture (c2): it was never meant to cover area.
+
+`TextureSlot.fringe_of` expresses the third row directly: name the slot this one
+edges, and it paints only in that band.
+
+**Under water is not ground.** No rock skin, no apron, no rim — measured, the
+oasis bed came out **76 % stone03** before the exclusion, because the basin
+floor is blocked and, after a scarp cuts it, steep, so `taste.md` §1.10's "rock
+is where the player cannot walk" swallowed the lake. That rule is about
+mountains. The bed now reads **98.8 % sand01**. Note the mask that matters is
+the *submerged* set, not the authored basin: the water plane overruns its
+polygon by design (§1.12), so the authored mask leaves a ring of bed unprotected.
+
 **(d) A palette carries far more than it uses.** 17.3% of all declared slots are
 never painted, and the tail sets are worse: `metin2_map_t2.txt` paints 6 of 17,
 `metin2_b_fielddungeon.txt` 5 of 17, `metin2_map_treasure_hunt.txt` 10 of 17.

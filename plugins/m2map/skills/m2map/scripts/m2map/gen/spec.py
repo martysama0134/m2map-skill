@@ -74,6 +74,19 @@ class TextureSlot:
     #: Relative weight in the stipple field. Ignored for `path`/`shore`, which
     #: are painted as solid features from the layout splines.
     weight: float = 1.0
+    #: Paint this slot as the dithered RIM of another slot (1-based index), not
+    #: as ground of its own.
+    #:
+    #: This is how a hand-painted oasis is built: one green (`grass 02`) laid as
+    #: a carpet, and the damp sand (`sand02`) only in the band where the green
+    #: gives way -- not at the waterline, and not as a texture in its own right.
+    #: The bed keeps the base sand. A slot painted this way needs no weight of
+    #: its own; `fringe_width_m` sets how far the band reaches.
+    fringe_of: int = 0
+    #: Width of that band in metres, and the odds a tile inside it takes this
+    #: slot rather than the one it fringes.
+    fringe_width_m: float = 4.0
+    fringe_mix: float = 0.55
     #: Confine this slot to a named `RegionSpec.kind`. Empty = the whole map.
     #:
     #: An `accent` with no region is sprinkled over everything the role allows,

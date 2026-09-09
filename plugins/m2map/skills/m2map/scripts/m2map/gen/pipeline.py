@@ -195,7 +195,8 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
     if step("texture"):
         b.tiles = texture.build(spec, b.layout, b.height_cm, b.slope_deg,
                                 b.wet if b.wet is not None else
-                                np.zeros(b.layout.shape, bool))
+                                np.zeros(b.layout.shape, bool),
+                                submerged=b.submerged)
         st = texture.stipple_stats(b.tiles)
         b.note("texture: %d slots used, run-length median %.1f, base share %.2f"
                % (st["used_slots"], st["run_length_median"], st["base_share"]))
