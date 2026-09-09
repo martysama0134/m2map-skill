@@ -107,6 +107,13 @@ def _suitability(spec: MapSpec, lay: Layout, slope: np.ndarray,
                 s = np.where(mask, s * 1.8, s)
             elif kind == "settlement" and role == "base":
                 s = np.where(mask, s * 1.4, s)
+            elif kind == "oasis" and role in ("shore", "accent"):
+                # The green apron. `metin2_map_n_desert_01` rings its oasis with
+                # grass and damp sand over the whole basin, not just at the
+                # waterline -- a band tens of metres wide that fades into dry
+                # sand. Without a region to name it, a water-gated shore slot
+                # only ever reaches a few tiles out.
+                s = np.where(mask, s * 12.0, s)
         scores[i] = s
     return scores
 
@@ -241,11 +248,21 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     for i, slot in enumerate(spec.textures, start=1):
         if slot.role not in ("shore", "accent") or slot.weight <= 0:
             continue
-        allowed = scores[i - 1] > 1e-6
+        field = scores[i - 1]
+        allowed = field > 1e-6
         if not allowed.any():
             continue
+        # Density FOLLOWS the suitability field rather than being uniform over
+        # it. A flat rate spreads an overlay evenly wherever it is permitted, so
+        # a shore texture gated on "near water" appears as often 10 m inland as
+        # at the edge, and a green apron cannot be concentrated on the oasis at
+        # all -- the corpus paints a dense band at the waterline that thins
+        # outward. Scaling the field so its mean over the allowed area equals
+        # the declared weight keeps the share while restoring the gradient.
         rate = float(np.clip(slot.weight, 0.0, 1.0))
-        hit = allowed & (rng.random((h, w)) < rate / max(1e-6, allowed.mean()))
+        norm = field / max(1e-9, float(field[allowed].mean()))
+        p_hit = np.clip(norm * rate, 0.0, 1.0)
+        hit = allowed & (rng.random((h, w)) < p_hit)
         tiles = np.where(hit, np.uint8(i), tiles)
 
     # The rock skin is region fill, not stipple -- see `cliff_massif`. Inside

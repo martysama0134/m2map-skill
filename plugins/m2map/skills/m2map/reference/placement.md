@@ -474,9 +474,26 @@ to the line, turning gently — a windbreak or a stock pen, curving. Placed as a
 density with a per-record roll it reads as scattered debris, which is what it
 was on the first pass.
 
-> **Rule:** author the run. `ObjectTier.positions` takes `(x, y, roll)` triples
-> precisely for this — every panel of an arc faces a different way, so a single
-> `roll_deg` cannot express one.
+> **Rule:** copy a shipped run rather than generating one. `ObjectTier.positions`
+> takes `(x, y, roll)` triples precisely for this.
+
+**A computed pitch leaves gaps, and the reason is the models.** The six fence
+models are *different lengths*, which is why the shipped runs mix them — the
+short ones close what the long ones leave. Generating an arc from the corpus
+median pitch of 361 cm with one model gives panels that do not meet, because
+`general_obj_fence03` is not 361 cm long. The real run at (333, 307) in
+`metin2_map_n_desert_01` steps **232, 232, 362, 521 cm** through
+fence05 → 04 → 03 → 02 → 01.
+
+So take the geometry verbatim. A 20-panel enclosure from that map, as offsets in
+metres and rolls in degrees from its first panel, spans 33 m and turns through
+15° steps; `map_skill_test_04` stamps it at the camp and a 5-panel one at the
+oasis. Two things to get right when reusing one:
+
+- **Rotate offsets and rolls by the same angle.** Turn one without the other and
+  the panels stop meeting.
+- **Anchor on the run's centroid, not its first panel.** Anchoring on panel 0
+  put a 33 m enclosure trailing off across the sand with the camp at one end.
 
 **Pool the family for this question.** Any *single* fence model is **84 %**
 singletons and the per-CRC nearest-neighbour reads 975 cm, which says "scatter"
