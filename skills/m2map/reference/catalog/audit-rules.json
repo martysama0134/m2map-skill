@@ -856,8 +856,7 @@
    ],
    "predicate": "boundary cells >= 40 AND submerged share of the plane < 0.80 AND exposed boundary share > 0.30. Cells on the sector rim are excluded, since the plane usually continues into the neighbour.",
    "fix": "Widen the plane past the basin rather than clipping it to the water (gen/water.py PLANE_OVERRUN, 1.2x the basin radius), so the terrain rising through it draws the waterline.",
-   "corpus": "Exposed boundary share: metin2_map_c1 0.3%, metin2_map_b1 0.4%, metin2_map_n_desert_01 1.2%, metin2_map_a1 2.5%. Fires on 5 of 142 shipped maps -- devilscatacomb, milgyo, 12zi_stage, eastplain_01 and _03 -- all interiors or near-flooded, where a decorative pool set into a carved floor has no shore to get wrong. INFO for that reason; on an outdoor shore it is real.",
-   "spec": null
+   "corpus": "Exposed boundary share: metin2_map_c1 0.3%, metin2_map_b1 0.4%, metin2_map_n_desert_01 1.2%, metin2_map_a1 2.5%. Fires on 5 of 142 shipped maps -- devilscatacomb, milgyo, 12zi_stage, eastplain_01 and _03 -- all interiors or near-flooded, where a decorative pool set into a carved floor has no shore to get wrong. INFO for that reason; on an outdoor shore it is real."
   }
  ]
 }
