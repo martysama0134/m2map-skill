@@ -25,6 +25,7 @@ import numpy as np
 
 from ..codec import areadata as ad
 from . import attribute, finish, layout, objects, terrain, texture, water
+from . import setpiece
 from .spec import MapSpec
 
 STAGES = ("layout", "terrain", "water", "texture", "objects", "attr", "finish")
@@ -134,6 +135,9 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
         stages: Tuple[str, ...] = STAGES, build: Optional[Build] = None,
         progress: Optional[Callable[[str], None]] = None) -> Build:
     """Run the requested stages, in order, on a fresh or existing build."""
+    # `setpieces:` entries become authored tiers and pads here, so the
+    # validation below sees the stamped positions and the pad extents too.
+    spec = setpiece.expand(spec)
     spec.require_valid()
     b = build or Build(spec=spec)
 

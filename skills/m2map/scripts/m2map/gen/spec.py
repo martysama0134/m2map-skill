@@ -31,6 +31,22 @@ CELL_SCALE = 200          # world units per terrain cell
 HEIGHT_SCALE = 0.5        # raw uint16 -> world cm
 SECTOR_CELLS = 128        # terrain cells per sector axis
 SECTOR_TILES = 256        # 1 m tiles per sector axis
+
+#: Saved set-piece patterns (`gen/setpiece.py`, `reference/setpieces/README.md`).
+SETPIECE_DIR = pathlib.Path(__file__).resolve().parents[3] / "reference" / "setpieces"
+
+
+def resolve_pattern(name) -> Optional[pathlib.Path]:
+    """A pattern by bare name under `reference/setpieces/` (`desert_camp`), by
+    file name (`desert_camp.json`) or by path. None when nothing is there."""
+    cand = [pathlib.Path(str(name))]
+    if not str(name).lower().endswith(".json"):
+        cand.append(pathlib.Path(str(name) + ".json"))
+    cand += [SETPIECE_DIR / c.name for c in list(cand)]
+    for c in cand:
+        if c.is_file():
+            return c
+    return None
 SECTOR_UNITS = SECTOR_CELLS * CELL_SCALE   # 25,600 cm
 
 #: A map's origin must be a multiple of this (four maps in the corpus violate
@@ -289,6 +305,39 @@ class PlazaSpec:
 
 
 @dataclass
+class SetPieceSpec:
+    """A shipped compound stamped whole from a saved pattern.
+
+    Three generated versions of the desert camp -- posts on a ring, an arc at
+    the corpus median pitch, a "run" chained from nearby records -- each read as
+    debris while every statistic passed. The one that matched the source render
+    copied the compound verbatim: every record within 32 m of a point,
+    offsets, rolls and height biases as shipped, moved as a block. Patterns
+    live in ``reference/setpieces/`` about their centroid; `pipeline.run`
+    expands each entry here into authored `ObjectTier`s (`gen/setpiece.py`)
+    and, unless ``pad_radius_m`` is 0, a levelling pad centred on the anchor --
+    the camp's 32 records stand on one plane in the source.
+    """
+
+    #: name under `reference/setpieces/` (`desert_camp`), or a path to a .json
+    pattern: str
+    #: tile metres, y-down; the pattern's pivot (its centroid) lands here
+    anchor: Tuple[float, float] = (0.0, 0.0)
+    #: turn the whole block, degrees in the sense of `roll` -- counter-clockwise
+    #: with north up (measured on 1,681 corpus fences). Keep to multiples of
+    #: 15 so the copied rolls stay on the ladder (`taste.md` 1.2).
+    rotate_deg: float = 0.0
+    label: str = ""
+    #: levelling pad radius in metres. None = the pattern's extent + 4 m
+    #: (clamped to the plaza band, 4-40); 0 = no pad.
+    pad_radius_m: Optional[float] = None
+    tier: str = "filler"
+
+    def __post_init__(self):
+        self.anchor = tuple(self.anchor)
+
+
+@dataclass
 class MapSpec:
     """Everything needed to build a map, and nothing that can be derived."""
 
@@ -311,6 +360,7 @@ class MapSpec:
     regions: List[RegionSpec] = field(default_factory=list)
     plazas: List[PlazaSpec] = field(default_factory=list)
     scarps: List[ScarpSpec] = field(default_factory=list)
+    setpieces: List[SetPieceSpec] = field(default_factory=list)
     objects: List[ObjectTier] = field(default_factory=list)
 
     # --- terrain shaping, clamped to the archetype's mined statistics ------
@@ -471,6 +521,17 @@ class MapSpec:
                     pz.radius_m <= cy <= span_tiles[1] - pz.radius_m):
                 out.append("plaza at (%.0f, %.0f) r=%.0f runs off the %dx%d m map"
                            % (cx, cy, pz.radius_m, span_tiles[0], span_tiles[1]))
+        for sps in self.setpieces:
+            if resolve_pattern(sps.pattern) is None:
+                out.append("set-piece pattern %r not found -- a name under "
+                           "reference/setpieces/ or a path to a .json" % sps.pattern)
+            ax, ay = sps.anchor
+            if not (0 <= ax < span_tiles[0] and 0 <= ay < span_tiles[1]):
+                out.append("set-piece %s anchored at (%.0f, %.0f) outside the "
+                           "%dx%d m map" % (sps.label or sps.pattern, ax, ay, *span_tiles))
+            if sps.pad_radius_m is not None and sps.pad_radius_m < 0:
+                out.append("set-piece %s pad_radius_m must be >= 0"
+                           % (sps.label or sps.pattern))
         # Archetype tables state distances measured on 2x4 to 6x6 maps. Copied
         # onto a small map they exclude the whole surface, and the failure is
         # silent -- the tier simply places nothing. Catch it here rather than
@@ -532,6 +593,7 @@ class MapSpec:
         d["regions"] = [RegionSpec(**r) for r in d.get("regions", [])]
         d["plazas"] = [PlazaSpec(**p) for p in d.get("plazas", [])]
         d["scarps"] = [ScarpSpec(**x) for x in d.get("scarps", [])]
+        d["setpieces"] = [SetPieceSpec(**x) for x in d.get("setpieces", [])]
         d["objects"] = [ObjectTier(**o) for o in d.get("objects", [])]
         for k in ("size", "base_position", "height_range_cm"):
             if k in d and d[k] is not None:

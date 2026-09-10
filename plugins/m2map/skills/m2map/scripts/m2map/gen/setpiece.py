@@ -72,7 +72,7 @@ from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 from ..codec import areadata as ad
 from .spec import ObjectTier
 
-__all__ = ["Piece", "SetPiece", "extract", "load", "rotate", "stamp",
+__all__ = ["Piece", "SetPiece", "extract", "load", "rotate", "stamp", "expand",
            "alignment", "extent_m", "relief_cm", "headings", "FORMAT"]
 
 FORMAT = "m2map-setpiece/1"
@@ -290,6 +290,50 @@ def stamp(pieces: Union[SetPiece, Iterable[Piece]], anchor: Tuple[float, float],
                                 positions=list(groups[(crc, bias)]),
                                 height_bias=(bias, bias)))
     return tiers
+
+
+# --- from a mapspec ------------------------------------------------------------
+
+def expand(spec):
+    """A copy of ``spec`` with every `SetPieceSpec` turned into authored tiers
+    and a levelling pad, and ``setpieces`` emptied.
+
+    Called at the top of `pipeline.run`, so a YAML mapspec can say::
+
+        setpieces:
+          - pattern: desert_camp
+            anchor: [88, 108]
+            rotate_deg: 90
+
+    The pad is a `PlazaSpec(tile_index=0, safezone=False)` centred on the
+    anchor -- it paints and flags nothing, it only levels -- with radius
+    ``pad_radius_m`` or, by default, the pattern's extent plus 4 m clamped to
+    the plaza band. A turned block stays inside it because it turns about the
+    same point.
+    """
+    from dataclasses import replace as _replace
+    from .spec import PlazaSpec, SpecError, resolve_pattern
+
+    if not getattr(spec, "setpieces", None):
+        return spec
+    objects = list(spec.objects)
+    plazas = list(spec.plazas)
+    for sps in spec.setpieces:
+        path = resolve_pattern(sps.pattern)
+        if path is None:
+            raise SpecError("set-piece pattern %r not found" % sps.pattern)
+        sp = load(path)
+        if sps.rotate_deg:
+            sp = sp.rotated(sps.rotate_deg)
+        objects += sp.stamp(tuple(sps.anchor), label=sps.label or sp.name, tier=sps.tier)
+        r = sps.pad_radius_m
+        if r is None:
+            x0, x1, y0, y1 = sp.extent_m()
+            r = min(40.0, max(4.0, max(abs(x0), abs(x1), abs(y0), abs(y1)) + 4.0))
+        if r > 0:
+            plazas.append(PlazaSpec(centre=tuple(sps.anchor), radius_m=float(r),
+                                    tile_index=0, safezone=False))
+    return _replace(spec, objects=objects, plazas=plazas, setpieces=[])
 
 
 # --- describing a block ------------------------------------------------------

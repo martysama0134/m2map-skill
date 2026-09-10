@@ -57,10 +57,25 @@ added because a map needed it and the alternative did not work.
 | A face of a CHOSEN height | `ScarpSpec.crest_cm` | fits terrain to a prop instead of hunting a `height_bias`. `taste.md` §1.13 |
 | A landmark at an exact spot | `ObjectTier.positions` | `(x, y)` or `(x, y, roll)`; skips every candidate filter. A waterfall cannot be expressed as "steep and near water" — that cannot say *which* water |
 | A fence run or any curving line | `positions` with `(x, y, roll)` | corpus fences: **62 %** in runs of 3+, gap p50 **361 cm**, turn p50 **18°**, rolled tangent — but the six models are different lengths, so do not generate one; copy it. `placement.md` §6.w |
-| A camp, yard or any shipped compound | `gen/setpiece.py` — `load` a pattern from `reference/setpieces/`, `.rotated(θ)`, `.stamp(anchor)` | every record within a radius, offsets / rolls / biases verbatim, about the block's **centroid**; turned as one block by multiples of 15 with the measured sign (roll CCW north-up, so y-down offsets turn clockwise), on a levelling pad centred on the anchor. `python -m m2map.gen.setpiece <map> 333 307 32 --save …` makes a new pattern. `reference/setpieces/README.md` |
+| A camp, yard or any shipped compound | **`setpieces:`** in the mapspec — a pattern from `reference/setpieces/`, an `anchor`, a `rotate_deg` | every record within a radius, offsets / rolls / biases verbatim, about the block's **centroid**; turned as one block by multiples of 15 with the measured sign (roll CCW north-up, so y-down offsets turn clockwise); a levelling pad is added on the anchor (extent + 4 m) unless `pad_radius_m: 0`. `reference/setpieces/README.md` |
 | A prop facing out of a slope | `ObjectTier.align_to_slope` | roll = fall line **+ 90°**; the plane lies along the heading |
 | An authored compound aimed deliberately | `ObjectTier.roll_deg` | one heading for every piece. Left to the sampler a warp gate's three parts drew 345, 285 and 105 |
 | A prop that needs a face | `ObjectTier.min_slope` | `fall_7` is p50 **71.4°**; with `max_slope` alone it lands on the flat |
+
+A set-piece in the spec is three lines:
+
+```yaml
+setpieces:
+  - pattern: desert_camp        # reference/setpieces/desert_camp.json
+    anchor: [88, 108]           # tile metres; the pattern's centroid lands here
+    rotate_deg: 90              # optional, multiples of 15
+```
+
+`pipeline.run` expands it into authored `ObjectTier`s and a
+`PlazaSpec(tile_index=0, safezone=False)` pad before validating, so the stamped
+positions and the pad are checked against the map like anything else. Do not
+hand-author a camp from the archetype's densities — `03-desert.md` explains
+why, three times over.
 
 **Fit the terrain to the prop, not the prop to the terrain.** A prop's geometry
 is fixed; the ground is not. When a fixed-size effect has to meet a landform,

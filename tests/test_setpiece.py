@@ -228,3 +228,56 @@ def test_stamped_piece_survives_the_pipeline_turned_or_not(source):
     first = recs[0]
     assert first.x / 100.0 == pytest.approx(anchor[0] + src.dy, abs=0.02)
     assert first.terrain_y / 100.0 == pytest.approx(anchor[1] - src.dx, abs=0.02)
+
+
+# --- from a mapspec ----------------------------------------------------------
+
+def test_yaml_setpieces_expand_into_tiers_and_a_pad():
+    """A `setpieces:` entry is all a YAML spec needs: expand() turns it into
+    the pattern's tiers about the anchor and a levelling pad on the same point."""
+    import json
+    from m2map.gen.spec import MapSpec, SetPieceSpec
+    try:
+        import yaml
+    except ImportError:                                   # pragma: no cover
+        yaml = None
+    spec = make_spec(setpieces=[SetPieceSpec(pattern="desert_camp",
+                                            anchor=(120.0, 150.0), rotate_deg=90.0)])
+    assert spec.validate() == []
+    # survives the spec's own text form
+    text = spec.dump()
+    data = yaml.safe_load(text) if yaml else json.loads(text)
+    back = MapSpec.from_dict(data)
+    assert back.setpieces[0].pattern == "desert_camp"
+    assert back.setpieces[0].anchor == (120.0, 150.0)
+    assert back.setpieces[0].rotate_deg == 90.0
+
+    ex = setpiece.expand(back)
+    assert ex.setpieces == [] and back.setpieces           # a copy, not a mutation
+    placed = [pos for t_ in ex.objects[len(back.objects):] for pos in t_.positions]
+    assert len(placed) == 32
+    pattern = setpiece.load(PATTERN).rotated(90.0)
+    # the centroid sits on the anchor
+    assert sum(x for x, _, _ in placed) / 32 == pytest.approx(120.0, abs=1e-3)
+    assert sum(y for _, y, _ in placed) / 32 == pytest.approx(150.0, abs=1e-3)
+    assert sorted(r for _, _, r in placed) == sorted(p.roll for p in pattern.pieces)
+    pad = ex.plazas[-1]
+    assert pad.centre == (120.0, 150.0) and pad.tile_index == 0 and not pad.safezone
+    x0, x1, y0, y1 = pattern.extent_m()
+    assert pad.radius_m == pytest.approx(max(abs(x0), abs(x1), abs(y0), abs(y1)) + 4.0)
+    # and the pipeline does the expansion itself
+    b = pipeline.run(back)
+    crcs = {p.crc for p in pattern.pieces}
+    assert sum(1 for r in b.records if r.crc in crcs) >= 32
+
+
+def test_yaml_setpieces_are_validated():
+    from m2map.gen.spec import SetPieceSpec
+    bad = make_spec(setpieces=[SetPieceSpec(pattern="no_such_pattern", anchor=(10.0, 10.0))])
+    assert any("not found" in p for p in bad.validate())
+    off = make_spec(setpieces=[SetPieceSpec(pattern="desert_camp", anchor=(300.0, 10.0))])
+    assert any("outside" in p for p in off.validate())
+    nopad = make_spec(setpieces=[SetPieceSpec(pattern="desert_camp", anchor=(120.0, 150.0),
+                                             pad_radius_m=0)])
+    ex = setpiece.expand(nopad)
+    assert len(ex.plazas) == len(nopad.plazas)

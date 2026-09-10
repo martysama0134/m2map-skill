@@ -608,7 +608,9 @@ class TestMsEnv:
 
     def test_round_trip_map_local_environments(self):
         # maps may ship their own .msenv next to setting.txt
-        files = sorted(MAPS.glob("*/*.msenv")) if MAPS.is_dir() else []
+        if not MAPS.is_dir():
+            pytest.skip("corpus not mounted -- the 19-file floor counts corpus maps")
+        files = sorted(MAPS.glob("*/*.msenv"))
         files += sorted((PACK / "maps").glob("*/*.msenv"))
         assert len(files) >= 19, "only %d map-local msenv" % len(files)
         for f in files:

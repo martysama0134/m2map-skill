@@ -27,6 +27,20 @@ source, unturned and turned 90°: rails connected both ways.
 
 ## Using one
 
+In a mapspec (`build_map.py spec.yaml`):
+
+```yaml
+setpieces:
+  - pattern: desert_camp        # a name here, a file name, or a path to a .json
+    anchor: [82, 120]           # tile metres, y-down; the centroid lands here
+    rotate_deg: 90              # optional; multiples of 15
+    # pad_radius_m: 34          # optional; default = extent + 4 m, 0 = no pad
+    # label: camp
+```
+
+`pipeline.run` expands each entry into authored `ObjectTier`s and a levelling
+pad before validation (`gen/setpiece.py` `expand`). The same from Python:
+
 ```python
 from m2map.gen import setpiece
 from m2map.gen.spec import PlazaSpec

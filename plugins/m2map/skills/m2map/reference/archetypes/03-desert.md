@@ -492,7 +492,9 @@ way the numbers did not show. The shipped camp at **(333, 307)** in
 rails of 5 and 6 panels flanking three tents, a brazier with its stall clutter,
 banana trees, ferns and aloes — 31 of 32 on one plane at z 17,826, sharing three
 headings (105 / 285 / 315, trees included). It is kept as a pattern about its
-centroid, `reference/setpieces/desert_camp.json`: `setpiece.load(...)`,
+centroid, `reference/setpieces/desert_camp.json` — in a mapspec,
+`setpieces: [{pattern: desert_camp, anchor: [x, y], rotate_deg: 0}]`, which
+`pipeline.run` expands into the tiers and the pad; from Python, `setpiece.load(...)`,
 `.rotated(θ)` with θ a multiple of 15 if it must face another way (the sign is
 measured — `placement.md` §6.w), `.stamp(anchor)` puts the centroid on the
 anchor, each record keeping its roll and bias; a 34 m levelling pad centred on
