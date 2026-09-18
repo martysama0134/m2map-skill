@@ -83,6 +83,15 @@ derive the landform's dimension from the effect and build to it. Two passes
 where a water level is involved, since the level is an output: build, read it,
 set the crest, build again. `taste.md` §1.13.
 
+**Authored positions belong to a seed.** `positions` skips every candidate
+filter, `max_slope` included, so a coordinate carried to another seed lands on
+whatever ground is there now. The warp gate site that measured 1.8° on
+`map_skill_test_04` measured **8–15°** with a 54° cell beside it on `_05`, same
+spec, new seed — against a corpus p95 of 2.9°. After the first build, read the
+slope under each authored landmark from the written `height.raw` and move it to
+the flattest on-road patch if it fails. Absolute heights (`crest_cm`,
+`surface_z`) need the same re-read.
+
 **Roads before everything.** Lay the corridor waypoints first; terrain flattens
 under them, texture paints them, objects clear them. A road added afterwards
 sits on terrain that ignores it.

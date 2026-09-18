@@ -840,6 +840,15 @@ Exits 0 and writes the PNG. About 30 s for a 1x1 map, most of it asset loading.
 - **Run from the data directory.** Not from the map directory and not from the
   repo. The editor resolves `pack/` and `ymir work/` relative to the working
   directory, and without them you get a grey screen with no error.
+- **Install the textureset under the data directory first.** `setting.txt` says
+  `TextureSet textureset\<name>.txt` and the editor resolves that against its
+  working directory, not against the map -- the copy `build_map.py` writes to
+  `<map>/textureset/` is not read. Copy it to `<data dir>/textureset/<name>.txt`
+  before the first shot. Without it the terrain renders as flat untextured
+  colour -- no road, no rock, no green -- with exit code 0, **and the editor
+  leaves a 32-byte `TextureCount 0` stub at that path**. The stub is then what
+  every later run loads, so overwrite it; checking that the file exists is not
+  enough.
 - **An exe copied to `D:\` needs the gran212 import patch** (`granny2.dll` ->
   `gran212.dll`). `prepare_package.py` does this for releases. An unpatched copy
   fails at load with no useful message.

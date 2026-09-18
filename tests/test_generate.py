@@ -455,6 +455,41 @@ def test_water_surfaces_are_plausible_against_terrain(written):
                 "a unit conversion?" % (i, s, lo, hi))
 
 
+# what happened: a two-level oasis -- an upper basin on a shelf, a lower pool at
+# the foot of the wall. The lower pool's plane runs past its shore by design, the
+# shelf is higher than the lower surface so the depth clip keeps it, and the
+# lower plane was written second: it took every cell of the upper basin. On disk
+# the upper basin was 0 submerged cells of 97, under a waterfall anchored "in the
+# upper water". Both map_skill_test_04 and _05 shipped that way; the 2D previews
+# and the audit passed.
+
+def test_an_overrun_never_takes_another_basin():
+    """A plane's overrun is for its own beach, not for a neighbour's bowl."""
+    from types import SimpleNamespace
+    from m2map.gen import water as water_stage
+
+    spec = make_spec()
+    height_cm = np.full((128, 128), 16000.0)
+    height_cm[:, 70:] = 17300.0                      # the shelf, east
+    height_cm[40:80, 30:66] = 15600.0                # the lower bowl, west
+    upper = np.zeros((256, 256), bool)
+    upper[100:140, 150:180] = True                   # tiles; cells 50-70 x 75-90
+    lower = np.zeros((256, 256), bool)
+    lower[84:156, 64:128] = True
+    lay = SimpleNamespace(shape=(256, 256), water_masks=[upper, lower],
+                          water_surfaces=[17472.0, None],
+                          lake_mask=upper | lower, water_lines=[None, None])
+
+    cells, heights, _wet, _sub = water_stage.build(spec, lay, height_cm)
+
+    basin = cells[50:70, 75:90]
+    assert heights[0] == 17472.0
+    assert (basin == 0).all(), (
+        "%d of %d upper-basin cells belong to another layer -- a later plane's "
+        "overrun overwrote the authored basin" % ((basin != 0).sum(), basin.size))
+    assert (heights[0] > height_cm[50:70, 75:90]).all()
+
+
 # --- border occlusion -----------------------------------------------------
 #
 # Outdoor maps wall their edges so the player cannot see past the world

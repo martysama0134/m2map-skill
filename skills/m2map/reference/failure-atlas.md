@@ -1084,6 +1084,28 @@ Ordering note: the carve must come from the **layout** (stage 2), because terrai
 is stage 3 and water is stage 4. The water polygons are known early; only their
 surface levels need the finished terrain.
 
+### An upper basin that is dry in the file
+
+**Cause.** One plane's overrun written over another body's basin. A plane runs
+past its own shore on purpose (rule 22), and the clip that stops it only removes
+ground far *below* its surface. On a two-level oasis the shelf stands *above*
+the lower pool, so the lower plane's overrun kept the shelf -- and being written
+second, it took every cell of the upper basin and put them on a surface 17 m
+under the ground. Read back from disk: upper layer **0 submerged cells of 97**,
+under a `fall_7` anchored "in the upper water". `map_skill_test_04` shipped that
+way and `_05` reproduced it; the audit, the 2D previews and a render from the
+oasis floor all passed, because from below the fall reads as a spring.
+
+**Fix.** A body always gets its own basin; its overrun takes only cells that are
+still dry (`gen/water.py` `_claim`). After it: 147 submerged cells, depth p50
+**204 cm** against the shipped basin's 172.
+
+**Check.** Per layer, from the written files: cells, submerged cells, depth. A
+layer with an authored `surface_z` and no submerged cell is this fault. One
+edge stays exposed by design -- the lip, where the plane is clipped over the
+drop and the fall hangs; it follows the scarp in 2 m steps and is only seen from
+above.
+
 ---
 
 ## 6. Non-determinism that looks deterministic

@@ -132,6 +132,19 @@ def _plane_mask(cell_mask: np.ndarray, height_cm=None, surface=None) -> np.ndarr
     return grown
 
 
+def _claim(cells: np.ndarray, basin: np.ndarray, plane: np.ndarray, index: int) -> None:
+    """Give ``index`` its basin, and whatever of its overrun is still dry.
+
+    The overrun exists to reach onto this body's own beach. Written
+    unconditionally it also reached into the next body's bowl: on a two-level
+    oasis the shelf stands higher than the lower pool's surface, so the depth
+    clip keeps it, and the lower plane -- written second -- took all 97 cells of
+    the upper basin. The file had a waterfall anchored in water that was not
+    there, and nothing in 2D showed it.
+    """
+    cells[basin | (plane & (cells == NO_WATER))] = index
+
+
 def _tiles_to_cells(mask: np.ndarray, ch: int, cw: int) -> np.ndarray:
     """1 m tile mask -> 2 m terrain-cell mask (any tile wet => cell wet)."""
     h, w = mask.shape
@@ -183,8 +196,9 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
                 # terrain that rises through it. Corpus median depth is
                 # 174-410 cm.
                 heights.append(float(np.percentile(hv, 35)) + 40.0)
-                cells[_plane_mask(cell_mask, height_cm[:ch, :cw],
-                                  heights[-1])] = len(heights) - 1
+                _claim(cells, cell_mask,
+                       _plane_mask(cell_mask, height_cm[:ch, :cw], heights[-1]),
+                       len(heights) - 1)
                 wet_tiles |= mask
             continue
 
@@ -192,8 +206,9 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
             if len(heights) >= wtr.MAX_WATER_NUM:
                 break
             heights.append(float(surface))
-            cells[_plane_mask(cell_mask, height_cm[:ch, :cw],
-                              float(surface))] = len(heights) - 1
+            _claim(cells, cell_mask,
+                   _plane_mask(cell_mask, height_cm[:ch, :cw], float(surface)),
+                   len(heights) - 1)
             wet_tiles |= mask
             continue
 
@@ -214,9 +229,11 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
             heights.append(level)
             # Each band's plane also runs past its own edge, for the same reason
             # -- a channel that stops at its banks shows the cell grid along
-            # them. Bands overwrite in order, so the overrun of one is trimmed
-            # by the next and only the outer rim of the whole channel widens.
-            cells[_plane_mask(band, height_cm[:ch, :cw], level)] = len(heights) - 1
+            # them. Each band claims its own stretch, so the overrun of one is
+            # trimmed by the next and only the outer rim of the whole channel
+            # widens.
+            _claim(cells, band, _plane_mask(band, height_cm[:ch, :cw], level),
+                   len(heights) - 1)
         wet_tiles |= mask
 
     # submerged = wet AND surface above terrain
