@@ -382,7 +382,9 @@ generic green terrain.
    map -- a1/b1/c1 each embed their capital in a 4x5 field.
 7. **Camp set-pieces.** A campfire building with a flame effect 7 cm away, chairs, a
    tent and crates inside a 15 m circle. That single motif appears across the whole
-   corpus and is the strongest co-occurrence signal in it.
+   corpus and is the strongest co-occurrence signal in it. Do not assemble one:
+   `reference/setpieces/c1_camp_north` / `_southwest` / `_east` are three shipped
+   encampments copied whole, each with a facing to turn toward the road.
 8. **A short blue fog.** Fog far 20,000 cm and a `#1849A8` -> `#D9E6FF` sky. Anything
    longer starts to read as `desert` or `darkforest_coast`.
 

@@ -305,6 +305,30 @@ class PlazaSpec:
 
 
 @dataclass
+class GroundStampSpec:
+    """Paint copied from under a set-piece -- what `expand` makes of a
+    pattern's `Ground`, already turned.
+
+    ``rows[j][i]`` is a digit into ``palette`` (texture PATHS) or ``-``; tile
+    ``(i, j)`` lands on ``anchor + origin_m + (i, j)``. The texture stage paints
+    each tile whose path the map's own palette declares and skips the rest, so a
+    camp copied onto a map without `field 04` keeps its core and loses its halo
+    rather than painting the wrong texture. Roads and plazas are painted after
+    it and win.
+    """
+
+    anchor: Tuple[float, float]
+    origin_m: Tuple[float, float]
+    palette: List[str]
+    rows: List[str]
+    label: str = ""
+
+    def __post_init__(self):
+        self.anchor = (float(self.anchor[0]), float(self.anchor[1]))
+        self.origin_m = (float(self.origin_m[0]), float(self.origin_m[1]))
+
+
+@dataclass
 class SetPieceSpec:
     """A shipped compound stamped whole from a saved pattern.
 
@@ -332,6 +356,9 @@ class SetPieceSpec:
     #: (clamped to the plaza band, 4-40); 0 = no pad.
     pad_radius_m: Optional[float] = None
     tier: str = "filler"
+    #: paint the pattern's own ground under it, where the palette has the
+    #: textures (see `GroundStampSpec`). False leaves the ground to the map.
+    ground: bool = True
 
     def __post_init__(self):
         self.anchor = tuple(self.anchor)
@@ -361,6 +388,8 @@ class MapSpec:
     plazas: List[PlazaSpec] = field(default_factory=list)
     scarps: List[ScarpSpec] = field(default_factory=list)
     setpieces: List[SetPieceSpec] = field(default_factory=list)
+    #: filled by `setpiece.expand`; written out so the map rebuilds from its spec
+    ground_stamps: List[GroundStampSpec] = field(default_factory=list)
     objects: List[ObjectTier] = field(default_factory=list)
 
     # --- terrain shaping, clamped to the archetype's mined statistics ------
@@ -598,6 +627,7 @@ class MapSpec:
         d["plazas"] = [PlazaSpec(**p) for p in d.get("plazas", [])]
         d["scarps"] = [ScarpSpec(**x) for x in d.get("scarps", [])]
         d["setpieces"] = [SetPieceSpec(**x) for x in d.get("setpieces", [])]
+        d["ground_stamps"] = [GroundStampSpec(**x) for x in d.get("ground_stamps", [])]
         d["objects"] = [ObjectTier(**o) for o in d.get("objects", [])]
         for k in ("size", "base_position", "height_range_cm"):
             if k in d and d[k] is not None:

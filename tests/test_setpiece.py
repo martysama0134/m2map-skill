@@ -114,6 +114,110 @@ def test_exclude_drops_the_next_compound_before_the_centroid(source):
     assert len(sp.pieces) == 5
 
 
+def test_a_pasted_group_registers_without_a_radius(source, tmp_path):
+    """A hand-picked selection IS the group: every record, no disc to argue with.
+
+    The three c1 encampments arrived as `areadata.txt` text copied out of the
+    editor. A radius cannot reproduce that -- the east camp's bounding box also
+    holds two stray fence panels and a tree the author left out.
+    """
+    picked = source / "001001" / "areadata.txt"           # rail + tent + FAR
+    sp = setpiece.from_areadata(picked, source_map="metin2_map_c1", name="picked")
+    assert len(sp.pieces) == 7 and sp.source_map == "metin2_map_c1"
+    assert sp.pivot == "centroid"
+    assert sum(p.dx for p in sp.pieces) == pytest.approx(0.0, abs=1e-9)
+    assert sp.source_point_m == sp.pivot_m                 # there is no query point
+    far = max(math.hypot(p.dx, p.dy) for p in sp.pieces)
+    assert far <= sp.radius_m < far + 1.0                  # the radius is a description
+    assert {p.roll for p in sp.pieces} >= {60.0, 225.0, 105.0}
+
+    out = tmp_path / "picked.json"
+    assert setpiece.main(["--from-areadata", str(picked), "--source-map", "metin2_map_c1",
+                          "--name", "picked", "--save", str(out)]) == 0
+    again = setpiece.load(out)
+    assert [(p.crc, p.roll) for p in again.pieces] == [(p.crc, p.roll) for p in sp.pieces]
+
+
+# --- the ground under a compound ------------------------------------------
+#
+# A pattern is records only, and half of what makes a camp read is paint: the
+# three c1 encampments each stand on a solid `field 01` core with a `field 04`
+# halo, and a disc of road dirt was only an approximation of that.
+
+DIRT = "d:/ymir work/terrainmaps/b/field/field 03.dds"      # a slot make_spec() has
+GRASS = "d:/ymir work/terrainmaps/b/grass/grass 01.dds"
+
+
+def _paint_source(map_dir: pathlib.Path):
+    """Give the fake map a palette and a dirt blob east of the rail."""
+    import numpy as np
+    (map_dir / "setting.txt").write_text(
+        "ScriptType\tMapSetting\nTextureSet\ttextureset\\fake.txt\n", encoding="ascii")
+    ts = map_dir / "textureset"
+    ts.mkdir(exist_ok=True)
+    block = ("Start Texture%03d\n    \"%s\"\n    4.0\n    4.0\n    0.0\n    0.0\n"
+             "    0\n    0\n    0\nEnd Texture%03d\n")
+    (ts / "fake.txt").write_text(
+        "TextureSet\n\nTextureCount 2\n\n" + block % (1, GRASS.replace("/", "\\"), 1)
+        + block % (2, DIRT.replace("/", "\\"), 2), encoding="ascii")
+    grid = np.ones((258, 258), np.uint8)
+    # sector (1,1): local tile = metres - 256. The rail's centroid is near
+    # (319, 300); paint 320..339 x 296..305 -- a bar reaching EAST of it.
+    grid[1 + 296 - 256:1 + 306 - 256, 1 + 320 - 256:1 + 340 - 256] = 2
+    (map_dir / "001001" / "tile.raw").write_bytes(grid.tobytes())
+
+
+def test_ground_is_read_by_texture_path_and_turns_with_the_block(source):
+    _paint_source(source)
+    sp = setpiece.extract(source, (333, 307), 32, exclude=["1099929426"])
+    sp = setpiece.with_ground(sp, source, keep=["field"], margin_m=20)
+    g = sp.ground
+    assert g is not None and g.palette == [DIRT]          # grass is not kept; paths, not indices
+    cells = g.cells()
+    assert len(cells) == 200                              # 20 x 10 tiles
+    assert min(dx for dx, _dy, _p in cells) > 0           # the bar lies east of the pivot...
+    turned = sp.rotated(90.0).ground.cells()
+    assert 190 <= len(turned) <= 210                      # nearest-neighbour, area kept
+    assert max(dy for _dx, dy, _p in turned) < 0          # ...and north of it after +90 of roll
+    # and it survives the JSON
+    again = setpiece.SetPiece.from_dict(sp.to_dict())
+    assert again.ground.rows == g.rows and again.ground.palette == g.palette
+    assert again.ground.origin_m == pytest.approx(g.origin_m, abs=1e-4)
+
+
+def test_stamped_ground_paints_the_matching_slot_and_only_that(source, tmp_path):
+    import numpy as np
+    _paint_source(source)
+    sp = setpiece.with_ground(
+        setpiece.extract(source, (333, 307), 32, exclude=["1099929426"]),
+        source, keep=["field"], margin_m=20)
+    path = sp.save(tmp_path / "bar.json")
+    spec = make_spec(water=[], plazas=[], objects=[])
+    from m2map.gen.spec import SetPieceSpec
+    spec.setpieces = [SetPieceSpec(pattern=str(path), anchor=(128.0, 190.0))]
+    b = pipeline.run(spec)
+    slot = [i for i, t in enumerate(spec.textures, 1) if t.path == DIRT][0]
+    dx, dy, _p = sp.ground.cells()[0]
+    assert b.tiles[int(190.0 + dy), int(128.0 + dx)] == slot
+    painted = sum(b.tiles[int(190.0 + y), int(128.0 + x)] == slot for x, y, _ in sp.ground.cells())
+    assert painted == 200
+    assert any("ground" in line for line in b.log)
+
+    spec.setpieces = [SetPieceSpec(pattern=str(path), anchor=(128.0, 190.0), ground=False)]
+    off = pipeline.run(spec)
+    assert sum(off.tiles[int(190.0 + y), int(128.0 + x)] == slot
+               for x, y, _ in sp.ground.cells()) < 120
+
+    # a palette without the texture paints nothing and says so
+    spec.setpieces = [SetPieceSpec(pattern=str(path), anchor=(128.0, 190.0))]
+    spec.textures = [t for t in spec.textures if t.path != DIRT]
+    spec.plazas = []
+    for r in spec.roads:
+        r.tile_index = 1
+    lost = pipeline.run(spec)
+    assert any("no slot for" in line and "field 03" in line for line in lost.log)
+
+
 def test_stamp_keeps_every_roll_and_bias(source):
     sp = setpiece.extract(source, (333, 307), 32)
     tiers = sp.stamp(anchor=(88.0, 108.0), label="camp")

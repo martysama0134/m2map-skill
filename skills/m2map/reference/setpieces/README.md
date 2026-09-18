@@ -20,6 +20,9 @@ matched the source render did no generating at all (`placement.md` §6.w,
 |---|---|---|---|---|---|---|
 | `desert_camp.json` | `metin2_map_n_desert_01`, 32 m around (333, 307) | 32 | centroid, at (326.91, 319.33) on the source | x −22.4 … +23.9 · y −22.8 … +18.8 | 58 cm (31 of 32 on one plane) | 105 ×12 · 315 ×6 · 285 ×5 · others ×9 |
 | `b1_town_square.json` | `metin2_map_b1`, 60 m around (638, 638), `b1-038-wall*` excluded | 80 | **centre** -- the safezone disc's centre | x −58.9 … +51.9 · y −56.6 … +56.8 | 258 cm | 0 ×15 · 30 ×10 · 180 ×8 · others |
+| `c1_camp_north.json` | `metin2_map_c1`, author's selection about (452, 933) | 49 | centroid | x −19.4 … +25.6 · y −27.8 … +17.1 | 0 cm | opens **north** (0) |
+| `c1_camp_southwest.json` | `metin2_map_c1`, author's selection about (194, 570) | 73 | centroid | x −20.8 … +12.8 · y −17.7 … +22.7 | 0 cm | opens **south-west** (225) |
+| `c1_camp_east.json` | `metin2_map_c1`, author's selection about (618, 300) | 68 | centroid | x −17.0 … +17.7 · y −26.3 … +29.0 | 101 cm | opens **east** (90) |
 
 `desert_camp`: two fence rails of 5 and 6 panels (fence01…05 mixed, steps
 232–521 cm) flanking three tents, a brazier with its stall clutter, banana
@@ -32,23 +35,91 @@ runs through its gate), two guesthouses and a workhouse east, market stalls
 north-east and south-east, a jar-and-crate yard west. Verified in WorldEditor
 against the source from the same camera (`map_skill_test_06`).
 
-A pattern is **records only**. What makes this one read as a town is also paint
-and attr, and the spec has to bring them:
+`c1_camp_*`: three Empire C field encampments, each two large tents and a small
+one with a carriage, a cart, stalls, racks, barrels and crates, and fence arcs on
+the closed sides (fence `roll + bearing` concentration 0.88-0.97). They were
+registered from `areadata.txt` text the map author copied out of the editor --
+a hand selection, no trees -- and each matched the corpus record for record
+(49/49, 73/73, 68 of the 71 in its bounding box: two stray panels and a Pagoda
+are not camp). Stamped copies verified against the source from the same camera,
+and `c1_camp_east` turned 90 verified to open north.
+
+A camp **faces** somewhere: the side without fence, where the road arrives. The
+facing is a compass bearing in the pattern's notes, and since roll turns
+counter-clockwise with north up,
+
+```
+rotate_deg = (facing - wanted_bearing) mod 360        # multiples of 15
+```
+
+so `c1_camp_east` (90) opens north (0) at `rotate_deg: 90`, and south at 270.
+Pick the variant whose facing is nearest and turn it the rest -- the three are
+different layouts, not one camp turned. Each carries its own ground (below): a
+solid `field 01` core, a `field 04` halo 4-8 m wide and a road spur on the open
+side, so the spec is two lines and a palette that declares both textures:
+
+```yaml
+textures:
+  - {path: 'd:/ymir work/terrainmaps/b/field/field 04.dds', role: accent, weight: 0.0}   # declared, not scattered
+setpieces:
+  - {pattern: c1_camp_north, anchor: [68, 66]}
+```
+
+## The ground under a pattern
+
+Half of what makes a compound read is paint, and `areadata.txt` has none of it.
+A pattern can carry the ground it stood on as a small grid about the pivot:
+
+```json
+"ground": {
+  "origin_m": [-27.39, -35.4],
+  "size": [63, 62],
+  "palette": ["d:/ymir work/terrainmaps/b/field/field 04.dds",
+              "d:/ymir work/terrainmaps/b/field/field 01.dds"],
+  "rows": ["-----000011100--...", "..."]
+}
+```
+
+- **Texture paths, not indices.** A `tile.raw` byte means nothing away from its
+  textureset. Each digit indexes `palette`; `-` leaves the tile to the target.
+- **Name the feature.** `--ground-keep field` keeps the dirt and drops the meadow.
+  Copy the whole window and its square edge shows wherever the target's grass
+  differs. (`b1_town_square` keeps `field` and `tile`: apron and paved disc.)
+- **It turns with the block** -- same sign as the offsets, nearest tile.
+- **Painted by path match.** The texture stage paints each tile whose texture the
+  map's palette declares, after the generated field and before the map's own
+  roads and plazas. A missing texture is skipped, never substituted, and the
+  build log says `! ground: <label> ... no slot for <path>` -- add the slot
+  (`weight: 0.0` keeps it out of the scatter). `ground: false` on the set-piece
+  leaves the ground to the map.
+- The expanded spec written beside the map holds the stamp as `ground_stamps:`,
+  so the map still rebuilds from its own `mapspec.yaml`.
+
+```
+python -m m2map.gen.setpiece --from-areadata picked.txt --source-map metin2_map_c1 \
+    --ground-from <CORPUS>/metin2_map_c1 --ground-keep field --name ... --save ...
+```
+
+Measured on the three camps: 2,021 / 2,051 / 2,288 tiles, `field 01` core to
+`field 04` halo about 1 : 1. Under a disc of road dirt instead, the copy read as
+a decal; with its own ground it cannot be told from the source frame.
+
+A pattern's records and ground are still not the whole compound. For a town the
+spec also brings the safezone disc, the pad and the roads:
 
 ```yaml
 plazas:
   - {centre: [112, 150], radius_m: 22, tile_index: 7, safezone: true}   # tile01, on the anchor
 setpieces:
   - {pattern: b1_town_square, anchor: [112, 150], pad_radius_m: 70}     # hotel is 36 x 20 m on the rim
-regions:
-  - {kind: settlement, polygon: [...66 m octagon on the anchor...], flatten: true}
 textures:
-  - {path: '.../b/field/field 04.dds', role: accent, region: settlement, weight: 0.7}   # the dirt apron
+  - {path: '.../b/field/field 04.dds', role: accent, weight: 0.0}       # for the shipped apron
 roads:     # spokes through the anchor; N runs through the hotel gate at dx +2, dy -57
 ```
 
-`role: accent` with a `region` is the patchy, coherent overlay (`mid` scores by
-slope and lands on the pad's rim; `interior` is for box maps). Scatter keeps off
+The dirt apron is the pattern's ground. (Without one, a region-confined
+`role: accent` slot is the patchy, coherent overlay to use -- `mid` scores by
+slope and lands on the pad's rim; `interior` is for box maps.) Scatter keeps off
 every plaza and pad by itself, and authored buildings stamp their own rectangle
 into `attr.atr` with the road core kept open.
 
@@ -119,6 +190,19 @@ it. The render is the last word.
 python -m m2map.gen.setpiece <CORPUS>/metin2_map_n_desert_01 333 307 32 \
     --name desert_camp --notes "..." --save reference/setpieces/desert_camp.json
 ```
+
+**From a selection instead of a radius.** A group picked by hand in the editor is
+its own definition -- paste the `areadata.txt` text into a file and
+
+```
+python -m m2map.gen.setpiece --from-areadata picked.txt --source-map metin2_map_c1     --name c1_camp_north --notes "..." --save reference/setpieces/c1_camp_north.json
+```
+
+takes every record in it, about their centroid (`source_point_m` repeats the
+pivot and `radius_m` is only the reach of the farthest record). Check the paste
+against the corpus first when the source is a shipped map: same count inside the
+bounding box, same CRC multiset -- and look at whatever differs, because that is
+what the author chose to leave out.
 
 `--exclude NAME|CRC` (repeatable) drops records before the centroid is taken. A
 disc cannot always take one compound and nothing of the next: at 60 m the b1

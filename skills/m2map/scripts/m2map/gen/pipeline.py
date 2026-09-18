@@ -201,6 +201,8 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
                                 b.wet if b.wet is not None else
                                 np.zeros(b.layout.shape, bool),
                                 submerged=b.submerged)
+        for line in texture.paint_ground_stamps(spec):
+            b.log.append(("! " if "no slot for" in line else "") + line)
         st = texture.stipple_stats(b.tiles)
         b.note("texture: %d slots used, run-length median %.1f, base share %.2f"
                % (st["used_slots"], st["run_length_median"], st["base_share"]))

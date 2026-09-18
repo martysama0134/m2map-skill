@@ -98,6 +98,86 @@ class Piece:
     name: str = ""
 
 
+#: One character per tile in `Ground.rows`: an index into `Ground.palette`.
+_GROUND_DIGITS = "0123456789abcdefghijklmnopqrstuvwxyz"
+#: ...and the tile that is left to the target map.
+_GROUND_SKIP = "-"
+
+
+def _norm_tex(path: str) -> str:
+    """A texture path as a key: textureset files write `d:\\ymir work\\...`,
+    mapspecs write `d:/ymir work/...`, and case is whatever the artist typed."""
+    return str(path).replace("\\", "/").strip().lower()
+
+
+@dataclass(frozen=True)
+class Ground:
+    """The paint under a compound: a 1 m tile grid about the pivot.
+
+    Keyed by texture PATH, not by index -- a `tile.raw` byte only means
+    something next to the textureset it was painted with, and the target map has
+    its own. ``rows[j][i]`` is a digit into ``palette`` or ``-`` for "leave this
+    tile to the target"; tile ``(i, j)`` covers ``origin_m + (i, j)`` to
+    ``+ (i + 1, j + 1)`` in the pattern's y-down metres.
+
+    The three c1 encampments are why this exists. Each stands on a solid
+    `field 01` core with a `field 04` halo 4-8 m wide and a spur toward the
+    road; a disc of road dirt under the stamped copy was only an approximation
+    of that, and the halo is what stops the patch reading as a decal.
+    """
+
+    origin_m: Tuple[float, float]
+    palette: List[str]
+    rows: List[str]
+
+    def cells(self) -> List[Tuple[float, float, str]]:
+        """``(dx, dy, texture path)`` of every painted tile's centre."""
+        out = []
+        for j, row in enumerate(self.rows):
+            for i, ch in enumerate(row):
+                if ch != _GROUND_SKIP:
+                    out.append((self.origin_m[0] + i + 0.5, self.origin_m[1] + j + 0.5,
+                                self.palette[_GROUND_DIGITS.index(ch)]))
+        return out
+
+    def rotated(self, deg: float) -> "Ground":
+        """Turned with the block: same sign as :func:`rotate`, nearest tile."""
+        if not self.rows or not (deg % 360.0):
+            return self
+        t = math.radians(deg)
+        c, sn = math.cos(t), math.sin(t)
+        w, h = len(self.rows[0]), len(self.rows)
+        ox, oy = self.origin_m
+        corners = [(ox + i, oy + j) for i in (0, w) for j in (0, h)]
+        turned = [(x * c + y * sn, -x * sn + y * c) for x, y in corners]
+        nx0 = math.floor(min(x for x, _ in turned))
+        ny0 = math.floor(min(y for _, y in turned))
+        nw = int(math.ceil(max(x for x, _ in turned))) - nx0
+        nh = int(math.ceil(max(y for _, y in turned))) - ny0
+        rows = []
+        for j in range(nh):
+            out = []
+            for i in range(nw):
+                x, y = nx0 + i + 0.5, ny0 + j + 0.5
+                sx, sy = x * c - y * sn, x * sn + y * c        # back into the source
+                si, sj = int(math.floor(sx - ox)), int(math.floor(sy - oy))
+                out.append(self.rows[sj][si] if 0 <= si < w and 0 <= sj < h
+                           else _GROUND_SKIP)
+            rows.append("".join(out))
+        return Ground(origin_m=(float(nx0), float(ny0)), palette=list(self.palette), rows=rows)
+
+    def to_dict(self) -> Dict:
+        return {"origin_m": [round(self.origin_m[0], 4), round(self.origin_m[1], 4)],
+                "size": [len(self.rows[0]) if self.rows else 0, len(self.rows)],
+                "palette": list(self.palette), "rows": list(self.rows)}
+
+    @classmethod
+    def from_dict(cls, d: Dict) -> "Ground":
+        return cls(origin_m=(float(d["origin_m"][0]), float(d["origin_m"][1])),
+                   palette=[_norm_tex(t) for t in d["palette"]],
+                   rows=[str(r) for r in d["rows"]])
+
+
 @dataclass
 class SetPiece:
     """A block of records about a pivot, with where it came from."""
@@ -115,13 +195,16 @@ class SetPiece:
     #: how far this instance has been turned from the source, degrees of roll
     rotation_deg: float = 0.0
     notes: str = ""
+    #: the paint under it, if it was read -- see :func:`with_ground`
+    ground: Optional[Ground] = None
 
     # --- geometry ---------------------------------------------------------
     def rotated(self, deg: float) -> "SetPiece":
         """The same block turned by ``deg`` about its pivot, in the sense of
         ``roll`` (see module docstring for the measured sign)."""
         return replace(self, pieces=rotate(self.pieces, deg),
-                       rotation_deg=(self.rotation_deg + deg) % 360.0)
+                       rotation_deg=(self.rotation_deg + deg) % 360.0,
+                       ground=self.ground.rotated(deg) if self.ground else None)
 
     def stamp(self, anchor: Tuple[float, float], label: Optional[str] = None,
               tier: str = "filler") -> List[ObjectTier]:
@@ -142,7 +225,7 @@ class SetPiece:
     # --- persistence ------------------------------------------------------
     def to_dict(self) -> Dict:
         x0, x1, y0, y1 = self.extent_m()
-        return {
+        d = {
             "format": FORMAT,
             "name": self.name,
             "source_map": self.source_map,
@@ -161,6 +244,9 @@ class SetPiece:
                  "bias": p.height_bias, "crc": p.crc, "z": p.z, "name": p.name}
                 for p in self.pieces],
         }
+        if self.ground is not None:
+            d["ground"] = self.ground.to_dict()
+        return d
 
     @classmethod
     def from_dict(cls, d: Dict) -> "SetPiece":
@@ -176,7 +262,8 @@ class SetPiece:
                    pivot_m=tuple(d.get("pivot_m", (0.0, 0.0))),
                    pivot=d.get("pivot", "centroid"),
                    rotation_deg=float(d.get("rotation_deg", 0.0)),
-                   notes=d.get("notes", ""))
+                   notes=d.get("notes", ""),
+                   ground=Ground.from_dict(d["ground"]) if d.get("ground") else None)
 
     def save(self, path) -> pathlib.Path:
         path = pathlib.Path(path)
@@ -195,6 +282,16 @@ def load(path) -> SetPiece:
 
 def _sector_files(map_dir: pathlib.Path) -> List[pathlib.Path]:
     return sorted(p for p in map_dir.glob("[0-9][0-9][0-9][0-9][0-9][0-9]/areadata.txt"))
+
+
+def _dropper(names: Dict[int, str], exclude: Sequence[str]):
+    """``crc -> bool``: is this record named out by ``exclude``?"""
+    drop = [str(e).lower() for e in exclude]
+
+    def dropped(crc: int) -> bool:
+        label = names.get(crc, "").lower()
+        return any(e == str(crc) or (label and e in label) for e in drop)
+    return dropped
 
 
 def extract(map_dir, centre_m: Tuple[float, float], radius_m: float,
@@ -220,23 +317,142 @@ def extract(map_dir, centre_m: Tuple[float, float], radius_m: float,
     cx, cy = float(centre_m[0]) * 100.0, float(centre_m[1]) * 100.0
     r_cm = float(radius_m) * 100.0
     names = names or {}
-    drop = [str(e).lower() for e in exclude]
-
-    def dropped(crc: int) -> bool:
-        label = names.get(crc, "").lower()
-        return any(e == str(crc) or (label and e in label) for e in drop)
-
+    dropped = _dropper(names, exclude)
     hits = []
     for f in _sector_files(map_dir):
         for rec in ad.AreaData.load(f).records:
             x, y = rec.x, rec.terrain_y          # areadata stores Y negated
             if math.hypot(x - cx, y - cy) <= r_cm and not dropped(int(rec.crc)):
                 hits.append((x, y, rec))
+    return _build(hits, map_dir.name, name, pivot, names,
+                  centre_m=(float(centre_m[0]), float(centre_m[1])),
+                  radius_m=float(radius_m))
+
+
+def from_areadata(path, source_map: str = "", name: str = "",
+                  pivot: str = "centroid",
+                  names: Optional[Dict[int, str]] = None,
+                  exclude: Sequence[str] = ()) -> SetPiece:
+    """Every record of one ``areadata.txt`` -- a selection copied out of the
+    editor, or a scratch map holding only the group -- as a :class:`SetPiece`.
+
+    A hand-picked group is its own definition and a radius cannot reproduce it:
+    the bounding box of the c1 east encampment also holds two stray fence panels
+    and a tree its author left out. So there is no query point. The pivot is the
+    centroid, ``source_point_m`` repeats it and ``radius_m`` is only a
+    description -- the reach of the farthest record, rounded up.
+
+    ``source_map`` names where the group stands (the coordinates are kept as
+    ``pivot_m``, so the source can be rendered from the same camera).
+    ``pivot="centre"`` is not meaningful here and is refused.
+    """
+    if pivot != "centroid":
+        raise ValueError("a pasted group has no query point; pivot must be 'centroid'")
+    names = names or {}
+    dropped = _dropper(names, exclude)
+    hits = []
+    for rec in ad.AreaData.load(path).records:
+        if dropped(int(rec.crc)):
+            continue
+        hits.append((rec.x, rec.terrain_y, rec))          # areadata stores Y negated
+    if not hits:
+        raise ValueError("no records in %s" % path)
+    return _build(hits, source_map, name or pathlib.Path(path).stem, "centroid", names)
+
+
+def _find_textureset(map_dir: pathlib.Path, ref: str) -> Optional[pathlib.Path]:
+    """Where ``setting.txt``'s ``TextureSet`` reference actually is.
+
+    The engine resolves it against the data directory, so look beside the map,
+    then up the tree the way a data dir is laid out (``<data>/maps/<map>`` next
+    to ``<data>/textureset``), then in the configured client pack.
+    """
+    rel = pathlib.PureWindowsPath(ref)
+    roots = [map_dir, map_dir.parent, map_dir.parent.parent]
+    for root in roots:
+        for cand in (root.joinpath(*rel.parts), root / "textureset" / rel.name):
+            if cand.is_file():
+                return cand
+            if cand.parent.is_dir():                       # case-insensitive match
+                for f in cand.parent.iterdir():
+                    if f.name.lower() == cand.name.lower():
+                        return f
+    try:
+        from ..config import paths
+        base = paths().texturesets
+        for f in base.iterdir():
+            if f.name.lower() == rel.name.lower():
+                return f
+    except Exception:                                      # not configured / not mounted
+        pass
+    return None
+
+
+def with_ground(sp: SetPiece, map_dir, keep: Sequence[str] = (), margin_m: float = 8.0,
+                textureset=None) -> SetPiece:
+    """``sp`` with the source map's paint under it, as a :class:`Ground`.
+
+    Reads ``tile.raw`` over the pattern's extent plus ``margin_m`` and resolves
+    every index through the map's own textureset. ``keep`` is a list of
+    case-insensitive substrings of the texture path; only matching tiles are
+    kept, the rest are left to the target map. Without it the whole window is
+    copied, grass and all, and the window's square edge shows wherever the
+    target's ground differs -- so name the FEATURE: ``keep=["field"]`` takes a
+    camp's dirt core and halo and leaves the meadow round it alone.
+    """
+    from ..codec import setting as setting_codec
+    from ..codec import textureset as ts_codec
+
+    map_dir = pathlib.Path(map_dir)
+    if sp.rotation_deg:
+        raise ValueError("read the ground before turning the pattern")
+    if textureset is None:
+        ref = setting_codec.Setting.load(map_dir / "setting.txt").texture_set
+        textureset = _find_textureset(map_dir, str(ref))
+        if textureset is None:
+            raise FileNotFoundError("textureset %r of %s not found; pass textureset="
+                                    % (ref, map_dir.name))
+    slots = ts_codec.TextureSet.load(textureset).slots
+    path_of = {i: _norm_tex(t.filename) for i, t in enumerate(slots) if t is not None}
+
+    x0, x1, y0, y1 = sp.extent_m()
+    px, py = sp.pivot_m
+    X0, X1 = int(math.floor(px + x0 - margin_m)), int(math.ceil(px + x1 + margin_m))
+    Y0, Y1 = int(math.floor(py + y0 - margin_m)), int(math.ceil(py + y1 + margin_m))
+    want = [k.lower() for k in keep]
+    sectors: Dict[Tuple[int, int], bytes] = {}
+    palette: List[str] = []
+    rows = []
+    for ty in range(Y0, Y1):
+        out = []
+        for tx in range(X0, X1):
+            key = (tx // 256, ty // 256)
+            if key not in sectors:
+                f = map_dir / ("%03d%03d" % key) / "tile.raw"
+                sectors[key] = f.read_bytes() if tx >= 0 and ty >= 0 and f.is_file() else b""
+            raw = sectors[key]
+            tex = path_of.get(raw[(ty % 256 + 1) * 258 + (tx % 256 + 1)]) if raw else None
+            if tex is None or (want and not any(k in tex for k in want)):
+                out.append(_GROUND_SKIP)
+                continue
+            if tex not in palette:
+                if len(palette) >= len(_GROUND_DIGITS):
+                    raise ValueError("more than %d textures under one pattern" % len(_GROUND_DIGITS))
+                palette.append(tex)
+            out.append(_GROUND_DIGITS[palette.index(tex)])
+        rows.append("".join(out))
+    return replace(sp, ground=Ground(origin_m=(X0 - px, Y0 - py), palette=palette, rows=rows))
+
+
+def _build(hits, source_map: str, name: str, pivot: str, names: Dict[int, str],
+           centre_m: Optional[Tuple[float, float]] = None,
+           radius_m: Optional[float] = None) -> SetPiece:
+    """``hits`` -- ``(x_cm, terrain_y_cm, record)`` -- about their pivot."""
     if pivot == "centroid" and hits:
         px = sum(h[0] for h in hits) / len(hits)
         py = sum(h[1] for h in hits) / len(hits)
-    elif pivot in ("centroid", "centre", "center"):
-        px, py = cx, cy
+    elif pivot in ("centroid", "centre", "center") and centre_m is not None:
+        px, py = centre_m[0] * 100.0, centre_m[1] * 100.0
     else:
         raise ValueError("pivot must be 'centroid' or 'centre', got %r" % pivot)
     pieces = [Piece(dx=(x - px) / 100.0, dy=(y - py) / 100.0,
@@ -244,8 +460,12 @@ def extract(map_dir, centre_m: Tuple[float, float], radius_m: float,
                     crc=int(rec.crc), z=float(rec.z), name=names.get(int(rec.crc), ""))
               for x, y, rec in hits]
     pieces.sort(key=lambda p: (math.hypot(p.dx, p.dy), p.crc))
-    return SetPiece(name=name or "%s_%d_%d" % (map_dir.name, round(centre_m[0]), round(centre_m[1])),
-                    pieces=pieces, source_map=map_dir.name,
+    if centre_m is None:
+        centre_m = (px / 100.0, py / 100.0)
+    if radius_m is None:
+        radius_m = float(math.ceil(max(math.hypot(p.dx, p.dy) for p in pieces)))
+    return SetPiece(name=name or "%s_%d_%d" % (source_map, round(centre_m[0]), round(centre_m[1])),
+                    pieces=pieces, source_map=source_map,
                     source_point_m=(float(centre_m[0]), float(centre_m[1])),
                     radius_m=float(radius_m), pivot_m=(px / 100.0, py / 100.0),
                     pivot="centroid" if pivot == "centroid" else "centre")
@@ -325,12 +545,13 @@ def expand(spec):
     same point.
     """
     from dataclasses import replace as _replace
-    from .spec import PlazaSpec, SpecError, resolve_pattern
+    from .spec import GroundStampSpec, PlazaSpec, SpecError, resolve_pattern
 
     if not getattr(spec, "setpieces", None):
         return spec
     objects = list(spec.objects)
     plazas = list(spec.plazas)
+    grounds = list(spec.ground_stamps)
     for sps in spec.setpieces:
         path = resolve_pattern(sps.pattern)
         if path is None:
@@ -346,7 +567,14 @@ def expand(spec):
         if r > 0:
             plazas.append(PlazaSpec(centre=tuple(sps.anchor), radius_m=float(r),
                                     tile_index=0, safezone=False))
-    return _replace(spec, objects=objects, plazas=plazas, setpieces=[])
+        if sps.ground and sp.ground is not None:
+            grounds.append(GroundStampSpec(anchor=tuple(sps.anchor),
+                                           origin_m=tuple(sp.ground.origin_m),
+                                           palette=list(sp.ground.palette),
+                                           rows=list(sp.ground.rows),
+                                           label=sps.label or sp.name))
+    return _replace(spec, objects=objects, plazas=plazas, setpieces=[],
+                    ground_stamps=grounds)
 
 
 # --- describing a block ------------------------------------------------------
@@ -461,10 +689,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap = argparse.ArgumentParser(
         description="dump every areadata record around a point as a set-piece, "
                     "about its centroid; optionally turn it and save it as a pattern")
-    ap.add_argument("map_dir")
-    ap.add_argument("x_m", type=float)
-    ap.add_argument("y_m", type=float)
-    ap.add_argument("radius_m", type=float)
+    ap.add_argument("map_dir", nargs="?")
+    ap.add_argument("x_m", type=float, nargs="?")
+    ap.add_argument("y_m", type=float, nargs="?")
+    ap.add_argument("radius_m", type=float, nargs="?")
+    ap.add_argument("--from-areadata", metavar="FILE",
+                    help="take every record of this areadata.txt -- a selection copied "
+                         "out of the editor -- instead of a map, a point and a radius")
+    ap.add_argument("--source-map", default="",
+                    help="with --from-areadata: the map the group stands on")
     ap.add_argument("--name", default="")
     ap.add_argument("--pivot", choices=("centroid", "centre"), default="centroid")
     ap.add_argument("--rotate", type=float, default=0.0,
@@ -472,11 +705,27 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--exclude", action="append", default=[], metavar="NAME|CRC",
                     help="drop records whose catalog name contains this, or whose "
                          "CRC is this; repeatable")
+    ap.add_argument("--ground-from", metavar="MAP_DIR",
+                    help="also save the paint under the group, read from this map "
+                         "(default with MAP_DIR X Y R: that map, if --ground-keep is given)")
+    ap.add_argument("--ground-keep", action="append", default=[], metavar="SUBSTR",
+                    help="keep only tiles whose texture path contains this (repeatable); "
+                         "name the feature, e.g. 'field' for a camp's dirt")
+    ap.add_argument("--ground-margin", type=float, default=8.0, metavar="M")
     ap.add_argument("--save", help="write the pattern as JSON here")
     ap.add_argument("--notes", default="")
     a = ap.parse_args(argv)
-    sp = extract(a.map_dir, (a.x_m, a.y_m), a.radius_m, name=a.name, pivot=a.pivot,
-                 names=_catalog_names(), exclude=a.exclude)
+    if a.from_areadata:
+        sp = from_areadata(a.from_areadata, source_map=a.source_map, name=a.name,
+                           pivot=a.pivot, names=_catalog_names(), exclude=a.exclude)
+    elif None in (a.map_dir, a.x_m, a.y_m, a.radius_m):
+        ap.error("give MAP_DIR X_M Y_M RADIUS_M, or --from-areadata FILE")
+    else:
+        sp = extract(a.map_dir, (a.x_m, a.y_m), a.radius_m, name=a.name, pivot=a.pivot,
+                     names=_catalog_names(), exclude=a.exclude)
+    ground_map = a.ground_from or (a.map_dir if a.ground_keep and not a.from_areadata else None)
+    if ground_map:
+        sp = with_ground(sp, ground_map, keep=a.ground_keep, margin_m=a.ground_margin)
     if a.rotate:
         sp = sp.rotated(a.rotate)
     sp.notes = a.notes
@@ -489,6 +738,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print("    (%7.2f, %7.2f, %5g, %5g, %10d),  # %s"
               % (p.dx, p.dy, p.roll, p.height_bias, p.crc, p.name))
     print("]")
+    if sp.ground is not None:
+        print("# ground: %d tiles of %s" % (len(sp.ground.cells()),
+                                          ", ".join(t.rsplit("/", 1)[-1] for t in sp.ground.palette)))
     if a.save:
         print("# saved", sp.save(a.save))
     return 0

@@ -37,6 +37,7 @@ whichever palette slot the spec nominates.
 
 from __future__ import annotations
 
+import math
 from typing import List
 
 import numpy as np
@@ -70,6 +71,44 @@ def build_textureset(spec: MapSpec) -> ts_codec.TextureSet:
 #: `beach sand 01` has 100% of its tiles within 4 m of water and >=70% of all
 #: shore tiles are; 6 leaves room for the plane's overrun past the basin.
 SHORE_BAND_TILES = 6
+
+
+def _tex_key(path: str) -> str:
+    return str(path).replace("\\", "/").strip().lower()
+
+
+def paint_ground_stamps(spec: MapSpec, tiles: np.ndarray = None) -> List[str]:
+    """Paint `spec.ground_stamps` into ``tiles``; return one log line per stamp.
+
+    Matching is by texture path against the map's own palette. A texture the
+    palette does not declare is skipped, never substituted: the wrong dirt is
+    worse than none, and the line says which slot to add. Called with
+    ``tiles=None`` it only reports.
+    """
+    slot_of = {_tex_key(t.path): i for i, t in enumerate(spec.textures, start=1)}
+    lines = []
+    for gs in spec.ground_stamps:
+        painted, missing = 0, {}
+        ax, ay = gs.anchor[0] + gs.origin_m[0], gs.anchor[1] + gs.origin_m[1]
+        for j, row in enumerate(gs.rows):
+            ty = int(math.floor(ay + j + 0.5))
+            for i, ch in enumerate(row):
+                if ch == "-":
+                    continue
+                tex = gs.palette[int(ch, 36)]
+                slot = slot_of.get(_tex_key(tex))
+                if slot is None:
+                    missing[tex] = missing.get(tex, 0) + 1
+                    continue
+                tx = int(math.floor(ax + i + 0.5))
+                if tiles is not None and 0 <= ty < tiles.shape[0] and 0 <= tx < tiles.shape[1]:
+                    tiles[ty, tx] = slot
+                painted += 1
+        line = "ground: %s painted %d tiles" % (gs.label or "set-piece", painted)
+        for tex, n in sorted(missing.items()):
+            line += "; no slot for %s (%d tiles skipped)" % (tex, n)
+        lines.append(line)
+    return lines
 
 
 def _suitability(spec: MapSpec, lay: Layout, slope: np.ndarray,
@@ -377,6 +416,10 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     # Feather before the solid features, so the rock tail never lands on a road
     # or inside a plaza. In the corpus it never does.
     tiles = _feather_massif(tiles, spec, rng)
+
+    # The ground copied from under a set-piece: after the generated field, before
+    # the map's own roads and plazas, which win where they cross it.
+    paint_ground_stamps(spec, tiles)
 
     # Solid features last so they overwrite the field rather than dither with it.
     for corr in lay.corridors:

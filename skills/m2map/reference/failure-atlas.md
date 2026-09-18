@@ -941,6 +941,7 @@ zero findings:
 | Hotel, guesthouses, workhouse walk-through on the server: 0 of 10 centre cells blocked, archetype 85.7% | `positions` never produced an attr footprint | authored buildings stamp their bbox rectangle turned by roll; the road core stays open through it, because the hotel stands ON the north spoke (`gen/attribute.py`) |
 | Beach sand over the whole map, 5% of a square 120 m from the pond (98% of shore tiles > 8 m from water) | `shore` kept a 0.05 floor everywhere and the overlay normalises by the mean -- with one small pond the floor IS the mean | a `shore` slot paints only the 6 m band round the **submerged** cells; `weight` is its share of that band (`gen/texture.py`) |
 | The expanded spec refused: "plaza radius 70 m outside the corpus band" | the pad is a `PlazaSpec`, and the 8-25 m band was measured on painted discs | pads (`tile_index=0`, no safezone) are exempt |
+| A camp on a disc of road dirt reads as a decal | the source ground is a `field 01` core inside a `field 04` halo with a spur to the road, and none of it is in `areadata.txt` | a pattern can save its `ground` by texture path (`setpiece --ground-from ... --ground-keep field`); it turns with the block and is painted where the palette has the texture |
 
 The general shape: a pattern carries what `areadata.txt` carries. Paint, the
 levelling pad, collision and the keep-out around it live in other files and the
