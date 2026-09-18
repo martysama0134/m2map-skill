@@ -66,6 +66,12 @@ def build_textureset(spec: MapSpec) -> ts_codec.TextureSet:
     return ts_codec.TextureSet(slots=slots, declared_count=len(spec.textures))
 
 
+#: How far from water a `shore` overlay may reach, in 1 m tiles. Corpus:
+#: `beach sand 01` has 100% of its tiles within 4 m of water and >=70% of all
+#: shore tiles are; 6 leaves room for the plane's overrun past the basin.
+SHORE_BAND_TILES = 6
+
+
 def _suitability(spec: MapSpec, lay: Layout, slope: np.ndarray,
                  height: np.ndarray, wet: np.ndarray) -> np.ndarray:
     """Per-slot preference field, shape ``(n_slots, h, w)``, before sampling.
@@ -261,7 +267,22 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
             continue
         field = scores[i - 1]
         allowed = field > 1e-6
-        if water is not None:
+        if slot.role == "shore" and not slot.region:
+            # At the water, and only there. The suitability keeps a small floor
+            # away from it, and the rate below is normalised by the MEAN of the
+            # field: on a map with one pond the floor is the mean, so the beach
+            # was sprinkled at its full weight over the whole map. `weight` is
+            # the share of this band, not of the map.
+            #
+            # Measured from what is SUBMERGED, not from the authored basin: the
+            # surface sits inside its bowl (rule 22), so a band around the
+            # polygon is a pale ring round a green crater, 5-10 m from the
+            # waterline it is meant to be. The dry rim of the bowl is beach.
+            surf = submerged if submerged is not None and submerged.any() else water
+            if surf is None or not surf.any():
+                continue
+            allowed &= _dilate(surf, SHORE_BAND_TILES) & ~surf
+        elif water is not None:
             allowed &= ~water
         if not allowed.any():
             continue

@@ -512,8 +512,12 @@ class MapSpec:
                            % (pz.tile_index, n))
             # The shipped stamps run 8 to 25 m. Outside that band the disc stops
             # reading as a plaza: under 6 m it is smaller than the buildings that
-            # ring it, over 40 m it is a field with a hard edge.
-            if not 4.0 <= pz.radius_m <= 40.0:
+            # ring it, over 40 m it is a field with a hard edge. A levelling pad
+            # (`tile_index=0`, no safezone) paints nothing and has no edge to
+            # read, and a town's pad is wider than any disc: `b1_town_square`
+            # needs 70 m.
+            is_pad = pz.tile_index == 0 and not pz.safezone
+            if not is_pad and not 4.0 <= pz.radius_m <= 40.0:
                 out.append("plaza radius %.1f m outside the corpus band "
                            "(8-25 m measured, 4-40 tolerated)" % pz.radius_m)
             cx, cy = pz.centre

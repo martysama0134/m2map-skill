@@ -759,6 +759,86 @@ def test_bad_plaza_is_caught_before_building(plaza, fragment):
     assert fragment in problems, problems
 
 
+def test_scatter_keeps_off_plazas_and_pads(built):
+    """A disc is clear in the corpus, and a pad holds a compound copied whole.
+
+    map_skill_test_06: ten scattered trees landed inside the b1 town square,
+    between its stalls -- the candidate mask knew roads and water and nothing
+    about plazas.
+    """
+    pz = built.layout.plazas[0]
+    inside = [r for r in built.records
+              if pz.mask[int(-r.y / 100.0), int(r.x / 100.0)]]
+    assert not inside, "%d scattered records stand on the plaza" % len(inside)
+
+
+def test_authored_buildings_block_their_footprint_but_not_the_road():
+    """A copied town is made of `positions`, and those never stamped attr.
+
+    field_empire blocks 85.7% of Building centre cells; map_skill_test_06 had
+    0 of 10 -- hotel, guesthouses and workhouse all walk-through on the server.
+    The footprint is the model's own rectangle turned by its roll (a 36 x 20 m
+    hall stamped as a disc seals the square), and the road keeps its core: the
+    b1 hotel stands ON the north spoke, which runs through its gate.
+    """
+    spec = make_spec(water=[], plazas=[], objects=[])
+    core = pipeline.run(spec).layout.corridors[0].core
+    ry = 80
+    rx = int(np.nonzero(core[ry])[0].mean())           # a tile on the road
+    hall = ObjectTier(crc=2286315329, name="hall", tier="signature", density=0.0,
+                      positions=[(60.0, 200.0, 0.0), (float(rx), float(ry), 90.0)])
+    spec.objects = [hall]
+    box = {2286315329: (3600.0, 2000.0, 1500.0)}
+    b = pipeline.run(spec, bbox_lookup=box.get)
+    blocked = (b.attr_cells & 1).astype(bool)
+    # off the road, unturned: 36 m along x, 20 m along y
+    assert blocked[200, 60] and blocked[200, 60 + 15] and blocked[200 + 8, 60]
+    assert not blocked[200 + 15, 60], "the hall was stamped as a disc of its long side"
+    # on the road, turned 90: the long axis is y now, and the road runs through
+    near = np.zeros_like(core)
+    near[ry - 22:ry + 23, rx - 22:rx + 23] = True      # the border seal is elsewhere
+    assert not blocked[core & near].any(), "a building footprint sealed the road"
+    assert blocked[ry + 14, rx - 7] and blocked[ry - 14, rx + 7]   # the corners off the route
+
+
+def test_shore_paint_stays_at_the_water():
+    """`shore` is an overlay for the waterline, not ground cover.
+
+    Its suitability kept a 0.05 floor everywhere, and the overlay normalises by
+    the mean: on a map with a small pond the floor IS the mean, so beach sand
+    was sprinkled at its full weight over the whole map -- 5% of a town square
+    120 m from the water. Corpus: `beach sand 01` has 100% of its tiles within
+    4 m of water.
+    """
+    spec = make_spec()
+    spec.textures = list(spec.textures) + [
+        TextureSlot("d:/ymir work/terrainmaps/b/beach/beach sand 01.dds",
+                    role="shore", weight=0.5)]
+    spec.water = [WaterSpec(waypoints=[(60, 180), (90, 170), (100, 200), (70, 210)],
+                            width_m=0.0, lake=True)]
+    b = pipeline.run(spec)
+    sand = b.tiles == len(spec.textures)
+    assert sand.any(), "no shore tile was painted at all"
+    from m2map.gen.objects import _water_distance
+    far = sand & (_water_distance(b.submerged) > 8.0)
+    assert far.sum() <= 0.05 * sand.sum(), (
+        "%d of %d shore tiles are more than 8 m from the waterline"
+        % (far.sum(), sand.sum()))
+
+
+def test_a_levelling_pad_is_not_held_to_the_plaza_band():
+    """The 8-25 m band is measured on PAINTED discs. A pad paints nothing.
+
+    `b1_town_square` spans 60 m about its centre and the hotel on its rim is
+    36 x 20 m, so its pad is 70 m -- and the expanded spec was refused as a
+    plaza too big to read as one.
+    """
+    pad = PlazaSpec(centre=(128.0, 128.0), radius_m=70.0, tile_index=0, safezone=False)
+    assert not [p for p in make_spec(plazas=[pad]).validate() if "corpus band" in p]
+    flagged = PlazaSpec(centre=(128.0, 128.0), radius_m=70.0, tile_index=0, safezone=True)
+    assert [p for p in make_spec(plazas=[flagged]).validate() if "corpus band" in p]
+
+
 def test_plaza_survives_a_spec_round_trip(tmp_path):
     """A mapspec that cannot be reloaded is not a contract."""
     spec = make_spec()

@@ -25,6 +25,7 @@ whole-byte copy blocks every cell of a Ymir-style map.
 
 from __future__ import annotations
 
+import math
 from typing import Iterable, List, Tuple
 
 import numpy as np
@@ -100,7 +101,26 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
         cells[:, -b:] |= attr_codec.ATTR_BLOCK
 
     # Object footprints -- the reason this stage runs after placement.
-    for fx, fy, radius in footprints:
+    authored = np.zeros((h, w), bool)
+    for fp in footprints:
+        if len(fp) == 5:
+            # An authored building: its own rectangle, turned by its roll. Roll
+            # is counter-clockwise with north up and the tile grid is y-down
+            # (`placement.md` 6.w), so the offset is flipped before it is turned
+            # back into the model's frame.
+            fx, fy, hx, hy, roll = fp
+            reach = int(math.ceil(math.hypot(hx, hy))) + 1
+            x0, x1 = int(max(0, fx - reach)), int(min(w, fx + reach + 1))
+            y0, y1 = int(max(0, fy - reach)), int(min(h, fy + reach + 1))
+            if x1 <= x0 or y1 <= y0:
+                continue
+            ys, xs = np.mgrid[y0:y1, x0:x1]
+            dx, dy = xs - fx, -(ys - fy)
+            c, s_ = math.cos(math.radians(roll)), math.sin(math.radians(roll))
+            u, v = dx * c + dy * s_, -dx * s_ + dy * c
+            authored[y0:y1, x0:x1] |= (np.abs(u) <= hx) & (np.abs(v) <= hy)
+            continue
+        fx, fy, radius = fp
         if radius <= 0:
             continue
         x0, x1 = int(max(0, fx - radius)), int(min(w, fx + radius + 1))
@@ -110,6 +130,13 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
         ys, xs = np.mgrid[y0:y1, x0:x1]
         disc = (xs - fx) ** 2 + (ys - fy) ** 2 <= radius * radius
         cells[y0:y1, x0:x1][disc] |= attr_codec.ATTR_BLOCK
+
+    # ...and the road keeps its core through them. Tents, warp gates and the b1
+    # hotel all stand ON the route (d(road) p50 0 cm); the hotel's gate is the
+    # north spoke of its square.
+    for corr in lay.corridors:
+        authored &= ~corr.core
+    cells[authored] |= attr_codec.ATTR_BLOCK
 
     # Named regions declared safe. Note that these are NOT cleared of block:
     # safe-zone and block overlap freely in the corpus -- 923,325 of the

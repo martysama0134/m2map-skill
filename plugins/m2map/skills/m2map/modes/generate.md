@@ -58,6 +58,8 @@ added because a map needed it and the alternative did not work.
 | A landmark at an exact spot | `ObjectTier.positions` | `(x, y)` or `(x, y, roll)`; skips every candidate filter. A waterfall cannot be expressed as "steep and near water" — that cannot say *which* water |
 | A fence run or any curving line | `positions` with `(x, y, roll)` | corpus fences: **62 %** in runs of 3+, gap p50 **361 cm**, turn p50 **18°**, rolled tangent — but the six models are different lengths, so do not generate one; copy it. `placement.md` §6.w |
 | A camp, yard or any shipped compound | **`setpieces:`** in the mapspec — a pattern from `reference/setpieces/`, an `anchor`, a `rotate_deg` | every record within a radius, offsets / rolls / biases verbatim, about the block's **centroid**; turned as one block by multiples of 15 with the measured sign (roll CCW north-up, so y-down offsets turn clockwise); a levelling pad is added on the anchor (extent + 4 m) unless `pad_radius_m: 0`. `reference/setpieces/README.md` |
+| A town square | **`setpieces: b1_town_square`** + a `PlazaSpec` on the same anchor + a `settlement` region carrying a `role: accent` dirt slot | records come from the pattern; disc, apron, spokes and pad are the spec's. `reference/setpieces/README.md` |
+| A beach | a `shore` slot, `weight` = share **of the 6 m band at the waterline** | measured from the submerged cells, not the authored polygon -- the surface sits inside its bowl |
 | A prop facing out of a slope | `ObjectTier.align_to_slope` | roll = fall line **+ 90°**; the plane lies along the heading |
 | An authored compound aimed deliberately | `ObjectTier.roll_deg` | one heading for every piece. Left to the sampler a warp gate's three parts drew 345, 285 and 105 |
 | A prop that needs a face | `ObjectTier.min_slope` | `fall_7` is p50 **71.4°**; with `max_slope` alone it lands on the flat |
@@ -91,6 +93,14 @@ spec, new seed — against a corpus p95 of 2.9°. After the first build, read th
 slope under each authored landmark from the written `height.raw` and move it to
 the flattest on-road patch if it fails. Absolute heights (`crest_cm`,
 `surface_z`) need the same re-read.
+
+**A big pad eats the terrain targets.** `flat_fraction` and the slope percentiles
+are fitted over the whole interior, pad included. With a 70 m pad on a 1x1 the
+fit took the pad as "the flat part" and made everything else steep: 79% of the
+ground outside the town came out rock, block 62%, and every scattered tree
+landed inside the square because that was the only grass. Ask for a flatter map
+than the archetype table says (`slope_p50` 3, `slope_p95` 22, `flat_fraction`
+0.70 gave block 40% and a green ring round the town).
 
 **Roads before everything.** Lay the corridor waypoints first; terrain flattens
 under them, texture paints them, objects clear them. A road added afterwards

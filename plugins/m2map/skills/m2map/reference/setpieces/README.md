@@ -19,11 +19,38 @@ matched the source render did no generating at all (`placement.md` §6.w,
 | file | source | records | pivot | extent about pivot (m) | relief | headings |
 |---|---|---|---|---|---|---|
 | `desert_camp.json` | `metin2_map_n_desert_01`, 32 m around (333, 307) | 32 | centroid, at (326.91, 319.33) on the source | x −22.4 … +23.9 · y −22.8 … +18.8 | 58 cm (31 of 32 on one plane) | 105 ×12 · 315 ×6 · 285 ×5 · others ×9 |
+| `b1_town_square.json` | `metin2_map_b1`, 60 m around (638, 638), `b1-038-wall*` excluded | 80 | **centre** -- the safezone disc's centre | x −58.9 … +51.9 · y −56.6 … +56.8 | 258 cm | 0 ×15 · 30 ×10 · 180 ×8 · others |
 
 `desert_camp`: two fence rails of 5 and 6 panels (fence01…05 mixed, steps
 232–521 cm) flanking three tents, a brazier with its stall clutter, banana
 trees, ferns and aloes. Verified in WorldEditor from the same camera as the
 source, unturned and turned 90°: rails connected both ways.
+
+`b1_town_square`: the 44 m `tile01` safezone disc of Empire B's capital, ringed
+by lamps and stone lanterns, the twin-hall hotel on the north spoke (the road
+runs through its gate), two guesthouses and a workhouse east, market stalls
+north-east and south-east, a jar-and-crate yard west. Verified in WorldEditor
+against the source from the same camera (`map_skill_test_06`).
+
+A pattern is **records only**. What makes this one read as a town is also paint
+and attr, and the spec has to bring them:
+
+```yaml
+plazas:
+  - {centre: [112, 150], radius_m: 22, tile_index: 7, safezone: true}   # tile01, on the anchor
+setpieces:
+  - {pattern: b1_town_square, anchor: [112, 150], pad_radius_m: 70}     # hotel is 36 x 20 m on the rim
+regions:
+  - {kind: settlement, polygon: [...66 m octagon on the anchor...], flatten: true}
+textures:
+  - {path: '.../b/field/field 04.dds', role: accent, region: settlement, weight: 0.7}   # the dirt apron
+roads:     # spokes through the anchor; N runs through the hotel gate at dx +2, dy -57
+```
+
+`role: accent` with a `region` is the patchy, coherent overlay (`mid` scores by
+slope and lands on the pad's rim; `interior` is for box maps). Scatter keeps off
+every plaza and pad by itself, and authored buildings stamp their own rectangle
+into `attr.atr` with the road core kept open.
 
 ## Using one
 
@@ -51,6 +78,9 @@ objects += camp.rotated(90.0).stamp(anchor, label="camp")
 plazas.append(PlazaSpec(centre=anchor, radius_m=34.0, tile_index=0, safezone=False))
 ```
 
+- **The pad is not a plaza.** A `PlazaSpec(tile_index=0, safezone=False)` is
+  exempt from the 4-40 m disc band; give `pad_radius_m` the extent plus the
+  largest footprint on the rim (70 m for `b1_town_square`).
 - **The pad.** `relief_cm` says how flat the source was (58 cm here — one
   plane). Level a `PlazaSpec(tile_index=0, safezone=False)` under the anchor,
   radius past `extent_m`, **centred on the anchor** so a turned block stays on
@@ -89,6 +119,11 @@ it. The render is the last word.
 python -m m2map.gen.setpiece <CORPUS>/metin2_map_n_desert_01 333 307 32 \
     --name desert_camp --notes "..." --save reference/setpieces/desert_camp.json
 ```
+
+`--exclude NAME|CRC` (repeatable) drops records before the centroid is taken. A
+disc cannot always take one compound and nothing of the next: at 60 m the b1
+square clips four corners and the gate of the walled estate beside it, and half
+a wall is worse than none.
 
 prints the table as a Python literal (about the centroid, with names from the
 catalog), the extent, relief, heading histogram and fence alignment, and saves

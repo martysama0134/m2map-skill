@@ -46,7 +46,7 @@ Read the matching mode file from `modes/` adjacent to this SKILL.md.
 |------|------|
 | Generating a new map | `reference/archetypes/README.md` → walk its selection tree → the one archetype doc |
 | Any placement decision | `reference/placement.md` — the family's section |
-| Reusing a shipped compound (camp, yard, shrine) | `reference/setpieces/README.md` — the patterns, and how to turn and stamp one |
+| Reusing a shipped compound (camp, town square, yard, shrine) | `reference/setpieces/README.md` — the patterns, and how to turn and stamp one |
 | Choosing or composing a palette | `reference/textures.md` |
 | Choosing lighting/fog | `reference/environments.md` |
 | Identifying what a prop *is* | `reference/objects.md`, then `catalog/objects.json` |
@@ -114,6 +114,7 @@ All modes, all generated output. Reference files cite these by number — number
     </EXTREMELY-IMPORTANT>
 24. **A waterfall needs a wall.** `fall_7` sits on slope p50 **71.4°** in the corpus and is a flat quad ~40 m across; a 41–52° ridge is a ramp, and a quad on a ramp floats or buries. Cut a `ScarpSpec` first (1,800 cm over a 3 m run is 81°, the steepest a heightfield can hold is one 200 cm cell of run per drop), then place the sheet on it — raised into its measured bias band (+78/+288/+1,378 cm) and rolled to the fall line **+90°**, because the plane lies along the heading.
 25. **A compound is copied whole, not assembled — and turned only as a block.** Three generated versions of the desert camp — posts on a ring, an arc at the corpus median pitch, a "run" chained from nearby records — each read as debris while every statistic passed; the copy that matched the reference render did no generating: every record within 32 m of (333, 307) in `metin2_map_n_desert_01`, offsets, rolls and height biases verbatim (`gen/setpiece.py`; the pattern is `reference/setpieces/desert_camp.json`, about its centroid — in a mapspec, `setpieces: [{pattern: desert_camp, anchor: [x, y], rotate_deg: θ}]`). To face it another way use `SetPiece.rotated(θ)`, θ a multiple of 15: roll increases **counter-clockwise with north up** (1,681 corpus fences: `roll + atan2(Δy_tile, Δx_tile)` constant at concentration 0.84, the difference 0.08), so the y-down offsets turn clockwise — turn both the same way and the rails come apart while every spacing statistic still passes. Level a pad under the pivot, and render the source at the same camera before judging the copy. `reference/placement.md` §6.w, `reference/setpieces/README.md`, `failure-atlas.md` §3.10.
+26. **A pattern is records only.** Copying a compound (rule 25) copies what `areadata.txt` holds. The plaza disc, the dirt apron, the road spokes, the levelling pad and the collision are the spec's to supply: a `PlazaSpec` on the same anchor, a region-confined `role: accent` slot, `pad_radius_m` past the largest footprint on the rim. Scatter keeps off plazas and pads, and authored buildings block their own rectangle with the road kept open through it -- the b1 hotel stands on its road. `reference/setpieces/README.md`, `failure-atlas.md` §3.11.
 
 ## Verification — not optional
 

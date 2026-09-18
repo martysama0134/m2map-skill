@@ -125,6 +125,11 @@ def _roll_for(rng, tier: ObjectTier, height_t: np.ndarray,
     return _sample_roll(rng, tier)
 
 
+#: Share of a model's bounding box an authored footprint blocks. The box takes
+#: the eaves and the steps; the walls stand inside it.
+FOOTPRINT_SHRINK = 0.9
+
+
 def _candidate_mask(spec: MapSpec, lay: Layout, tier: ObjectTier,
                     tiles: np.ndarray, slope: np.ndarray,
                     submerged: np.ndarray, wet: np.ndarray = None) -> np.ndarray:
@@ -153,6 +158,13 @@ def _candidate_mask(spec: MapSpec, lay: Layout, tier: ObjectTier,
     if tier.road_clearance_cm > 0 and lay.corridors:
         ok &= lay.road_distance >= (tier.road_clearance_cm / 100.0)
 
+    # Nothing is scattered onto a plaza or a levelling pad. The corpus disc is
+    # clear, and a pad carries a compound copied whole (`gen/setpiece.py`) whose
+    # spacing is the point -- ten scattered trees came up between the stalls of
+    # the b1 town square. Authored `positions` never reach this mask.
+    for pz in lay.plazas:
+        ok &= ~pz.mask
+
     # Distance to water, both directions. The corpus measures d(water) per CRC
     # and the two ends are genuinely different rules: desert flora keeps AWAY
     # (tree/n2 p50 20,009 cm) while oasis and shore decoration hugs the edge.
@@ -177,7 +189,9 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
     """Place every tier. Returns ``(records, footprints)``.
 
     ``records`` are whole-map :class:`ObjectRecord`s in map-local cm;
-    ``footprints`` are ``(tile_x, tile_y, radius_tiles)`` for stage 7.
+    ``footprints`` are ``(tile_x, tile_y, radius_tiles)`` for scattered props
+    and ``(tile_x, tile_y, half_x, half_y, roll)`` for authored ones, for
+    stage 7.
     ``bbox_lookup(crc) -> (sx, sy, sz) cm`` supplies real model extents from the
     catalog; without it, spacing falls back to the spec.
     """
@@ -230,6 +244,18 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
                     roll=(float(own_roll) % 360.0 if own_roll is not None
                           else _roll_for(rng, tier, height_t, int(tx), int(ty))),
                     height_bias=round(bias, 6)))
+                # An authored building blocks its own rectangle. A copied town
+                # is nothing but `positions`, and with no footprint every hall
+                # in it was walk-through on the server (0 of 10 centre cells
+                # blocked against the archetype's 85.7%). A rectangle turned by
+                # the roll, not a disc: the b1 hotel is 36 x 20 m and a disc of
+                # its long side seals the square it faces.
+                box = bbox_lookup(tier.crc) if bbox_lookup else None
+                if box and tier.tier != "accent" and min(box[0], box[1]) >= 200.0:
+                    footprints.append((tx, ty,
+                                       FOOTPRINT_SHRINK * box[0] / 200.0,
+                                       FOOTPRINT_SHRINK * box[1] / 200.0,
+                                       records[-1].roll))
             continue
 
         mask = _candidate_mask(spec, lay, tier, tiles, slope_t, submerged, wet)

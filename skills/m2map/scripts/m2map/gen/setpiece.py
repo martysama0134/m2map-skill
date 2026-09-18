@@ -199,7 +199,8 @@ def _sector_files(map_dir: pathlib.Path) -> List[pathlib.Path]:
 
 def extract(map_dir, centre_m: Tuple[float, float], radius_m: float,
             name: str = "", pivot: str = "centroid",
-            names: Optional[Dict[int, str]] = None) -> SetPiece:
+            names: Optional[Dict[int, str]] = None,
+            exclude: Sequence[str] = ()) -> SetPiece:
     """Every record within ``radius_m`` of ``centre_m`` on ``map_dir``, as a
     :class:`SetPiece` about its pivot.
 
@@ -208,15 +209,28 @@ def extract(map_dir, centre_m: Tuple[float, float], radius_m: float,
     (the mean of the record positions -- the block's own centre, which is what
     to turn it about) or ``"centre"`` (the point asked for). Records come back
     sorted by distance from the pivot so the table is stable across runs.
+
+    ``exclude`` drops records before the centroid is taken: each entry is a CRC
+    in decimal, or a case-insensitive substring of the catalog name. A disc
+    cannot always take one compound and nothing of the next -- the b1 town
+    square at 60 m clips four corners and the gate of the walled estate beside
+    it, and half a wall is worse than none.
     """
     map_dir = pathlib.Path(map_dir)
     cx, cy = float(centre_m[0]) * 100.0, float(centre_m[1]) * 100.0
     r_cm = float(radius_m) * 100.0
+    names = names or {}
+    drop = [str(e).lower() for e in exclude]
+
+    def dropped(crc: int) -> bool:
+        label = names.get(crc, "").lower()
+        return any(e == str(crc) or (label and e in label) for e in drop)
+
     hits = []
     for f in _sector_files(map_dir):
         for rec in ad.AreaData.load(f).records:
             x, y = rec.x, rec.terrain_y          # areadata stores Y negated
-            if math.hypot(x - cx, y - cy) <= r_cm:
+            if math.hypot(x - cx, y - cy) <= r_cm and not dropped(int(rec.crc)):
                 hits.append((x, y, rec))
     if pivot == "centroid" and hits:
         px = sum(h[0] for h in hits) / len(hits)
@@ -225,7 +239,6 @@ def extract(map_dir, centre_m: Tuple[float, float], radius_m: float,
         px, py = cx, cy
     else:
         raise ValueError("pivot must be 'centroid' or 'centre', got %r" % pivot)
-    names = names or {}
     pieces = [Piece(dx=(x - px) / 100.0, dy=(y - py) / 100.0,
                     roll=float(rec.roll) % 360.0, height_bias=float(rec.height_bias),
                     crc=int(rec.crc), z=float(rec.z), name=names.get(int(rec.crc), ""))
@@ -307,8 +320,8 @@ def expand(spec):
 
     The pad is a `PlazaSpec(tile_index=0, safezone=False)` centred on the
     anchor -- it paints and flags nothing, it only levels -- with radius
-    ``pad_radius_m`` or, by default, the pattern's extent plus 4 m clamped to
-    the plaza band. A turned block stays inside it because it turns about the
+    ``pad_radius_m`` or, by default, the pattern's extent plus 4 m (a pad is
+    exempt from the plaza band; a town is wider than any disc). A turned block stays inside it because it turns about the
     same point.
     """
     from dataclasses import replace as _replace
@@ -329,7 +342,7 @@ def expand(spec):
         r = sps.pad_radius_m
         if r is None:
             x0, x1, y0, y1 = sp.extent_m()
-            r = min(40.0, max(4.0, max(abs(x0), abs(x1), abs(y0), abs(y1)) + 4.0))
+            r = max(4.0, max(abs(x0), abs(x1), abs(y0), abs(y1)) + 4.0)
         if r > 0:
             plazas.append(PlazaSpec(centre=tuple(sps.anchor), radius_m=float(r),
                                     tile_index=0, safezone=False))
@@ -456,11 +469,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--pivot", choices=("centroid", "centre"), default="centroid")
     ap.add_argument("--rotate", type=float, default=0.0,
                     help="turn the block by this many degrees of roll before printing")
+    ap.add_argument("--exclude", action="append", default=[], metavar="NAME|CRC",
+                    help="drop records whose catalog name contains this, or whose "
+                         "CRC is this; repeatable")
     ap.add_argument("--save", help="write the pattern as JSON here")
     ap.add_argument("--notes", default="")
     a = ap.parse_args(argv)
     sp = extract(a.map_dir, (a.x_m, a.y_m), a.radius_m, name=a.name, pivot=a.pivot,
-                 names=_catalog_names())
+                 names=_catalog_names(), exclude=a.exclude)
     if a.rotate:
         sp = sp.rotated(a.rotate)
     sp.notes = a.notes

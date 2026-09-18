@@ -99,6 +99,21 @@ def test_centroid_pivot_is_the_blocks_own_centre(source):
         _pair_distances([(p.dx, p.dy) for p in sc.pieces])
 
 
+def test_exclude_drops_the_next_compound_before_the_centroid(source):
+    """A disc cannot always take one compound and nothing of its neighbour.
+
+    The b1 town square at 60 m clips four corners and the gate of the walled
+    estate beside it; they are named out, and the centroid is of what is left.
+    """
+    names = {1099929426: "general_obj_tent01", 1339763610: "general_obj_fence01"}
+    sp = setpiece.extract(source, (333, 307), 32, names=names, exclude=["TENT"])
+    assert len(sp.pieces) == 5 and all(p.crc in RAIL_CRCS for p in sp.pieces)
+    assert sum(p.dx for p in sp.pieces) == pytest.approx(0.0, abs=1e-9)
+    # a CRC works too, for a prop the catalog has no name for
+    sp = setpiece.extract(source, (333, 307), 32, exclude=["1099929426"])
+    assert len(sp.pieces) == 5
+
+
 def test_stamp_keeps_every_roll_and_bias(source):
     sp = setpiece.extract(source, (333, 307), 32)
     tiers = sp.stamp(anchor=(88.0, 108.0), label="camp")

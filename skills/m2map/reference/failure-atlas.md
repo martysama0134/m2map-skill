@@ -929,6 +929,23 @@ measurement and obvious in one frame. `placement.md` §6.w.
 map. If the source shows two rails of 5 and 6 and the table has 20 rows, the
 table is wrong.
 
+## 3.11 A copied compound brings records, and nothing else
+
+`map_skill_test_06` stamped the b1 town square -- 80 records, verified against
+the source render -- and four things around it were wrong while the audit read
+zero findings:
+
+| Fault | Cause | Now |
+|---|---|---|
+| Ten scattered trees between the market stalls | the candidate mask knew roads and water, not plazas or pads | scatter keeps off every `PlazaSpec` mask (`gen/objects.py`) |
+| Hotel, guesthouses, workhouse walk-through on the server: 0 of 10 centre cells blocked, archetype 85.7% | `positions` never produced an attr footprint | authored buildings stamp their bbox rectangle turned by roll; the road core stays open through it, because the hotel stands ON the north spoke (`gen/attribute.py`) |
+| Beach sand over the whole map, 5% of a square 120 m from the pond (98% of shore tiles > 8 m from water) | `shore` kept a 0.05 floor everywhere and the overlay normalises by the mean -- with one small pond the floor IS the mean | a `shore` slot paints only the 6 m band round the **submerged** cells; `weight` is its share of that band (`gen/texture.py`) |
+| The expanded spec refused: "plaza radius 70 m outside the corpus band" | the pad is a `PlazaSpec`, and the 8-25 m band was measured on painted discs | pads (`tile_index=0`, no safezone) are exempt |
+
+The general shape: a pattern carries what `areadata.txt` carries. Paint, the
+levelling pad, collision and the keep-out around it live in other files and the
+spec has to say them -- `reference/setpieces/README.md` has the five lines.
+
 ## 4. Unit boundaries — the faults a round trip cannot see
 
 Every entry above describes a file that is wrong in a way some check can notice.
