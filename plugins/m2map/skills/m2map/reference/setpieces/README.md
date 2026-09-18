@@ -23,6 +23,11 @@ matched the source render did no generating at all (`placement.md` §6.w,
 | `c1_camp_north.json` | `metin2_map_c1`, author's selection about (452, 933) | 49 | centroid | x −19.4 … +25.6 · y −27.8 … +17.1 | 0 cm | opens **north** (0) |
 | `c1_camp_southwest.json` | `metin2_map_c1`, author's selection about (194, 570) | 73 | centroid | x −20.8 … +12.8 · y −17.7 … +22.7 | 0 cm | opens **south-west** (225) |
 | `c1_camp_east.json` | `metin2_map_c1`, author's selection about (618, 300) | 68 | centroid | x −17.0 … +17.7 · y −26.3 … +29.0 | 101 cm | opens **east** (90) |
+| `desert_camp_west.json` | `metin2_map_n_desert_01`, author's selection about (1435, 721) | 78 | centroid | x -21.0 … +25.7 · y -23.1 … +26.4 | 5 cm | opens **west** (270) |
+| `desert_camp_south.json` | same map, about (891, 146) | 80 | centroid | x -27.7 … +22.8 · y -25.7 … +20.1 | 15 cm | opens **south** (180) |
+| `desert_camp_northwest.json` | same map, about (435, 709) | 83 | centroid | x -38.2 … +16.5 · y -28.9 … +18.9 | 27 cm | opens **north-west** (315) |
+| `desert_camp_northeast.json` | same map, about (158, 981) | 135 | centroid | x -37.5 … +41.6 · y -40.8 … +36.9 | 191 cm | opens **north-east** (45) |
+| `desert_camp_west2.json` | same map, about (429, 1207) | 157 | centroid | x -42.1 … +43.2 · y -50.0 … +33.4 | 70 cm | opens **west** (270) |
 
 `desert_camp`: two fence rails of 5 and 6 panels (fence01…05 mixed, steps
 232–521 cm) flanking three tents, a brazier with its stall clutter, banana
@@ -43,6 +48,26 @@ a hand selection, no trees -- and each matched the corpus record for record
 (49/49, 73/73, 68 of the 71 in its bounding box: two stray panels and a Pagoda
 are not camp). Stamped copies verified against the source from the same camera,
 and `c1_camp_east` turned 90 verified to open north.
+
+`desert_camp_*` (the five with a direction): desert encampments registered the
+same way, each matching `metin2_map_n_desert_01` record for record
+(78 / 80 / 83 / 135 / 157), flora included -- the palms and ferns are part of the
+composition here, where the c1 selections left their trees out. Three sizes:
+`west`, `south` and `northwest` are 45-55 m rings of huts or tents behind fence
+arcs; `northeast` is a 79 m village of ten tents round a warp-gate dais with a
+lion statue; `west2` is an 85 m ring of four hut groups with 57 fence panels.
+Their ground is three different things, and each is saved with its pattern:
+
+| pattern | floor |
+|---|---|
+| `west`, `south`, `northwest`, and the original `desert_camp` | a **solid `sand02` patch** -- 1,100-1,800 tiles, the dark damp-looking floor -- with `grass 01`/`grass 02` dithered under the palm clumps |
+| `northeast` | grass under each tent group (4,025 tiles, two greens dithered), bare sand in the middle |
+| `west2` | no floor at all: a web of `field 01` tracks meeting in the middle (2,101 tiles) |
+
+Declare `sand02`, `grass 01`, `grass 02` and `field 01` (`weight: 0.0` for the
+ones the map does not otherwise use). Verified against the source from the same
+camera, and `desert_camp_west` turned 90 verified to open south
+(`map_setpiece_check_desert`).
 
 A camp **faces** somewhere: the side without fence, where the road arrives. The
 facing is a compass bearing in the pattern's notes, and since roll turns

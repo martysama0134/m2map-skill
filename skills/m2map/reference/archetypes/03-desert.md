@@ -502,6 +502,18 @@ the same anchor stands in for the plane. Rendered from the same camera, the
 copy and the source cannot be told apart. `placement.md` §6.w;
 `failure-atlas.md` §3.10.
 
+**Six shipped camps are patterns now**, not one: `desert_camp` (the 32-record
+one above) and `desert_camp_west` / `_south` / `_northwest` / `_northeast` /
+`_west2`, hand-selected by the map's author, 78-157 records each with their
+palms, each with a facing to turn toward the road
+(`reference/setpieces/README.md`).
+
+> **`sand02` is the camp floor.** Map-wide it is dither noise (1.2 % non-edge,
+> above) and as a generated ground texture it fails -- but under four of the six
+> camps it is a SOLID patch of 1,100-1,800 tiles, the dark floor the huts stand
+> round. That is its one region-forming use on this map, and it comes with the
+> pattern's saved ground; do not try to generate it.
+
 ### The warp gate is three objects, and they share one heading
 
 `warpgate02_01` is only the dais. Its companions within 15 m are `warpgate02`
