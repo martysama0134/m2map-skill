@@ -211,6 +211,9 @@ it. The render is the last word.
 
 ## Making one
 
+The whole procedure -- verify, read the ground, render, save, check sheet,
+compare, document -- is `modes/register.md`. The commands:
+
 ```
 python -m m2map.gen.setpiece <CORPUS>/metin2_map_n_desert_01 333 307 32 \
     --name desert_camp --notes "..." --save reference/setpieces/desert_camp.json
@@ -222,6 +225,9 @@ its own definition -- paste the `areadata.txt` text into a file and
 ```
 python -m m2map.gen.setpiece --from-areadata picked.txt --source-map metin2_map_c1     --name c1_camp_north --notes "..." --save reference/setpieces/c1_camp_north.json
 ```
+
+(add `--verify-against <CORPUS>/<map>` first: it checks every pasted record is on
+the map and lists what the author left out of the same box)
 
 takes every record in it, about their centroid (`source_point_m` repeats the
 pivot and `radius_m` is only the reach of the farthest record). Check the paste

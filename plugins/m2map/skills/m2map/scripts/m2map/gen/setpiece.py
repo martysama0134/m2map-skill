@@ -360,6 +360,50 @@ def from_areadata(path, source_map: str = "", name: str = "",
     return _build(hits, source_map, name or pathlib.Path(path).stem, "centroid", names)
 
 
+def verify_against(areadata_path, map_dir, names: Optional[Dict[int, str]] = None) -> Dict:
+    """Check a pasted selection against the map it is said to come from.
+
+    Every pasted record should exist on the map -- same position to the
+    centimetre, same CRC, roll and bias. One that does not is a typo or the
+    wrong map (``missing_from_map``). Records the map holds inside the paste's
+    bounding box that the paste does NOT are reported too (``left_out``): they
+    are what the author chose to leave out, and worth a look before saving --
+    on the c1 east camp they were two stray fence panels and a tree.
+    """
+    names = names or {}
+    pasted = list(ad.AreaData.load(areadata_path).records)
+    if not pasted:
+        raise ValueError("no records in %s" % areadata_path)
+    x0, x1 = min(r.x for r in pasted) - 1.0, max(r.x for r in pasted) + 1.0
+    y0, y1 = min(r.terrain_y for r in pasted) - 1.0, max(r.terrain_y for r in pasted) + 1.0
+    on_map = [r for f in _sector_files(pathlib.Path(map_dir))
+              for r in ad.AreaData.load(f).records
+              if x0 <= r.x <= x1 and y0 <= r.terrain_y <= y1]
+
+    def key(r):
+        return (round(r.x), round(r.terrain_y), int(r.crc), float(r.roll) % 360.0,
+                float(r.height_bias))
+
+    def row(r):
+        return {"x_m": round(r.x / 100.0, 2), "y_m": round(r.terrain_y / 100.0, 2),
+                "crc": int(r.crc), "name": names.get(int(r.crc), ""),
+                "roll": float(r.roll) % 360.0, "bias": float(r.height_bias)}
+
+    have = {}
+    for r in on_map:
+        have.setdefault(key(r), []).append(r)
+    missing = []
+    for r in pasted:
+        bucket = have.get(key(r))
+        if bucket:
+            bucket.pop()
+        else:
+            missing.append(row(r))
+    left_out = [row(r) for bucket in have.values() for r in bucket]
+    return {"pasted": len(pasted), "in_bbox": len(on_map), "missing_from_map": missing,
+            "left_out": left_out, "exact": not missing and not left_out}
+
+
 def _find_textureset(map_dir: pathlib.Path, ref: str) -> Optional[pathlib.Path]:
     """Where ``setting.txt``'s ``TextureSet`` reference actually is.
 
@@ -696,6 +740,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--from-areadata", metavar="FILE",
                     help="take every record of this areadata.txt -- a selection copied "
                          "out of the editor -- instead of a map, a point and a radius")
+    ap.add_argument("--verify-against", metavar="MAP_DIR",
+                    help="with --from-areadata: check every pasted record exists on this "
+                         "map, and list what the map holds in the same box that the paste "
+                         "does not; exits 1 if a pasted record is not on the map")
     ap.add_argument("--source-map", default="",
                     help="with --from-areadata: the map the group stands on")
     ap.add_argument("--name", default="")
@@ -715,6 +763,16 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ap.add_argument("--save", help="write the pattern as JSON here")
     ap.add_argument("--notes", default="")
     a = ap.parse_args(argv)
+    if a.from_areadata and a.verify_against:
+        rep = verify_against(a.from_areadata, a.verify_against, names=_catalog_names())
+        print("# verify: %d pasted, %d on the map inside the same box%s"
+              % (rep["pasted"], rep["in_bbox"], " -- exact match" if rep["exact"] else ""))
+        for r in rep["left_out"]:
+            print("#   left out by the author: %(name)s %(crc)d at (%(x_m).1f, %(y_m).1f) roll %(roll)g" % r)
+        for r in rep["missing_from_map"]:
+            print("#   NOT ON THE MAP: %(name)s %(crc)d at (%(x_m).1f, %(y_m).1f) roll %(roll)g" % r)
+        if rep["missing_from_map"]:
+            return 1
     if a.from_areadata:
         sp = from_areadata(a.from_areadata, source_map=a.source_map, name=a.name,
                            pivot=a.pivot, names=_catalog_names(), exclude=a.exclude)

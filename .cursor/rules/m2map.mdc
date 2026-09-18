@@ -43,7 +43,7 @@ Read these before writing anything, in this order:
    arithmetic, the positional-array text grammar, textureset slot 0, the YPRT
    property container. Skipping this produces confidently wrong output.
 3. The mode file under `skills/m2map/modes/` that matches the task —
-   `generate`, `improve`, `audit`, `merge`, `reskin` or `server`.
+   `generate`, `improve`, `audit`, `merge`, `reskin`, `server` or `register`.
 4. Whatever that mode tells you to load from `skills/m2map/reference/`.
 
 The byte-level format specification is vendored at

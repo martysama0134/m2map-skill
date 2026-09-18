@@ -4,6 +4,7 @@ description: >
   Use when creating, modifying, auditing, merging, reskinning or populating
   Metin2 client maps — user says "/m2map", "make a map", "generate a map",
   "add a road", "the north sector is empty", "why do my objects not show up",
+  "register this pattern", "save this group of objects", pasted AreaDataFile text,
   "players fall through the floor", "merge these maps", "add spawns"; provides a
   map folder or a screenshot of terrain to match; or references any map file
   (setting.txt, height.raw, tile.raw, attr.atr, water.wtr, areadata.txt,
@@ -21,7 +22,8 @@ Dispatched as a subagent with a specific task? Skip mode detection and execute t
 
 Priority order:
 
-1. **Explicit keyword**: args start with `generate`, `improve`, `audit`, `merge`, `reskin` or `server` → that mode
+1. **Explicit keyword**: args start with `generate`, `improve`, `audit`, `merge`, `reskin`, `server` or `register` → that mode
+1a. **Pasted `areadata.txt` text** (`AreaDataFile`, `Start Object000` …) or "register / save this group / pattern for later" → **register mode**. A paste is a selection to keep, not a map to audit
 2. **Symptom report**: args contain a visible-fault phrase ("objects don't show", "falls through the floor", "blocked in open ground", "error texture", "map won't load", "seams", "blank minimap", "walks on water") → **audit mode first**, then `improve` if a fix is wanted
 3. **Two or more map paths**, or "combine"/"stitch"/"expand" → merge mode
 4. **One map path + a biome word** ("make it snowy", "desert version") → reskin mode
@@ -30,7 +32,7 @@ Priority order:
 7. **Spawn words** ("regen", "spawns", "npc", "boss", "stone", "add monsters") → server mode
 8. **Text description of a place** → generate mode
 9. **Image attached** → generate mode, using the image only for *style cues* (biome, density, palette feel). See "Screenshots" below.
-10. **No args**: ask — "(a) Generate a new map, (b) Improve an existing one, (c) Audit for problems, (d) Merge or expand, (e) Reskin to another biome, (f) Add spawns" — then dispatch
+10. **No args**: ask — "(a) Generate a new map, (b) Improve an existing one, (c) Audit for problems, (d) Merge or expand, (e) Reskin to another biome, (f) Add spawns, (g) Register a group of objects as a reusable pattern" — then dispatch
 
 Read the matching mode file from `modes/` adjacent to this SKILL.md.
 
@@ -46,6 +48,7 @@ Read the matching mode file from `modes/` adjacent to this SKILL.md.
 |------|------|
 | Generating a new map | `reference/archetypes/README.md` → walk its selection tree → the one archetype doc |
 | Any placement decision | `reference/placement.md` — the family's section |
+| Registering a new pattern | `modes/register.md` — verify the paste, read the ground, render source and copy |
 | Reusing a shipped compound (camp, town square, yard, shrine) | `reference/setpieces/README.md` — the patterns, and how to turn and stamp one |
 | Choosing or composing a palette | `reference/textures.md` |
 | Choosing lighting/fog | `reference/environments.md` |

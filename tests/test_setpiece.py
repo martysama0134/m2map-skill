@@ -138,6 +138,33 @@ def test_a_pasted_group_registers_without_a_radius(source, tmp_path):
     assert [(p.crc, p.roll) for p in again.pieces] == [(p.crc, p.roll) for p in sp.pieces]
 
 
+def test_a_paste_is_checked_against_the_map_it_came_from(source, tmp_path):
+    """Same count in the bounding box, same records -- and name what differs.
+
+    Eight pastes were checked this way by hand before it became a function. Seven
+    matched exactly; the c1 east camp's box held 71 records against 68 pasted,
+    and the three extras (two stray panels, a tree) were the author's choice.
+    """
+    picked = tmp_path / "picked.txt"
+    area = ad.AreaData(records=[
+        ad.ObjectRecord(x=x, y=y, z=17826.0, crc=crc, roll=roll, height_bias=bias)
+        for x, y, roll, bias, crc in RAIL[:2] + RAIL[3:]])          # panel 3 left out
+    area.declared_count = len(area.records)
+    picked.write_bytes(area.to_bytes())
+
+    rep = setpiece.verify_against(picked, source)
+    assert rep["pasted"] == 4 and rep["in_bbox"] == 5
+    assert rep["missing_from_map"] == []                 # every pasted record exists
+    assert [(r["crc"], r["roll"]) for r in rep["left_out"]] == [(RAIL[2][4], RAIL[2][2])]
+    assert not rep["exact"]
+
+    # a record that is NOT on the map is the serious case: a typo, or the wrong map
+    area.records[0].roll = 61.0
+    picked.write_bytes(area.to_bytes())
+    rep = setpiece.verify_against(picked, source)
+    assert len(rep["missing_from_map"]) == 1 and rep["missing_from_map"][0]["roll"] == 61.0
+
+
 # --- the ground under a compound ------------------------------------------
 #
 # A pattern is records only, and half of what makes a camp read is paint: the
