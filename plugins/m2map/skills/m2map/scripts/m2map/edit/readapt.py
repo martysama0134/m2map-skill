@@ -463,8 +463,8 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
             continue
         lk = Link(a, b, path)
         lk.wall_cells = sum(1 for x, y in path if not free[y, x])
-        lk.mouth_a_cm = _mouth(zc0, floors[a], path[0])
-        lk.mouth_b_cm = _mouth(zc0, floors[b], path[-1])
+        lk.mouth_a_cm = _mouth(zc0, floors[a] & dry, path[0])
+        lk.mouth_b_cm = _mouth(zc0, floors[b] & dry, path[-1])
         links.append(lk)
 
     # 3. one datum -----------------------------------------------------------

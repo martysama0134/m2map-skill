@@ -95,6 +95,8 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
 
 3. **Level.** Each block is shifted so the two **mouths** of the link — the
    median floor within 16 m of each end of the pass — stand at one height.
+   Walkable, DRY cells only: no mountain enters it, and **(03)** no ford or
+   lakebed either -- a mouth beside `b1`'s lake read 35 cm low with them in.
    Nothing wider. `guild_01` is tiered (islands at 17,320 and 19,720 cm): its
    median would have sunk the island the road lands on 21 m below its neighbour.
    **(02)** And "the commonest floor within 120 m" is only right on flat maps:
