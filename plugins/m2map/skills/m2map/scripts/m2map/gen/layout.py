@@ -250,6 +250,13 @@ class Layout:
     bridges: List["BridgeFit"] = field(default_factory=list)
     #: 0..1 suppression of the border ridge, so water can leave the map.
     ridge_gap: np.ndarray | None = None
+    #: `IslandsSpec` rasterised: the 0..1 wall profile on the terrain VERTEX
+    #: grid (1 = a top, 0 = the canyon bed), and in tile space everything that
+    #: is not a top. None without islands. See `gen/islands.py`.
+    island_t: np.ndarray | None = None
+    void: np.ndarray | None = None
+    #: cm to add along the lips of the tops -- the rock berm. Vertex grid.
+    island_berm: np.ndarray | None = None
 
     @property
     def road_mask(self) -> np.ndarray:
@@ -522,4 +529,13 @@ def build(spec: MapSpec) -> Layout:
                     <= (pz.radius_m + 3.0) ** 2)
 
     lay.flatten = flatten
+
+    if getattr(spec, "islands", None) is not None:
+        from . import islands
+        lay.island_t, _rim = islands.profile(spec)
+        lay.void = islands.void_tiles(lay.island_t, shape)
+        # no rock on a road, a plaza or a set-piece's pad: all three are in
+        # `flatten`, and the berm goes on after they were levelled
+        lay.island_berm = islands.berm(
+            spec, _distance_to(flatten, cap=16.0) if flatten.any() else None)
     return lay

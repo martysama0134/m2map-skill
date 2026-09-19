@@ -393,15 +393,19 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     if cliff_slots:
         massif = cliff_massif(spec, slope, rng,
                               slope_deg_src=slope_deg,
-                              road_mask=lay.road_mask)
+                              road_mask=lay.road_mask, void=lay.void)
         # A LAKE BED IS NOT ROCK. `taste.md` 1.10 says rock covers the ground the
         # player cannot walk on, and a basin floor qualifies -- it is blocked,
         # and after a scarp cuts it, steep. The rule was written about mountains
         # and it swallowed the water: 76% of the oasis bed came out stone03
         # against a hand-painted reference that is plainly sand. The bed keeps
         # whatever the ground carpet gave it.
+        #
+        # The sea between mesas is the exception the other way: `map_a2` paints
+        # 99.9% of its submerged tiles `stone01`/`stone02`, the same rock as the
+        # walls that run down into it. Only authored basins keep their bed.
         if water is not None and water.any():
-            massif &= ~water
+            massif &= ~(water if lay.void is None else (water & ~lay.void))
         if massif.any():
             # ONE texture, flat across the whole face. See `dominant_cliff`.
             tiles = np.where(massif, np.uint8(dominant_cliff(spec)), tiles)
@@ -424,12 +428,14 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     # Solid features last so they overwrite the field rather than dither with it.
     for corr in lay.corridors:
         band = np.clip(corr.tile_index, 1, len(spec.textures))
-        tiles[corr.core] = band
+        # a road stops at the lip of a mesa; the bridge carries it, not the paint
+        land = np.ones((h, w), bool) if lay.void is None else ~lay.void
+        tiles[corr.core & land] = band
         # The fringe dithers between corridor and surroundings, which is how the
         # corpus transitions: a hard edge reads as a decal laid on the ground.
         # Measured blend band over the 37 confirmed road maps: median 3 m,
         # p25 1 m, p75 7 m, and `hard_edge` false on every one of them.
-        fr = corr.fringe & ~corr.core
+        fr = corr.fringe & ~corr.core & land
         if fr.any():
             coin = rng.random((h, w)) < 0.45
             tiles[fr & coin] = band
@@ -735,7 +741,8 @@ def base_carpet(spec: MapSpec, scores: np.ndarray, rng) -> np.ndarray:
 
 def cliff_massif(spec: MapSpec, slope: np.ndarray, rng,
                  slope_deg_src: np.ndarray | None = None,
-                 road_mask: np.ndarray | None = None) -> np.ndarray:
+                 road_mask: np.ndarray | None = None,
+                 void: np.ndarray | None = None) -> np.ndarray:
     """Where the rock skin covers the ground: **everywhere the player cannot
     walk**.
 
@@ -777,7 +784,7 @@ def cliff_massif(spec: MapSpec, slope: np.ndarray, rng,
         jitter = (fbm(rng, h, w, octaves=3, base_cells=32, gain=0.55) - 0.5) * 2.0
         mask = walkable.terrain_block(
             spec, slope_deg_src if slope_deg_src is not None else slope,
-            (h, w), roads=road_mask, jitter=jitter)
+            (h, w), roads=road_mask, jitter=jitter, void=void)
     else:
         # Interiors and painted_box maps have no slope rule to borrow, so fall
         # back to the palette's own weights: rank by slope, take the top share.

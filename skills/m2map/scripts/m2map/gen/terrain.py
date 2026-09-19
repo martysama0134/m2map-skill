@@ -262,7 +262,9 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
           scarp_cm: np.ndarray | None = None,
           benches: "list | None" = None,
           bridges: "list | None" = None,
-          channels: "list | None" = None) -> np.ndarray:
+          channels: "list | None" = None,
+          island_t: np.ndarray | None = None,
+          island_berm: np.ndarray | None = None) -> np.ndarray:
     """Whole-map vertex height grid in world cm.
 
     Returns ``(h*128+1, w*128+1)`` -- the shared logical vertex grid. Splitting
@@ -338,6 +340,16 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
     for rs in getattr(spec, "relief_stamps", None) or []:
         height = stamp_relief(height, rs)
 
+    # Islands: cut the canyons out of the finished tops. AFTER the roads and
+    # pads, so a road drawn from one island to the next is level ground on both
+    # and nothing between -- levelled first, the corridor smoothing builds a
+    # causeway across the canyon, because it diffuses ALONG the road.
+    if island_t is not None and getattr(spec, "islands", None) is not None:
+        bed = float(spec.islands.bed_cm)
+        if island_berm is not None:
+            height = np.clip(height + island_berm, 0.0, 32767.5)
+        height = bed + (np.maximum(height, bed) - bed) * island_t
+
     # Cut the water bed last, so flattening cannot fill it back in. Without a
     # bed the water plane lies on top of the ground as a flat slab; with one it
     # sits in a channel and the banks read as banks.
@@ -369,6 +381,9 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
         w = np.clip(_to_cells(fit.bank_weight, height.shape), 0.0, 1.0)
         height = height * (1.0 - w) + level * w
         bed = level - float(fit.model["bed_below_bank_cm"])
+        if getattr(spec, "islands", None) is not None:
+            # between mesas the gorge under the deck is the canyon itself
+            bed = min(bed, float(spec.islands.bed_cm))
         c = np.clip(_to_cells(fit.cut_weight, height.shape), 0.0, 1.0)
         height = np.minimum(height, height * (1.0 - c) + bed * c)
         height = np.clip(height, 0.0, 32767.5)

@@ -95,7 +95,8 @@ def reachable(free: np.ndarray, seed: np.ndarray | None = None) -> np.ndarray:
 
 
 def terrain_block(spec: MapSpec, slope_deg: np.ndarray, shape, roads=None,
-                  jitter: np.ndarray | None = None) -> np.ndarray:
+                  jitter: np.ndarray | None = None,
+                  void: np.ndarray | None = None) -> np.ndarray:
     """The block mask that follows from terrain alone, in TILE space.
 
     Object footprints are added later by the attr stage; they are not terrain and
@@ -142,6 +143,12 @@ def terrain_block(spec: MapSpec, slope_deg: np.ndarray, shape, roads=None,
     blocked |= stranded
     if roads is not None:
         blocked &= ~roads
+    # Between mesas (`IslandsSpec`) a road is a route only as far as the lip. It
+    # still joins the islands above -- that is what makes the far one reachable
+    # -- but the canyon under it is wall and bed, blocked and rock; the deck of
+    # the bridge is opened by the attr stage and nothing else is.
+    if void is not None:
+        blocked |= void
     return blocked
 
 

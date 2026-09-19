@@ -587,6 +587,43 @@ def test_a_rope_bridge_is_anchored_at_one_end():
     assert north - h[64, 64] >= 1400.0, "a rope bridge hangs over a gorge: a1 measures 15-43 m"
 
 
+def _islands_spec():
+    from m2map.gen.spec import BridgeSpec, IslandsSpec
+    return make_spec(
+        size=(2, 1), plazas=[], objects=[], regions=[], safezone_regions=[], water=[],
+        height_range_cm=(16200.0, 17200.0), flat_fraction=0.7, border_ridge_cm=0.0,
+        roads=[RoadSpec(waypoints=[(150, 128), (220, 128), (292, 128), (362, 128)],
+                        width_m=5.0, tile_index=1)],
+        bridges=[BridgeSpec(model="suspension01", centre=(256.0, 128.0), roll_deg=90.0)],
+        islands=IslandsSpec(sites=[(150.0, 128.0), (362.0, 128.0)], rim_m=40.0,
+                            surface_cm=10000.0, bed_cm=8800.0))
+
+
+def test_islands_are_mesas_over_one_sea_joined_only_by_the_deck():
+    """`map_a2`: equal tops either side of a bridge, a flooded canyon between,
+    rock and block on all of it, and the road stopping at each lip."""
+    b = pipeline.run(_islands_spec())
+    h = b.height_cm
+    west, east, mid = h[64, 100], h[64, 156], h[64, 128]
+    assert abs(west - east) <= 10.0, "tops %.0f / %.0f across the bridge" % (west, east)
+    assert mid == pytest.approx(8800.0, abs=1.0), "no causeway under the deck"
+    assert west - 10000.0 >= 5000.0, "a2 stands 53-95 m over its water"
+    assert b.water_heights == [10000.0]
+    assert b.submerged[128, 256] and not b.submerged[128, 200]
+    assert not b.wet.any(), "the sea is not an authored basin; flora ignores it"
+    assert not any(line.startswith("! bridge") for line in b.log)
+
+    a, t = b.attr_cells, b.tiles
+    assert not (a[126:131, 224:289] & 0x03).any(), "the deck is walkable"
+    assert (a[100:118, 256] & 0x01).all(), "the canyon beside the deck is blocked"
+    assert (a[128, 150:215] & 0x01).sum() == 0, "the road on the top is open"
+    cliff = [i for i, sl in enumerate(b.spec.textures, start=1) if sl.role == "cliff"]
+    assert np.isin(t[90:120, 250:262], cliff).all(), "the bed is rock, as a2 paints it"
+    assert np.isin(t[128, 236:276], cliff).all(), "no road paint across the canyon"
+    # both tops are one playable interior, through the road over the deck
+    assert not (a[128, 160] & 0x01) and not (a[128, 350] & 0x01)
+
+
 def test_bad_bridges_are_caught_before_building():
     from m2map.gen.spec import BridgeSpec
     spec = _bridge_spec()

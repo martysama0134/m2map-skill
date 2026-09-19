@@ -71,7 +71,8 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
         # rim all the way over the top rather than only on its faces. See
         # `gen/walkable.py`.
         cells[walkable.terrain_block(spec, slope_deg, (h, w),
-                                     roads=lay.road_mask)] |= attr_codec.ATTR_BLOCK
+                                     roads=lay.road_mask,
+                                     void=lay.void)] |= attr_codec.ATTR_BLOCK
 
     # Water: only cells whose surface is actually above the terrain. A buried
     # water plane is invisible and correctly unflagged in every shipped map.
@@ -89,7 +90,8 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
     # ATTR_WATER stays set on a ford: Ymir paints exactly this as 0xCA
     # ("bridge, walkable" over water). Only BLOCK is lifted.
     for corr in lay.corridors:
-        cells[corr.core] &= np.uint8(~attr_codec.ATTR_BLOCK & 0xFF)
+        core = corr.core if lay.void is None else (corr.core & ~lay.void)
+        cells[core] &= np.uint8(~attr_codec.ATTR_BLOCK & 0xFF)
 
     # Border seal. Maps stop the player with a block band at the edge; measured
     # widths cluster at a few metres.

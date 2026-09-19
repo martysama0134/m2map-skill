@@ -77,6 +77,10 @@ def _note_road_gradient(b: "Build") -> None:
         core |= c.core
     d = b.layout.road_distance
     ctrl = (d >= 6.0) & (d <= 24.0)
+    if b.layout.void is not None:
+        # between mesas the corridor crosses canyons it is not a road in
+        core &= ~b.layout.void
+        ctrl &= ~b.layout.void
     if core.sum() < 50 or ctrl.sum() < 50:
         return
     h, w = b.slope_deg.shape
@@ -154,7 +158,8 @@ def _bridge_tiers(b) -> list:
             idx = int(b.water_cells[cy, cx])
             if idx != 0xFF and idx < len(b.water_heights):
                 drop = fit.bank_cm - b.water_heights[idx]
-                lo, hi = 0.6 * m["water_below_bank_cm"], 3.0 * m["water_below_bank_cm"]
+                lo = 0.6 * m["water_below_bank_cm"]
+                hi = float(m.get("water_below_bank_max_cm", 3.0 * m["water_below_bank_cm"]))
                 line += ", water %.0f cm below the bank (a1: %.0f)" % (drop, m["water_below_bank_cm"])
                 if not lo <= drop <= hi:
                     line = "! " + line
@@ -201,7 +206,11 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
                                     bridges=(b.layout.bridges
                                              if b.layout else None),
                                     channels=(b.layout.channels
-                                              if b.layout else None))
+                                              if b.layout else None),
+                                    island_t=(b.layout.island_t
+                                              if b.layout else None),
+                                    island_berm=(b.layout.island_berm
+                                                 if b.layout else None))
         b.slope_deg = terrain.slope_degrees(b.height_cm)
         # Report the PLAYABLE interior, not the whole grid. The border ridge is
         # a 40 deg wall by design, and including it pushed the reported slope

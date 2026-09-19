@@ -250,6 +250,88 @@ waterline is its channel edge; a1's bank reaches 1.2 m of water within ~5 m.
 
 ---
 
+## 7. Mesas over one sea -- `map_a2`, and `islands:`
+
+`map_a2` is not a valley with rivers. It is about twenty flat-topped islands cut
+out of one plateau by canyons of near-constant width, flooded by ONE water plane
+(9,940 cm, the only layer on the map), and joined by 21 `suspension bridge01` and
+one `bridge02`. Measured along every one of the 21 spans:
+
+| | |
+|---|---|
+| the two tops a bridge joins | the **same height** to the metre (63 -> 63, 67 -> 67 m over the water) |
+| lip to lip | **54-60 m** -- the 72 m model less 6 m of deck on each bank |
+| the wall | lip to below the water in **12-18 m** of run; 30-60 m of it in the first 6 |
+| the bed | flat, **9 or 15 m** under the surface |
+| tops over the water | **53-95 m**, median 66 (walkable ground p5 15,313 / p50 16,734 / p95 18,568) |
+| the plane | 25.4% of the map's cells, 16.3% actually submerged |
+| paint | `stone01`/`stone02` down the walls AND over the bed: 99.9% of submerged tiles |
+| the rim | one more mesa, higher, that no bridge reaches; 66% of the map is blocked |
+| the lip | **not flat to the edge**: 14-34 m inside it the ground stands +2.5 m (median), +8 m (p75), +16 m (p90) over the walkable level and is 50-65% blocked, open again by 50 m -- a broken berm of rock humps, absent at bridge heads |
+
+That is a Voronoi diagram with its edges widened, and `islands:` states it that
+way -- one site per island:
+
+```yaml
+islands:
+  sites: [[768, 768], [768, 468], ...]   # tile metres
+  gap_m: 60            # the bridge, not a taste: what suspension01 spans
+  wall_m: 15
+  surface_cm: 10000
+  bed_cm: 8800
+  rim_m: 100           # the rim mesa's canyon, in from the map edge
+height_range_cm: [16200, 19500]          # the TOPS; must clear surface_cm
+roads:                                   # site to site, through the bridge, along its span
+  - waypoints: [[768, 800], [768, 668], [768, 568], [768, 468]]
+    tile_index: 2
+bridges:
+  - {model: suspension01, centre: [768, 618], roll_deg: 0}
+```
+
+What the generator does with it, and why each step is where it is:
+
+- **The canyons are cut AFTER the roads and pads** (`gen/islands.py`,
+  `terrain.build`): `bed + (h - bed) * t`, with `t` the wall profile. A road
+  drawn from one island to the next is then level ground on both and nothing
+  between. Cut first, the corridor smoothing -- which diffuses along the road --
+  builds a causeway across the canyon.
+- **A bridge goes at the midpoint of two sites, along the line between them**,
+  roll snapped to 15: the canyon is their bisector, so that line is its normal.
+  For a rope bridge `roll = atan2(-dx, -dy)`. The bridge fit then closes what
+  the snap left open -- it fills each bank out to the lip and cuts the gorge to
+  the canyon bed, not to the model's 20 m.
+- **The banks come from the ground**, because the sea is not a `water:` entry:
+  the median of the two approaches, both set to it. Keep the tops' relief low
+  (`flat_fraction` 0.6, `slope_p95` ~24) or the two ends start metres apart.
+- **One plane, written last, run 5 cells into the walls** (rule 22). It is not
+  part of `wet`: that is the authored basins, which desert flora keeps 50-300 m
+  from, and an island is nowhere that far from the sea.
+- **Everything that is not a top is void**: blocked whatever a road does, and
+  rock -- including under water, which is the one place a bed is painted stone
+  (`taste.md` 1.10 keeps a LAKE bed sand). The road still joins the islands for
+  reachability, so the far top is not sealed as a stranded shelf; its paint and
+  its open attr stop at the lip, and the deck is the only strip across.
+- Corners round off into pools where three canyons meet (`round_m`, a soft
+  minimum over the bisectors) and the coast wanders `wobble_m` off the line.
+- **The canyons bend** (`warp_m`, 40): the sample point is displaced by a smooth
+  field before the diagram is read, faded to nothing within 45 m of every bridge
+  centre -- so each span still crosses its canyon square and at the midpoint --
+  and toward the map edge, so the rim mesa keeps its width. Without it the map
+  is a ruled diagram in a square frame; the rim canyon also turns its corners on
+  a radius (`rim_corner_m`).
+- **The berm** (`berm_cm` 1,600, `berm_m` 32) goes on after roads and pads and
+  is pressed flat within 12 m of anything levelled, so bridge heads, gates and
+  camps stay open. Rendered beside `map_a2` from one camera, the bare-lipped
+  version read as a table top; with it the block share went 59% -> 68% (a2: 66%).
+
+`D:/map_ad3` is the worked example (hub + 6 + 12 sites, 27 `suspension01`); its
+`_make_spec.py` computes sites, bridge rolls and road waypoints together.
+
+An island no road reaches is sealed and painted rock, top included -- correct
+for the rim, a mistake anywhere else. Link every site.
+
+---
+
 ## Sources
 
 `catalog/stats-objects.json.by_crc` (roll histograms, `nn_same_crc_cm`),

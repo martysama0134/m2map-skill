@@ -336,11 +336,15 @@ BRIDGE_MODELS: Dict[str, Dict[str, Any]] = {
     "suspension01": {"crc": 59728437, "name": "general_obj_suspension bridge01",
                      "length_cm": 7177.0, "width_cm": 1045.0, "axis": "y", "origin": "end",
                      "datum_below_bank_cm": 5.0, "lip_inset_m": 6.0,
-                     "bed_below_bank_cm": 2000.0, "water_below_bank_cm": 1500.0},
+                     "bed_below_bank_cm": 2000.0, "water_below_bank_cm": 1500.0,
+                     # map_a2 hangs 21 of these 53-95 m over its water
+                     "water_below_bank_max_cm": 9600.0},
     "suspension02": {"crc": 1244865174, "name": "general_obj_suspension bridge02",
                      "length_cm": 4759.0, "width_cm": 1044.0, "axis": "y", "origin": "end",
                      "datum_below_bank_cm": 5.0, "lip_inset_m": 6.0,
-                     "bed_below_bank_cm": 2000.0, "water_below_bank_cm": 1500.0},
+                     "bed_below_bank_cm": 2000.0, "water_below_bank_cm": 1500.0,
+                     # map_a2 hangs 21 of these 53-95 m over its water
+                     "water_below_bank_max_cm": 9600.0},
 }
 
 
@@ -509,6 +513,65 @@ class SetPieceSpec:
 
 
 @dataclass
+class IslandsSpec:
+    """Mesas over one sheet of water -- the form of `map_a2`.
+
+    `map_a2` is about twenty flat-topped islands cut out of one plateau by
+    canyons of nearly constant width, all flooded by ONE water plane. Measured
+    under its 21 `suspension bridge01`: the two tops a bridge joins stand at the
+    same height (63 -> 63 m, 67 -> 67 m over the water), **54-60 m lip to lip**,
+    the wall falls from the lip to below the water in **12-18 m** of run, the bed
+    is flat at 9 or 15 m under the surface, and the tops stand **53-95 m** over
+    the water (median 66). The rim of the map is one more mesa, higher, that no
+    bridge reaches. Rock is painted down the walls AND across the bed (99.9% of
+    submerged tiles are `stone01`/`stone02`).
+
+    That is a Voronoi diagram with its edges widened, so that is how it is
+    stated: one ``site`` per island, in tile metres. The canyon between two
+    islands runs along their bisector, ``gap_m`` across; where three meet the
+    corners round off into a pool (a soft minimum over the bisectors, not a
+    hard one). ``gap_m`` is the bridge, not a taste: 60 m is what a 72 m
+    `suspension01` spans with 6 m of deck on each bank.
+
+    The tops are whatever the terrain stage made -- roads levelled, pads cut --
+    and the cut comes after, so a road drawn from one island to the next is a
+    road on both and nothing in between. Put a `BridgeSpec` where it crosses.
+    """
+
+    sites: List[Tuple[float, float]]
+    #: lip to lip across a canyon, metres
+    gap_m: float = 60.0
+    #: horizontal run of the wall from the lip down to the bed, metres
+    wall_m: float = 15.0
+    #: the one water plane, world cm
+    surface_cm: float = 10000.0
+    #: the canyon floor, world cm
+    bed_cm: float = 8800.0
+    #: how far in from the map edge the rim mesa's lip stands, metres
+    rim_m: float = 100.0
+    #: how far the coast wanders off the straight bisector, metres
+    wobble_m: float = 7.0
+    #: corner rounding where canyons meet, metres (0 = sharp Voronoi corners)
+    round_m: float = 22.0
+    #: how far the canyons bend off their bisectors between bridges, metres.
+    #: Faded to 0 within 45 m of every `BridgeSpec.centre`.
+    warp_m: float = 40.0
+    #: radius the rim canyon turns on at the map corners, metres
+    rim_corner_m: float = 420.0
+    #: The rock berm along every lip. `map_a2`'s tops do not run flat to the
+    #: edge: 14-34 m inside the lip the ground stands +2.5 m (median), +8 m
+    #: (p75), +16 m (p90) over the walkable level and is 50-65% blocked, open
+    #: again by 50 m -- a broken parapet of rock humps, absent at bridge heads
+    #: and where a road passes. ``berm_cm`` is the height of the tallest humps,
+    #: ``berm_m`` how far in from the lip they reach. 0 = a bare knife edge.
+    berm_cm: float = 1600.0
+    berm_m: float = 32.0
+
+    def __post_init__(self):
+        self.sites = [(float(p[0]), float(p[1])) for p in self.sites]
+
+
+@dataclass
 class MapSpec:
     """Everything needed to build a map, and nothing that can be derived."""
 
@@ -537,6 +600,8 @@ class MapSpec:
     ground_stamps: List[GroundStampSpec] = field(default_factory=list)
     relief_stamps: List[ReliefStampSpec] = field(default_factory=list)
     objects: List[ObjectTier] = field(default_factory=list)
+    #: mesas over one water plane (`map_a2`); see `IslandsSpec`
+    islands: Optional[IslandsSpec] = None
 
     # --- terrain shaping, clamped to the archetype's mined statistics ------
     height_range_cm: Tuple[float, float] = (0.0, 4000.0)
@@ -683,6 +748,21 @@ class MapSpec:
                     out.append("bridge %s at (%g, %g) runs off the %dx%d m map with its "
                                "approach" % (br.model, br.centre[0], br.centre[1], *span_tiles))
                     break
+        if self.islands is not None:
+            isl = self.islands
+            if len(isl.sites) < 2:
+                out.append("islands needs at least 2 sites")
+            if not isl.bed_cm < isl.surface_cm < lo:
+                out.append("islands: want bed_cm < surface_cm < height_range_cm[0] "
+                           "(%.0f < %.0f < %.0f) -- the tops stand over the water, "
+                           "the water over the bed" % (isl.bed_cm, isl.surface_cm, lo))
+            if isl.wall_m * 2.0 >= isl.gap_m:
+                out.append("islands: two walls of %.0f m do not fit a %.0f m canyon"
+                           % (isl.wall_m, isl.gap_m))
+            for px, py in isl.sites:
+                if not (0 <= px < span_tiles[0] and 0 <= py < span_tiles[1]):
+                    out.append("island site (%.0f, %.0f) outside the %dx%d m map"
+                               % (px, py, *span_tiles))
         for sc in self.scarps:
             if len(sc.waypoints) < 2:
                 out.append("scarp with %d waypoint(s) -- need at least 2"
@@ -793,6 +873,8 @@ class MapSpec:
         d["ground_stamps"] = [GroundStampSpec(**x) for x in d.get("ground_stamps", [])]
         d["relief_stamps"] = [ReliefStampSpec(**x) for x in d.get("relief_stamps", [])]
         d["objects"] = [ObjectTier(**o) for o in d.get("objects", [])]
+        if d.get("islands") is not None:
+            d["islands"] = IslandsSpec(**d["islands"])
         for k in ("size", "base_position", "height_range_cm"):
             if k in d and d[k] is not None:
                 d[k] = tuple(d[k])

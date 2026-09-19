@@ -53,6 +53,10 @@ NO_WATER = 0xFF
 PLANE_OVERRUN = 1.20
 
 
+#: How far the sea plane of an `IslandsSpec` runs into the canyon walls, cells.
+SEA_OVERRUN_CELLS = 5
+
+
 def _dilate_cells(mask: np.ndarray, steps: int) -> np.ndarray:
     out = mask
     for _ in range(int(steps)):
@@ -171,7 +175,8 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
 
     stamps = [rs for rs in getattr(spec, "relief_stamps", None) or []
               if rs.water_rows and rs.base_cm is not None]
-    if spec.is_box() or not (lay.water_masks or stamps):
+    sea = getattr(spec, "islands", None)
+    if spec.is_box() or not (lay.water_masks or stamps or sea is not None):
         return cells, heights, wet_tiles, np.zeros_like(wet_tiles)
 
     lake_tiles = lay.lake_mask if lay.lake_mask is not None else None
@@ -256,6 +261,19 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
         heights.append(float(rs.base_cm) + float(rs.water_surface_cm))
         cells[plane] = len(heights) - 1
         wet_tiles |= _cells_to_tiles(plane, h_tiles, w_tiles)
+
+    # The sea between the mesas: ONE plane over everything below it, run
+    # `SEA_OVERRUN_CELLS` into the walls so its edge is buried in rock (rule 22;
+    # `map_a2`'s plane covers 25% of the map and 16% is under it). Written last
+    # and only on dry cells, so a pond on a top keeps its own level. It is not
+    # added to `wet`: that is the AUTHORED basins, which flora keeps its distance
+    # from, and an island is nowhere far from the sea.
+    if sea is not None and len(heights) < wtr.MAX_WATER_NUM:
+        under = height_cm[:ch, :cw] < float(sea.surface_cm)
+        if under.any():
+            heights.append(float(sea.surface_cm))
+            plane = _dilate_cells(under, SEA_OVERRUN_CELLS)
+            cells[plane & (cells == NO_WATER)] = len(heights) - 1
 
     # submerged = wet AND surface above terrain
     submerged_cells = np.zeros((ch, cw), bool)
