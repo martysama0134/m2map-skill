@@ -54,6 +54,10 @@ class Paths:
     client_pack: Path | None = None
     ymir_work: Path | None = None
     worldeditor: Path | None = None
+    #: The editor BINARY, and the data root it must be started from (the folder
+    #: holding pack/ and ymir work/). ``worldeditor`` above is the source repo.
+    worldeditor_exe: Path | None = None
+    worldeditor_data: Path | None = None
     mapforge: Path | None = None
     opengranny: Path | None = None
     pygr2: Path | None = None
@@ -111,6 +115,7 @@ class Paths:
         """
         pairs = [
             (self.client_pack, "<CLIENT_PACK>"),
+            (self.worldeditor_exe, "<WORLDEDITOR_EXE>"),
             (self.worldeditor, "<WORLDEDITOR>"),
             (self.mapforge, "<MAPFORGE>"),
             (self.opengranny, "<OPENGRANNY>"),

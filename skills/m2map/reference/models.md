@@ -278,7 +278,7 @@ source to add a `--shot` flag to.
 
 ```bash
 # from D:\ (the data dir holding pack/ and "ymir work/")
-D:/WorldEditorRemix_MfcRelease_x64.exe \
+<WORLDEDITOR_EXE> \
     --file "ymir work\zone\a\building\a1-001-house3.gr2" \
     --size 732,571 \
     --shot "C:/.../out.png" \
@@ -349,7 +349,7 @@ is the tighter, "solid core" number).
 
 ```bash
 python -m m2map.mine.models --thumbs <dir> \
-    --we D:/WorldEditorRemix_MfcRelease_x64.exe --we-cwd D:/
+    --we <WORLDEDITOR_EXE> --we-cwd <WORLDEDITOR_DATA>
 ```
 
 Skips non-`.gr2`/`.msm` entries, skips PNGs that already exist (so it is

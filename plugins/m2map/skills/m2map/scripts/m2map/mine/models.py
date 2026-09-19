@@ -1014,10 +1014,12 @@ def main(argv=None) -> int:
     ap.add_argument("--thumbs", default=None, metavar="DIR",
                     help="render thumbnails for the models in models.json "
                          "(needs --we; .spt cannot be rendered)")
-    ap.add_argument("--we", default=r"D:/WorldEditorRemix_MfcRelease_x64.exe",
-                    help="WorldEditorRemix executable for --thumbs")
-    ap.add_argument("--we-cwd", default="D:/",
-                    help="data dir the editor runs in (holds pack/ and ymir work/)")
+    ap.add_argument("--we", default=_paths().worldeditor_exe,
+                    help="WorldEditorRemix executable for --thumbs "
+                         "(default: worldeditor_exe in m2map.paths.json)")
+    ap.add_argument("--we-cwd", default=_paths().worldeditor_data,
+                    help="data dir the editor runs in (holds pack/ and ymir work/; "
+                         "default: worldeditor_data, else the folder of --we)")
     ap.add_argument("--thumb-size", type=int, default=512)
     ap.add_argument("--quiet", action="store_true")
     args = ap.parse_args(argv)
@@ -1045,7 +1047,11 @@ def main(argv=None) -> int:
             print("run the scan first: %s does not exist" % src, file=sys.stderr)
             return 2
         doc = json.loads(src.read_text(encoding="utf-8"))
-        data_dir = pathlib.Path(args.we_cwd)
+        if not args.we:
+            print("no editor: pass --we or set worldeditor_exe in m2map.paths.json",
+                  file=sys.stderr)
+            return 2
+        data_dir = pathlib.Path(args.we_cwd or pathlib.Path(args.we).parent)
         dest = pathlib.Path(args.thumbs)
         done = failed = skipped = 0
         t0 = time.time()

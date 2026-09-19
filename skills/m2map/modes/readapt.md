@@ -38,9 +38,13 @@ Expect the next map to find another: the procedure is the part to keep.
    the floors are wrong, not the route **(03)**.
 4. Look at `_preview/readapt_route.png` — where the pass went, and what it
    crossed — then `readapt_tile.png` at the pass.
-5. Copy `<out>/textureset/*.txt` beside the editor, render every link **before
-   and after with one camera** (`--target` = midpoint of `from_tile`/`to_tile`
-   ×100, `--cam 45,0,9000`), plus one long shot down an open join.
+5. `python scripts/readapt_map.py <map> --out <map>_readapt --render-only` (or `--render` on the first run): every pass shot in WorldEditorRemix **before
+   and after with one camera**, the textureset staged for the editor, and one
+   contact sheet -- `_preview/we_sheet.png`. **Read the sheet.** Add `--at X,Y`
+   (tile metres, repeatable) for anything else worth a look: a spot the user
+   pointed at, one long open join, a filler border. `NOT RENDERED` means the
+   editor is not configured (`worldeditor_exe`, `worldeditor_data` in
+   `m2map.paths.json`) -- tell the user the map was not checked in the engine.
 6. Show the user the renders. Whatever they correct becomes code, a line in this
    file, a test and a failure-atlas entry. Tell them the one step left to
    them: **F6 in WorldEditorRemix** (shadowmap + minimap) — then `tools/sync.py`,
@@ -174,10 +178,10 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
 
 ## Then look at it
 
-Render each link in WorldEditor **before and after, same camera** — target the
-midpoint of `from_tile`/`to_tile` from the report (×100 for world cm), `--cam
-45,0,9000`. Copy the merged textureset beside the editor first or the shot is
-untextured. The 2D previews cannot show a tear; only the engine draws one.
+`--render` / `--render-only` (step 5). The 2D previews cannot show a tear, a
+blank tile or a plane over a bank; only the engine draws one. On
+`map_merge_test_03` the lime-green eraser holes passed every number and were
+found in the first shot. Ten shots and the sheet take about a minute.
 
 ## What it does not do
 

@@ -13,6 +13,8 @@
   "ymir_work": "D:/ymir work",
 
   "worldeditor": "C:/path/to/WorldEditorRemix",
+  "worldeditor_exe": "C:/path/to/data/WorldEditorRemix_MfcRelease_x64.exe",
+  "worldeditor_data": "C:/path/to/data",
   "mapforge": "C:/path/to/M2-MapForge",
   "opengranny": "C:/path/to/OpenGranny",
   "pygr2": null,

@@ -685,6 +685,14 @@ WorldEditorRemix_<Cfg>[_x64].exe
 
 ### Screenshot verification recipe
 
+**From Python: `m2map/edit/we_shots.py`.** `shoot(map, (x_cm, y_cm), png)` is the
+command below as a function -- run from the data root, textureset staged, 60
+frames, the PNG checked for size, `--regen` never passed. `pairs(before, after,
+spots, out_dir)` shoots two maps with one camera and lays them side by side in
+`we_sheet.png`. Needs `worldeditor_exe` and `worldeditor_data` in
+`m2map.paths.json`; raises `RenderUnavailable` otherwise. `readapt_map.py
+--render` is built on it; any mode that changes a map can be.
+
 ```bat
 cd /d D:\
 WorldEditorRemix_MfcRelease.exe ^
