@@ -42,10 +42,11 @@ CRC = 26807040
 
 FORD_ROWS = slice(76, 80)            # a river across bowl 0, flagged water, NOT blocked
 FILLER_CM = 20000.0
+MOAT_ROWS = slice(104, 108)          # in bowl 0's south wall: no way round it
 ROAD_ROWS = slice(150, 158)          # tiles; south of the pond in each bowl
 
 
-def _bowl(floor_cm: float, seed: int, ford: bool = False):
+def _bowl(floor_cm: float, seed: int, ford: bool = False, moat: bool = False):
     """One sealed source map: flat floor, a 40-cell mountain ring, a pond."""
     rng = np.random.default_rng(seed)
     yy, xx = np.mgrid[0:129, 0:129]
@@ -59,6 +60,11 @@ def _bowl(floor_cm: float, seed: int, ford: bool = False):
         river[FORD_ROWS, :] = edge[FORD_ROWS, :] > 36       # bank to bank, into the rock
         z[river] -= POND_DEPTH + 100
         pond = pond | river
+    if moat:
+        ditch = np.zeros((129, 129), bool)
+        ditch[MOAT_ROWS, :] = True                 # edge to edge, through the ring
+        z[ditch] = floor_cm - POND_DEPTH - 100
+        pond = pond | ditch
     return z, pond[:128, :128]
 
 
@@ -77,7 +83,7 @@ def _write_filler(d: pathlib.Path) -> None:
 
 
 def _write_merged(root: pathlib.Path, ford: bool = False, filler: bool = False,
-                  road: bool = False) -> None:
+                  road: bool = False, moat: bool = False) -> None:
     root.mkdir()
     (root / "setting.txt").write_bytes(SETTING.encode("ascii"))
     if filler:
@@ -86,7 +92,7 @@ def _write_merged(root: pathlib.Path, ford: bool = False, filler: bool = False,
     for sy, floor in enumerate(FLOORS):
         d = root / ("%06u" % sy)
         d.mkdir()
-        z, pond = _bowl(floor, sy, ford and sy == 0)
+        z, pond = _bowl(floor, sy, ford and sy == 0, moat and sy == 0)
         raw = np.pad(np.round(z / 0.5), 1, mode="edge").astype("<u2")
         height_codec.write_height(d / "height.raw", height_codec.HeightMap(raw))
         steep = np.zeros((128, 128), bool)
@@ -224,3 +230,15 @@ def test_the_pass_is_painted_on_to_the_maps_own_road(tmp_path):
     gap = m.tile[256 + 96:256 + ROAD_ROWS.start - 4, :]        # bowl 1: floor north of its road
     assert (gap == 3).sum() > 100, "road painted across the floor between them"
     assert not report.get("problems")
+
+
+def test_a_pass_that_must_cross_water_says_so(tmp_path):
+    """Water costs the route 60x; when there is still no way round, the pass is a
+    causeway and the report names it -- nothing fits a bridge on its own."""
+    src, out = tmp_path / "merged", tmp_path / "readapted"
+    _write_merged(src, moat=True)
+    report = readapt.readapt(src, out)
+    (link,) = report["links"]
+    assert link["water_m"] >= 8
+    assert any("causeway" in n for n in report["notes"])
+    assert all(report["joined"].values())

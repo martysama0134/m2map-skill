@@ -37,7 +37,7 @@ def summary(report: dict) -> dict:
         "void_blocks": report.get("void_blocks", []),
         "level_cm": report.get("level_cm", {}),
         "links": [{k: lk[k] for k in ("blocks", "from_tile", "to_tile", "length_m",
-                                      "wall_m", "mouths_cm", "grade_pct", "road_joined_m")
+                                      "wall_m", "mouths_cm", "grade_pct", "road_joined_m", "water_m")
                                 if k in lk}
                   for lk in report.get("links", [])],
         "skipped_links": [lk["blocks"] for lk in report.get("skipped_links", [])],

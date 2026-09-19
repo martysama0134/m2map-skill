@@ -98,6 +98,7 @@ class Link:
     mouth_a_cm: float = 0.0
     mouth_b_cm: float = 0.0
     wall_cells: int = 0
+    water_cells: int = 0                     # of the path, over water: a causeway
     tree: bool = False                       # levelled flat; a spare link is not
 
 
@@ -466,6 +467,8 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
             continue
         lk = Link(a, b, path)
         lk.wall_cells = sum(1 for x, y in path if not free[y, x])
+        over = wet | _cell_attr(m.attr, ATTR_WATER)
+        lk.water_cells = sum(1 for x, y in path if over[y, x])
         lk.mouth_a_cm = _mouth(zc0, floors[a] & dry, path[0])
         lk.mouth_b_cm = _mouth(zc0, floors[b] & dry, path[-1])
         links.append(lk)
@@ -576,8 +579,17 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
             "to_tile": [lk.path[-1][0] * 2, lk.path[-1][1] * 2],
             "length_m": round(length_m, 1), "wall_m": lk.wall_cells * 2,
             "mouths_cm": [round(za), round(zb)], "grade_pct": round(grade, 1),
-            "road_joined_m": reach,
+            "road_joined_m": reach, "water_m": lk.water_cells * 2,
         })
+        if lk.water_cells:
+            # Water costs 60x, so this was the only way through. It is filled,
+            # not bridged: no merged map has needed a bridge yet, and a fit built
+            # without one to render would be a guess (rule 27 has the measured
+            # one, for a person to place).
+            report.setdefault("notes", []).append(
+                "link %d-%d crosses %d m of water on a causeway: a bridge there is a "
+                "`bridges:`-style fit by hand (reference/structures.md sec 5)"
+                % (lk.a, lk.b, lk.water_cells * 2))
         if grade > opt.max_grade_pct:
             report.setdefault("problems", []).append(
                 "link %d-%d climbs %.0f%% (corpus cuts 5-18%%): level the blocks or lengthen the pass"

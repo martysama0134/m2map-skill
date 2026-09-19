@@ -210,9 +210,11 @@ found in the first shot. Ten shots and the sheet take about a minute.
   over; the report carries the same line as `shadowmap_minimap`.
 - **Spawns** are not touched: `regen.txt` heights are the server's business and
   the coordinates did not move.
-- **No bridge.** A pass that must cross water becomes a causeway. If the water
-  is wide, put a `bridges:`-style fit there by hand (rule 27,
-  `reference/structures.md` §5).
+- **No bridge.** Water costs the route 60x, so a pass goes round it; one that
+  cannot becomes a causeway, and the report says so -- `water_m` on the link and
+  a line in `notes`. None of the three test maps crosses any, which is why there
+  is no automatic fit: it would have nothing to be rendered against. Put a
+  `bridges:`-style fit there by hand (rule 27, `reference/structures.md` §5).
 - **An overlap crops a map, and the crop is not repaired.** Where `c1` was laid
   over `b1` and `a1`, a lake and a road end at the join against the newcomer's
   ring. The weld makes that a cliff; ending the road somewhere is an `improve`.
