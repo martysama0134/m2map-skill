@@ -42,6 +42,7 @@ matched the source render did no generating at all (`placement.md` §6.w,
 | `snow_camp_southwest.json` | same map, about (821, 112) | 29 | centroid | x -20.2 … +11.5 · y -17.2 … +20.8 | 246 cm | opens **south-west** (225) |
 | `moat_island_castle.json` / `_snow` / `_grass` | `metin2_map_empirecastle` / `empirewar01` / `empirewar02`, about (108, 246) | 3 | **centre** -- the moat's middle | **landform with water**, radius 64 m | -7.5 m … | bridges leave **north** and **east** |
 | `moat_island_desert.json` | `metin2_map_empirewar03`, about (370, 242) | 3 | **centre** | **landform with water**, radius 72 m; the MIRROR of the others | -12 m … | bridges leave **north** and **west** |
+| `thunder_zone_gate_east.json` | `metin2_map_mt_thunder`, every record within 34 m of (644, 1450) | 12 | **centre** -- the door | **landform**, radius 64 m, base at the pivot | 0 … +56 m | fronts **east** (90) |
 | `a1_fishing_bays.json` | `metin2_map_a1`, author's selection about (359, 375) | 5 | centroid | x -18.9 … +31.8 · y -53.2 … +58.8 | **shore pattern**, `water_cm` 15,305 | water to the **east** (90) |
 
 `desert_camp`: two fence rails of 5 and 6 panels (fence01…05 mixed, steps
@@ -158,6 +159,7 @@ name has `warp` or `gate`, grouped within 8 m):
 | the rune arch in its boulder | `warpgate01` **2233504330** + `warpgate03` 1812446801 -- **`a2_dungeon_gateway_north`** | 4 (a2, threeway, trent, trent02); alone on the duel/pvp arenas |
 | the walled gatehouse | `thief_Dungeon_gate` 1430790742 + `warpgate03` + `warpgate02_01` -- **`desert_dungeon_gatehouse_south`** / `br_` | 12 buildings (a3, b3, n_desert_01, battleroyale x2, guild_war4 ...) |
 | the snow cave door | `n_snow_m_resoucegate` 489994703 (an ice-and-rock cave shell) round `general_obj_stonedoor` + arch 929619867 + two stone lions + two pillars, all at ONE roll -- **`snow_dungeon_gateway_south`** | 1 |
+| the zone gate in a gully | `general_obj_stonedoor` + `warpgate02` 1602256688 + fortMS fence stubs + two lions + a stone-light pair 30 m out -- **`thunder_zone_gate_east`** | 1 |
 | dungeon-interior doors | `anglar_cavegate*` / `anglar_stonegate*`, `mt_thunder_closinggate`, `prayer_gate*`, `ob-12-03gate*`, `Nst_gate_00N` | 25-56 each, inside their own dungeons only |
 | camp and town gates | `camp_redthief_gate_*`, `camp_manticore_gate*`, `<empire>-035-woodgate`, `general_obj_bigstonegate*`, `fortressA_gate_00` | 2-20 each -- part of a wall run, not a warp |
 | one-offs | `deviltowergate`, `spider_dungeongate_up`, `dragon_gate`, `gaint_gate_01`, `flame_dg_ingate`, `icecrystalscave_gate`, `smh_dungeongate` + tower, `guild_pvp_gate` + base ... | 1-7 |
@@ -269,6 +271,34 @@ dirt halo. Declare the lining, path and bed textures at `weight: 0.0`
 `sand02`). Roads should arrive at the bridge heads, 27 m from the pivot.
 Verified on `map_setpiece_check_moat` against the source from the same camera;
 the castle one turned 90 has its bridges leaving west and north.
+
+### A zone entrance, and why its road bends
+
+`thunder_zone_gate_east` -- the entrance from another zone on
+`metin2_map_mt_thunder` at (644, 1450), fronting east: a roofed stone door across
+a road in a gully, the `warpgate02` portal 2 m in front of it, a `fortMS` fence
+pillar and panel closing the gap to each cliff, a stone lion either side 5 m
+out, a tree behind each end, and **30 m out along the approach a pair of stone
+lights (`b1_018-stonelight`) 25.7 m apart, one either side of the road** -- the
+author's "parallel column". Twelve records, every one within 34 m of the door.
+
+The terrain is the trick, in the author's words: *entrance shapes are angular so
+players don't see the void*. Behind the door the road does not stop. It runs on
+-- painted `field01`/`field04`, and **blocked** on every tile -- 25 m west, then
+bends south-west behind a rock shoulder and away to the map edge 85 m off. A
+player looking through the door sees a road curving out of sight behind rock.
+The door is the end of the walkable road, not the end of the road.
+
+So it is a landform pattern with `--relief-attr`, and with **`--relief-base
+pivot`**: the base level is the ground AT the pivot, on the source and on the
+target. A mountain or a moat stands on open ground and reads its base off the
+outer ring; a gate stands in a gully whose ring is cliff, and read that way its
+road came out 4.7 m under the ground it was stamped on. Put it where a road
+meets the border ridge, `rotate_deg = (90 - B) mod 360`. Verified on
+`map_setpiece_check_moat` from three cameras, one through the door.
+
+When generating a map edge entrance without the pattern, keep the rule: **carry
+the road 25 m past the gate, bend it 60-90 degrees behind rock, block it all.**
 
 ## The ground under a pattern
 

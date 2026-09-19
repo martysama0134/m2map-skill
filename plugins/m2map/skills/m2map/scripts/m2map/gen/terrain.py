@@ -410,7 +410,12 @@ def stamp_relief(height_cm: np.ndarray, rs) -> np.ndarray:
           + src[v0 + 1, u0] * (1 - fu) * fv + src[v0 + 1, u0 + 1] * fu * fv)
     win = height_cm[j0:j1, i0:i1]
     ring = inside & (r >= R - F)
-    base = float(np.percentile(win[ring], 25)) if ring.any() else float(np.median(win))
+    if getattr(rs, "base_at", "ring") == "pivot":
+        pj = min(max(int(round(ay / cell)), 0), height_cm.shape[0] - 1)
+        pi = min(max(int(round(ax / cell)), 0), height_cm.shape[1] - 1)
+        base = float(height_cm[pj, pi])
+    else:
+        base = float(np.percentile(win[ring], 25)) if ring.any() else float(np.median(win))
     rs.base_cm = base                     # the water that came with it hangs from this
     k = np.clip((R - r) / F, 0.0, 1.0)
     w = np.where(inside, k * k * (3.0 - 2.0 * k), 0.0)

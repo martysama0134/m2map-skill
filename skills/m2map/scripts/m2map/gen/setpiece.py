@@ -215,9 +215,17 @@ class Relief:
     #: ground under it is submerged.
     attr_origin_m: Optional[Tuple[float, float]] = None
     attr_rows: Optional[List[str]] = None
+    #: where the base level is read, on the source and again on the target:
+    #: ``ring`` (the 25th percentile of the feather ring -- a mountain or a moat
+    #: standing on open ground) or ``pivot`` (the ground AT the pivot -- a gate
+    #: in a gully, whose ring is cliff: read off the ring, the mt_thunder gate's
+    #: road came out 4.7 m under the ground it was stamped on).
+    base_at: str = "ring"
 
     def to_dict(self) -> Dict:
         d = self._base_dict()
+        if self.base_at != "ring":
+            d["base_at"] = self.base_at
         if self.water_rows is not None:
             d["water"] = {"surface_cm": self.water_surface_cm, "rows": list(self.water_rows)}
         if self.attr_rows is not None:
@@ -239,7 +247,7 @@ class Relief:
                    rows=[[int(v) for v in (r.split() if isinstance(r, str) else r)]
                          for r in d["rows"]],
                    radius_m=float(d["radius_m"]), feather_m=float(d.get("feather_m", 16.0)),
-                   cell_m=float(d.get("cell_m", 2.0)),
+                   cell_m=float(d.get("cell_m", 2.0)), base_at=str(d.get("base_at", "ring")),
                    water_surface_cm=(float(d["water"]["surface_cm"]) if d.get("water") else None),
                    water_rows=([str(r) for r in d["water"]["rows"]] if d.get("water") else None),
                    attr_origin_m=(tuple(float(v) for v in d["attr"]["origin_m"])
@@ -673,7 +681,7 @@ def with_ground(sp: SetPiece, map_dir, keep: Sequence[str] = (), margin_m: float
 
 
 def with_relief(sp: SetPiece, map_dir, radius_m: float, feather_m: float = 16.0,
-                water: bool = False, attr: bool = False) -> SetPiece:
+                water: bool = False, attr: bool = False, base_at: str = "ring") -> SetPiece:
     """``sp`` with the source map's landform under it, as a :class:`Relief`.
 
     Reads ``height.raw`` on the vertex grid over a square of ``radius_m`` about
@@ -716,7 +724,13 @@ def with_relief(sp: SetPiece, map_dir, radius_m: float, feather_m: float = 16.0,
     yy, xx = np.mgrid[j0:j1 + 1, i0:i1 + 1]
     r = np.hypot(xx * 2.0 - px, yy * 2.0 - py)
     ring = (r >= radius_m - feather_m) & (r <= radius_m)
-    base = float(np.percentile(z[ring], 25))
+    if base_at == "pivot":
+        base = float(z[int(round(py / 2.0)) - j0, int(round(px / 2.0)) - i0])
+    elif base_at == "ring":
+        base = float(np.percentile(z[ring], 25))
+    else:
+        raise ValueError("base_at must be 'ring' or 'pivot', got %r" % base_at)
+    extra_base = {"base_at": base_at}
     rows = [[int(round(v - base)) for v in row] for row in z]
     extra = {}
     if water:
@@ -765,7 +779,7 @@ def with_relief(sp: SetPiece, map_dir, radius_m: float, feather_m: float = 16.0,
         extra["attr_rows"] = arows
     return replace(sp, relief=Relief(origin_m=(i0 * 2.0 - px, j0 * 2.0 - py), rows=rows,
                                      radius_m=float(radius_m), feather_m=float(feather_m),
-                                     **extra))
+                                     **extra_base, **extra))
 
 
 def _build(hits, source_map: str, name: str, pivot: str, names: Dict[int, str],
@@ -924,6 +938,7 @@ def expand(spec):
                                            feather_m=sp.relief.feather_m,
                                            cell_m=sp.relief.cell_m,
                                            rotate_deg=sp.rotation_deg,
+                                           base_at=sp.relief.base_at,
                                            water_surface_cm=sp.relief.water_surface_cm,
                                            water_rows=sp.relief.water_rows,
                                            attr_origin_m=sp.relief.attr_origin_m,
@@ -1089,6 +1104,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                          "for a record that is nothing without its mountain (a volcano). "
                          "Read from --ground-from / --locate-on / MAP_DIR")
     ap.add_argument("--relief-feather", type=float, default=16.0, metavar="M")
+    ap.add_argument("--relief-base", choices=("ring", "pivot"), default="ring",
+                    help="where the base level is read: the outer ring (a mountain, a moat) or "
+                         "the ground at the pivot (a gate in a gully, whose ring is cliff)")
     ap.add_argument("--relief-water", action="store_true",
                     help="with --relief-radius: also save the water plane that stood in the "
                          "landform (a moat, a crater lake), its level kept about the same base")
@@ -1153,7 +1171,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         if not src:
             ap.error("--relief-radius needs a map: --ground-from, --locate-on or MAP_DIR")
         sp = with_relief(sp, src, a.relief_radius, feather_m=a.relief_feather,
-                         water=a.relief_water, attr=a.relief_attr)
+                         water=a.relief_water, attr=a.relief_attr, base_at=a.relief_base)
     if a.rotate:
         sp = sp.rotated(a.rotate)
     sp.water_cm = a.water_cm

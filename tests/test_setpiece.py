@@ -574,3 +574,31 @@ def test_a_moat_comes_with_its_water_and_its_collision(tmp_path):
     assert b.submerged[150, 120] and b.submerged[158, 120]
     assert b.attr_cells[150, 126] & attr_codec.ATTR_BLOCK == 0          # on the strip
     assert b.attr_cells[158, 120] & (attr_codec.ATTR_BLOCK | attr_codec.ATTR_WATER) == 3
+
+
+def test_a_gate_in_a_gully_reads_its_base_at_the_pivot():
+    """Two walls either side of a level floor: the ring is mostly wall, so a
+    base read off it sinks the floor. `base_at: pivot` keeps the floor on the
+    ground at the anchor."""
+    import numpy as np
+    from m2map.gen import terrain
+    from m2map.gen.spec import ReliefStampSpec
+
+    n = 31
+    rows = [[0 if abs(j - 15) <= 2 else 4000 for i in range(n)] for j in range(n)]
+    flat = np.full((129, 129), 17000.0)
+
+    def floor(base_at):
+        rs = ReliefStampSpec(anchor=(100.0, 100.0), origin_m=(-30.0, -30.0), rows=rows,
+                             radius_m=30.0, feather_m=6.0, base_at=base_at)
+        return terrain.stamp_relief(flat, rs)[50, 50]
+
+    assert floor("pivot") == pytest.approx(17000.0)
+    assert floor("ring") == pytest.approx(17000.0)      # flat target: both agree...
+    ridge = flat.copy()
+    ridge[:, :] += np.abs(np.arange(129) - 50)[:, None] * 100.0     # ...a valley floor at row 50
+    rs = ReliefStampSpec(anchor=(100.0, 100.0), origin_m=(-30.0, -30.0), rows=rows,
+                         radius_m=30.0, feather_m=6.0, base_at="pivot")
+    assert terrain.stamp_relief(ridge, rs)[50, 50] == pytest.approx(17000.0)
+    rs.base_at = "ring"
+    assert terrain.stamp_relief(ridge, rs)[50, 50] > 17300.0         # lifted onto the slopes

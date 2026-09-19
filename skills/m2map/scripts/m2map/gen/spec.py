@@ -447,6 +447,8 @@ class ReliefStampSpec:
     #: the source's `attr & 0x07` per 1 m tile (`-` = leave), forced last
     attr_origin_m: Optional[Tuple[float, float]] = None
     attr_rows: Optional[List[str]] = None
+    #: `ring` or `pivot`: where the base is read (see `setpiece.Relief.base_at`)
+    base_at: str = "ring"
     #: the base the terrain stage read off the target; the water stage needs it
     base_cm: Optional[float] = None
 
