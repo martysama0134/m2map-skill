@@ -34,7 +34,7 @@ Expect the next map to find another: the procedure is the part to keep.
    source maps, and `void_blocks` the filler? Is each `level_cm` plausible?
    `grade_pct` ≤ 18? `joined` all true, `tear_after_cm` 0, `blank_tiles_added`
    0? `removed` objects few, `stray` near zero? **Is every `length_m` close to
-   its `wall_m`?** A pass much longer than its wall is crossing open floor --
+   its `wall_m`?** `server_attr.agrees` true, `max_value` ≤ 7? A pass much longer than its wall is crossing open floor --
    the floors are wrong, not the route **(03)**.
 4. Look at `_preview/readapt_route.png` — where the pass went, and what it
    crossed — then `readapt_tile.png` at the pass.
@@ -42,8 +42,8 @@ Expect the next map to find another: the procedure is the part to keep.
    and after with one camera** (`--target` = midpoint of `from_tile`/`to_tile`
    ×100, `--cam 45,0,9000`), plus one long shot down an open join.
 6. Show the user the renders. Whatever they correct becomes code, a line in this
-   file, a test and a failure-atlas entry. Tell them the two steps left to
-   them: **F6 in WorldEditorRemix** (shadowmap + minimap) and `server_attr` — then `tools/sync.py`,
+   file, a test and a failure-atlas entry. Tell them the one step left to
+   them: **F6 in WorldEditorRemix** (shadowmap + minimap) — then `tools/sync.py`,
    `tests/run-all.sh`, commit.
 
 If it breaks, the three questions that found every fault so far: *are the blocks
@@ -160,7 +160,11 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
    new floor are removed and counted. A record listed by one block but standing
    in another gets the datum shift only, and is counted as `stray`.
 
-8. **Read it back** (rule 18). From the files just written: the worst tear left
+8. **`server_attr` is rebuilt** from the `attr` just written, masked `& 0x07`
+   (rules 5, 14) -- `codec/server_attr.py`, pure Python, seconds. It used to be
+   deleted and left to the user; the codec was in the repo the whole time.
+
+9. **Read it back** (rule 18). From the files just written: the worst tear left
    on any shared vertex (must be 0), and whether one walkable component now
    holds every block's floor. On the test map also: submerged cells per block
    13,079 / 534 / 2,858 → 13,036 / 534 / 2,858 (the 43 are the causeway), and
@@ -182,8 +186,6 @@ untextured. The 2D previews cannot show a tear; only the engine draws one.
   in this repo bakes a shadowmap or a minimap, and rebaking two sectors here
   would put a lighting seam where there was none. Say so when handing the map
   over; the report carries the same line as `shadowmap_minimap`.
-- **`server_attr` is dropped**, as in a merge — `attr` changed, regenerate it
-  (rule 14).
 - **Spawns** are not touched: `regen.txt` heights are the server's business and
   the coordinates did not move.
 - **No bridge.** A pass that must cross water becomes a causeway. If the water

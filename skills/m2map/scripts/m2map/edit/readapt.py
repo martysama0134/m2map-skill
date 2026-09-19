@@ -41,6 +41,7 @@ from ..audit import rules as audit_rules
 from ..codec import areadata as ad_codec
 from ..codec import attr as attr_codec
 from ..codec import height as height_codec
+from ..codec import server_attr as sa_codec
 from ..codec import setting as setting_codec
 from ..codec import textureset as ts_codec
 from ..codec import tile as tile_codec
@@ -595,7 +596,9 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
     if report["blank_tiles_added"]:
         report.setdefault("problems", []).append(
             "%d painted tiles became slot 0 (blank)" % report["blank_tiles_added"])
-    report["server_attr"] = "regenerate (attr changed)" if report["written"] else "unchanged"
+    report["server_attr"] = _server_attr_on_disk(out, back)
+    if not report["server_attr"]["agrees"]:
+        report.setdefault("problems", []).append("server_attr disagrees with attr.atr")
     # Nothing here bakes either; WorldEditorRemix does, on F6.
     report["shadowmap_minimap"] = ("stale: open in WorldEditorRemix and press F6"
                                    if report["written"] else "unchanged")
@@ -852,9 +855,28 @@ def _write(m: MergedMap, z: np.ndarray, out, overwrite: bool) -> List[str]:
         for name, files in (("areadata.txt", m.areas), ("areaambiencedata.txt", m.ambs)):
             if (sx, sy) in files:
                 put(d / name, files[sx, sy].to_bytes())
-    if (out / "server_attr").exists():
-        (out / "server_attr").unlink()                 # derived; stale the moment attr moved
+    # Derived, and stale the moment attr moved (rule 14): rebuilt from the attr
+    # just written, masked to the three bits the server reads (rule 5).
+    grids = {s: m.attr[m._tslice(*s)] for s in m.sectors()}
+    data = sa_codec.from_attr_maps(grids, m.W, m.H).to_bytes()
+    old = (out / "server_attr").read_bytes() if (out / "server_attr").exists() else None
+    if data != old:
+        (out / "server_attr").write_bytes(data)
+        written.append("server_attr")
     return written
+
+
+def _server_attr_on_disk(out, back: "MergedMap") -> dict:
+    """Re-read the file: nothing above bit 2, and the same cells blocked as the
+    client's ``attr.atr`` says."""
+    sa = sa_codec.read_server_attr(pathlib.Path(out) / "server_attr")
+    top, blocked, agrees = 0, 0, True
+    for sx, sy in back.sectors():
+        g = sa.to_attr_grid(sx, sy)
+        top = max(top, int(g.max()))
+        blocked += int((g & ATTR_BLOCK).astype(bool).sum())
+        agrees &= bool(np.array_equal(g, back.attr[back._tslice(sx, sy)] & sa_codec.SERVER_ATTR_MASK))
+    return {"max_value": top, "blocked_cells": blocked, "agrees": agrees and top <= 7}
 
 
 def _tear_on_disk(out) -> float:

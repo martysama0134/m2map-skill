@@ -121,6 +121,8 @@ def test_readapt_joins_levels_and_keeps_every_relation(tmp_path):
     # -- read it back ------------------------------------------------------
     assert torn_borders(out, ["000000", "000001"]) == []
     assert report["tear_after_cm"] == 0.0
+    assert (out / "server_attr").exists(), "attr changed, so the server file is rebuilt (rule 14)"
+    assert report["server_attr"]["agrees"] and report["server_attr"]["max_value"] <= 7
 
     m = readapt.MergedMap(out)
     z, _ = m.stitch()
