@@ -95,7 +95,8 @@ def main(argv=None) -> int:
 
     if a.accept:
         BASELINE.parent.mkdir(parents=True, exist_ok=True)
-        BASELINE.write_text(json.dumps({**base, **got}, indent=1, sort_keys=True) + "\n", "ascii")
+        BASELINE.write_text(json.dumps({**base, **got}, indent=1, sort_keys=True) + "\n", "ascii",
+                            newline="\n")
         print("baseline written: %s" % BASELINE.relative_to(ROOT))
         return 0
     return 1 if moved else 0
