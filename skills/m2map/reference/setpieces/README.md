@@ -38,6 +38,8 @@ matched the source render did no generating at all (`placement.md` §6.w,
 | `desert_dungeon_gatehouse_south.json` | `metin2_map_n_desert_01`, author's selection about (832, 535) | 3 | centroid | 14.6 m of records; the court is 18 x 28 m | 28 cm | fronts **south** (180) |
 | `br_dungeon_gatehouse_south.json` | the same records on `metin2_map_battleroyale`'s flame ground | 3 | centroid | same | 28 cm | fronts **south** (180) |
 | `a2_dungeon_gateway_north.json` | `map_a2`, author's selection about (282, 1459) | 2 | centroid | 4.1 m | 0 cm | fronts **north** (0) |
+| `snow_dungeon_gateway_south.json` | `map_n_snowm_01`, author's selection about (731, 96) | 8 | centroid | x -4.3 … +6.9 · y -3.9 … +9.9 | 95 cm | fronts **south** (180) |
+| `snow_camp_southwest.json` | same map, about (821, 112) | 29 | centroid | x -20.2 … +11.5 · y -17.2 … +20.8 | 246 cm | opens **south-west** (225) |
 | `a1_fishing_bays.json` | `metin2_map_a1`, author's selection about (359, 375) | 5 | centroid | x -18.9 … +31.8 · y -53.2 … +58.8 | **shore pattern**, `water_cm` 15,305 | water to the **east** (90) |
 
 `desert_camp`: two fence rails of 5 and 6 panels (fence01…05 mixed, steps
@@ -153,6 +155,7 @@ name has `warp` or `gate`, grouped within 8 m):
 | the y-view arch (eastplain, elemental) | `warpgate01_yview` 1443800060, often + `warpgate03_01` | 33 + 19 |
 | the rune arch in its boulder | `warpgate01` **2233504330** + `warpgate03` 1812446801 -- **`a2_dungeon_gateway_north`** | 4 (a2, threeway, trent, trent02); alone on the duel/pvp arenas |
 | the walled gatehouse | `thief_Dungeon_gate` 1430790742 + `warpgate03` + `warpgate02_01` -- **`desert_dungeon_gatehouse_south`** / `br_` | 12 buildings (a3, b3, n_desert_01, battleroyale x2, guild_war4 ...) |
+| the snow cave door | `n_snow_m_resoucegate` 489994703 (an ice-and-rock cave shell) round `general_obj_stonedoor` + arch 929619867 + two stone lions + two pillars, all at ONE roll -- **`snow_dungeon_gateway_south`** | 1 |
 | dungeon-interior doors | `anglar_cavegate*` / `anglar_stonegate*`, `mt_thunder_closinggate`, `prayer_gate*`, `ob-12-03gate*`, `Nst_gate_00N` | 25-56 each, inside their own dungeons only |
 | camp and town gates | `camp_redthief_gate_*`, `camp_manticore_gate*`, `<empire>-035-woodgate`, `general_obj_bigstonegate*`, `fortressA_gate_00` | 2-20 each -- part of a wall run, not a warp |
 | one-offs | `deviltowergate`, `spider_dungeongate_up`, `dragon_gate`, `gaint_gate_01`, `flame_dg_ingate`, `icecrystalscave_gate`, `smh_dungeongate` + tower, `guild_pvp_gate` + base ... | 1-7 |
@@ -160,12 +163,21 @@ name has `warp` or `gate`, grouped within 8 m):
 Two names are shared by different models (`warpgate01` is three CRCs,
 `warpgate02` three, `warpgate03` two): go by CRC, never by name.
 
-The three registered ones are all **terrain fits**, which the records do not
+`snow_camp_southwest` is the other snow camp: one yurt, three weapon racks, a
+stall with a flag and a 20-panel stake palisade (`ob-7-02-01`, step ~3.9 m)
+round the north, east and south. It has **no floor** -- the ground under it is
+the map's own `snow01`/`snow02` dither -- where `br_snow_camp_north` stands on a
+`field 01` disc; both are true of shipped snow camps. Turned 90 it opens
+south-east, verified.
+
+The registered gateways are all **terrain fits**, which the records do not
 carry. The warp arch stands free on a road end. The rune arch stands in a notch
 at the foot of a rock face where a road dead-ends (`pad_radius_m: 6`, or the pad
 levels the face). The gatehouse stands in a notch cut into a massif, rock on
 three sides, its road climbing to the front gate; the portal is inside, at the
 far end of the court, 13-15 m behind the building's origin (`pad_radius_m: 20`).
+The snow door brings its own rock -- the cave shell wraps it on three sides --
+and still backs onto a `stone01` cliff (`pad_radius_m: 8`).
 Its floor is a solid court and approach -- `field 01` with a `sand03` line under
 the walls on the desert original, `valcano_02` and a `tile01` road on
 battleroyale, which reuses it tile for tile at the same coordinates. Verified

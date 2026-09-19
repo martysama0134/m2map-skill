@@ -1,0 +1,152 @@
+{
+ "format": "m2map-setpiece/1",
+ "name": "snow_dungeon_gateway_south",
+ "source_map": "map_n_snowm_01",
+ "source_point_m": [
+  731.217783205,
+  96.35614135750001
+ ],
+ "radius_m": 13.0,
+ "pivot": "centroid",
+ "pivot_m": [
+  731.2178,
+  96.3561
+ ],
+ "rotation_deg": 0.0,
+ "notes": "Author's WorldEditor selection (WE_OBJECTS_V1 paste, 8 records, 8/8 found on map_n_snowm_01 about (731, 96), nothing left out). FRONTS SOUTH (facing 180; every record is at roll 15, so it looks a little west of south). A roofed stone door (general_obj_stonedoor) with the octagonal warp arch 929619867 inside it as the portal frame, a stone lion either side, two stone pillars behind, all at bias +6 -- standing in the mouth of n_snow_m_resoucegate, an ice-and-rock cave shell sunk 30 cm that wraps the door on three sides -- and an ice boulder (ice_01) 12 m to the south-east on a small ice_quest patch. One heading for all eight: the signature of a block placed as a unit. TERRAIN FIT: the shell backs onto a stone01 cliff (438 of 1,155 tiles in the window are cliff, all to the north); put it at the foot of a rock face, front to the open snow, pad_radius_m 8. rotate_deg = (180 - B) mod 360.",
+ "count": 8,
+ "extent_m": [
+  -4.34,
+  6.93,
+  -3.86,
+  9.86
+ ],
+ "relief_cm": 94.8,
+ "headings": {
+  "15": 8
+ },
+ "pieces": [
+  {
+   "dx": -0.2368,
+   "dy": 0.3553,
+   "roll": 15.0,
+   "bias": 6.0,
+   "crc": 929619867,
+   "z": 19398.675781,
+   "name": "warpgate01"
+  },
+  {
+   "dx": -1.0522,
+   "dy": -1.2953,
+   "roll": 15.0,
+   "bias": 6.0,
+   "crc": 386239327,
+   "z": 19398.400391,
+   "name": "general_obj_stonedoor"
+  },
+  {
+   "dx": 3.1944,
+   "dy": -0.7791,
+   "roll": 15.0,
+   "bias": 6.0,
+   "crc": 2276262724,
+   "z": 19403.410156,
+   "name": "general_obj_lionstoneimage"
+  },
+  {
+   "dx": 0.7631,
+   "dy": -3.5163,
+   "roll": 15.0,
+   "bias": 6.0,
+   "crc": 1780937370,
+   "z": 19402.955078,
+   "name": "general_obj_stonepillar_02"
+  },
+  {
+   "dx": -1.4632,
+   "dy": -3.8598,
+   "roll": 15.0,
+   "bias": -30.0,
+   "crc": 489994703,
+   "z": 19399.564453,
+   "name": "n_snow_m_resoucegate.GR2"
+  },
+  {
+   "dx": -3.7985,
+   "dy": -2.2675,
+   "roll": 15.0,
+   "bias": 6.0,
+   "crc": 1780937370,
+   "z": 19391.695313,
+   "name": "general_obj_stonepillar_02"
+  },
+  {
+   "dx": -4.3392,
+   "dy": 1.5052,
+   "roll": 15.0,
+   "bias": 6.0,
+   "crc": 2276262724,
+   "z": 19387.623047,
+   "name": "general_obj_lionstoneimage"
+  },
+  {
+   "dx": 6.9324,
+   "dy": 9.8576,
+   "roll": 15.0,
+   "bias": 10.0,
+   "crc": 2688839387,
+   "z": 19308.642578,
+   "name": "ice_01"
+  }
+ ],
+ "ground": {
+  "origin_m": [
+   -15.2178,
+   -14.3561
+  ],
+  "size": [
+   33,
+   35
+  ],
+  "palette": [
+   "d:/ymir work/terrainmaps/n/snow.m/ice_quest.dds"
+  ],
+  "rows": [
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "---------------------------------",
+   "----------------------00---------",
+   "---------------------0000--------",
+   "---------------------0000--------",
+   "----------------------00---------",
+   "----------------------00---------",
+   "---------------------000000------",
+   "---------------00----0000000-----",
+   "--------------0000----00000000---",
+   "--------------0000-------000000--",
+   "---------------00-------0000000--",
+   "-----------------------0000000---",
+   "-----------------------0000------"
+  ]
+ }
+}

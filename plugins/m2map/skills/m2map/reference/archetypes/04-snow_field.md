@@ -281,6 +281,12 @@ solid `n/snow.m/field 01` disc ~35 m across with a track leaving it, on
 `snow01`/`snow02` dither; declare `snow.m/field 01` (`weight: 0.0` if the map
 has no road of it). `reference/setpieces/README.md`.
 
+**And two from `map_n_snowm_01` itself**: `snow_camp_southwest` -- one yurt,
+weapon racks and a stake palisade, on bare snow with NO painted floor -- and
+`snow_dungeon_gateway_south`, the roofed stone door with two lions inside an
+ice cave shell (`n_snow_m_resoucegate`) at the foot of a `stone01` cliff, every
+record at one roll.
+
 ## Attr policy
 
 `slope_driven` on `map_n_snowm_01` only; `painted_box` on the four sungzi instances

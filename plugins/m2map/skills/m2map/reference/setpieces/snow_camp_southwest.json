@@ -1,0 +1,308 @@
+{
+ "format": "m2map-setpiece/1",
+ "name": "snow_camp_southwest",
+ "source_map": "map_n_snowm_01",
+ "source_point_m": [
+  820.5756330844827,
+  111.61315968517242
+ ],
+ "radius_m": 26.0,
+ "pivot": "centroid",
+ "pivot_m": [
+  820.5756,
+  111.6132
+ ],
+ "rotation_deg": 0.0,
+ "notes": "Author's WorldEditor selection (WE_OBJECTS_V1 paste, 29 records, 29/29 found on map_n_snowm_01 about (821, 112), nothing left out). OPENS SOUTH-WEST (facing 225): a palisade of 20 stake panels (ob-7-02-01, step ~3.9 m, rolls walking 180 -> 90 -> 0 round the arc) closes the north, east and south; the west and south-west are open. Inside: one large yurt (general_obj_tent01) against the east rail, three weapon racks (nsm-general_obj_02) in a line running north-west from it, a stone pillar, and at the north-west tip a small stall (nsm-general_obj_04) with a flag. Everything at bias -15. NO FLOOR: the ground under it is the map's own snow01/snow02 dither, so nothing is saved -- unlike br_snow_camp_north, which stands on a field 01 disc. Source relief 246 cm: the default pad levels it. rotate_deg = (225 - B) mod 360.",
+ "count": 29,
+ "extent_m": [
+  -20.24,
+  11.48,
+  -17.23,
+  20.84
+ ],
+ "relief_cm": 245.6,
+ "headings": {
+  "180": 5,
+  "90": 4,
+  "105": 2,
+  "165": 2,
+  "30": 2,
+  "0": 2,
+  "225": 1,
+  "240": 1,
+  "285": 1,
+  "255": 1,
+  "120": 1,
+  "135": 1,
+  "150": 1,
+  "195": 1,
+  "75": 1,
+  "330": 1,
+  "60": 1,
+  "270": 1
+ },
+ "pieces": [
+  {
+   "dx": -1.8777,
+   "dy": -1.6673,
+   "roll": 225.0,
+   "bias": -15.0,
+   "crc": 353097755,
+   "z": 20263.904297,
+   "name": "nsm-general_obj_02"
+  },
+  {
+   "dx": -6.4557,
+   "dy": 1.0386,
+   "roll": 240.0,
+   "bias": -15.0,
+   "crc": 353097755,
+   "z": 20265.341797,
+   "name": "nsm-general_obj_02"
+  },
+  {
+   "dx": 1.8123,
+   "dy": 9.5421,
+   "roll": 285.0,
+   "bias": -10.0,
+   "crc": 1033499706,
+   "z": 20343.912109,
+   "name": "general_obj_tent01"
+  },
+  {
+   "dx": -9.6969,
+   "dy": -5.8133,
+   "roll": 255.0,
+   "bias": -15.0,
+   "crc": 353097755,
+   "z": 20198.369141,
+   "name": "nsm-general_obj_02"
+  },
+  {
+   "dx": 11.4773,
+   "dy": 0.1143,
+   "roll": 105.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20306.552734,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": 11.0031,
+   "dy": -3.8323,
+   "roll": 105.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20266.892578,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": 11.2318,
+   "dy": 3.9105,
+   "roll": 90.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20338.740234,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": 10.4904,
+   "dy": -7.7964,
+   "roll": 120.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20236.480469,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": 11.0,
+   "dy": 7.6869,
+   "roll": 90.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20366.167969,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": 8.8164,
+   "dy": -10.8908,
+   "roll": 135.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20221.935547,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": 6.4366,
+   "dy": -13.329,
+   "roll": 150.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20216.023438,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": -11.8604,
+   "dy": -9.1639,
+   "roll": 195.0,
+   "bias": -15.0,
+   "crc": 1484999595,
+   "z": 20175.724609,
+   "name": "general_obj_pillar"
+  },
+  {
+   "dx": 3.4063,
+   "dy": -15.0853,
+   "roll": 165.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20212.195313,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": 10.8614,
+   "dy": 11.2618,
+   "roll": 90.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20391.550781,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": -3.6059,
+   "dy": 15.7039,
+   "roll": 90.0,
+   "bias": -15.0,
+   "crc": 1504598343,
+   "z": 20361.193359,
+   "name": "obj-0006"
+  },
+  {
+   "dx": 0.1918,
+   "dy": -16.1376,
+   "roll": 165.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20208.107422,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": -3.1979,
+   "dy": -17.2039,
+   "roll": 180.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20209.054688,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": 9.9135,
+   "dy": 14.6526,
+   "roll": 75.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20410.919922,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": -6.6695,
+   "dy": -17.2333,
+   "roll": 180.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20206.078125,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": -3.8392,
+   "dy": 18.728,
+   "roll": 180.0,
+   "bias": -15.0,
+   "crc": 4202815249,
+   "z": 20378.365234,
+   "name": "ob-7-02-02"
+  },
+  {
+   "dx": -3.7321,
+   "dy": 18.8532,
+   "roll": 330.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20379.359375,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": 8.3492,
+   "dy": 17.5526,
+   "roll": 60.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20421.289063,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": -10.1775,
+   "dy": -17.0942,
+   "roll": 180.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20210.847656,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": 5.3375,
+   "dy": 19.2014,
+   "roll": 30.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20413.837891,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": -16.2005,
+   "dy": -12.3735,
+   "roll": 270.0,
+   "bias": -15.0,
+   "crc": 1194855859,
+   "z": 20199.873047,
+   "name": "general_obj_flag"
+  },
+  {
+   "dx": -0.8789,
+   "dy": 20.6407,
+   "roll": 0.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20397.710938,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": 2.3295,
+   "dy": 20.8361,
+   "roll": 30.0,
+   "bias": -15.0,
+   "crc": 1155967375,
+   "z": 20410.464844,
+   "name": "ob-7-02-01"
+  },
+  {
+   "dx": -14.2209,
+   "dy": -16.8651,
+   "roll": 180.0,
+   "bias": -15.0,
+   "crc": 4202815249,
+   "z": 20236.960938,
+   "name": "ob-7-02-02"
+  },
+  {
+   "dx": -20.244,
+   "dy": -15.2371,
+   "roll": 0.0,
+   "bias": -15.0,
+   "crc": 108169427,
+   "z": 20277.265625,
+   "name": "nsm-general_obj_04"
+  }
+ ]
+}
