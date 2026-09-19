@@ -47,8 +47,11 @@ Expect the next map to find another: the procedure is the part to keep.
    `m2map.paths.json`) -- tell the user the map was not checked in the engine.
 6. Show the user the renders. Whatever they correct becomes code, a line in this
    file, a test and a failure-atlas entry. Tell them the one step left to
-   them: **F6 in WorldEditorRemix** (shadowmap + minimap) — then `tools/sync.py`,
-   `tests/run-all.sh`, commit.
+   them: **F6 in WorldEditorRemix** (shadowmap + minimap) — then
+   `tools/readapt_regress.py` (every merged test map against
+   `tests/baselines/readapt.json` -- **before** saying the other maps are
+   unchanged; `--accept` when the move is the one you meant, and add the new map
+   to the baseline the same way), `tools/sync.py`, `tests/run-all.sh`, commit.
 
 If it breaks, the three questions that found every fault so far: *are the blocks
 right* (`MergedMap.torn_borders` / `.blocks`), *is there floor on the join*

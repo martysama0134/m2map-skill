@@ -1,0 +1,240 @@
+{
+ "map_merge_test_01": {
+  "blank_tiles_added": 0,
+  "blocks": {
+   "0": 4,
+   "1": 4,
+   "2": 4
+  },
+  "files_written": 42,
+  "joined": {
+   "0": true,
+   "1": true,
+   "2": true
+  },
+  "level_cm": {
+   "0": -941.5,
+   "1": 0.0,
+   "2": -575.0
+  },
+  "links": [
+   {
+    "blocks": [
+     0,
+     1
+    ],
+    "from_tile": [
+     104,
+     460
+    ],
+    "grade_pct": 0.0,
+    "length_m": 99.4,
+    "mouths_cm": [
+     16395,
+     16395
+    ],
+    "to_tile": [
+     92,
+     548
+    ],
+    "wall_m": 86
+   },
+   {
+    "blocks": [
+     1,
+     2
+    ],
+    "from_tile": [
+     440,
+     974
+    ],
+    "grade_pct": 0.0,
+    "length_m": 78.5,
+    "mouths_cm": [
+     16391,
+     16390
+    ],
+    "to_tile": [
+     444,
+     1044
+    ],
+    "wall_m": 68
+   }
+  ],
+  "objects": {
+   "max_move_cm": 942,
+   "moved": 382,
+   "removed": 3,
+   "stray": 1
+  },
+  "problems": [],
+  "server_attr": {
+   "agrees": true,
+   "blocked_cells": 403894,
+   "max_value": 5
+  },
+  "skipped_links": [],
+  "tear_after_cm": 0.0,
+  "void_blocks": []
+ },
+ "map_merge_test_02": {
+  "blank_tiles_added": 0,
+  "blocks": {
+   "0": 30,
+   "1": 36
+  },
+  "files_written": 117,
+  "joined": {
+   "0": true,
+   "1": true
+  },
+  "level_cm": {
+   "0": 0.0,
+   "1": 1363.0
+  },
+  "links": [
+   {
+    "blocks": [
+     0,
+     1
+    ],
+    "from_tile": [
+     1278,
+     894
+    ],
+    "grade_pct": 0.0,
+    "length_m": 51.5,
+    "mouths_cm": [
+     18204,
+     18204
+    ],
+    "to_tile": [
+     1324,
+     894
+    ],
+    "wall_m": 44
+   }
+  ],
+  "objects": {
+   "max_move_cm": 1363,
+   "moved": 582,
+   "removed": 0,
+   "stray": 0
+  },
+  "problems": [],
+  "server_attr": {
+   "agrees": true,
+   "blocked_cells": 1489175,
+   "max_value": 3
+  },
+  "skipped_links": [],
+  "tear_after_cm": 0.0,
+  "void_blocks": []
+ },
+ "map_merge_test_03": {
+  "blank_tiles_added": 0,
+  "blocks": {
+   "0": 17,
+   "1": 6,
+   "2": 20,
+   "3": 14,
+   "4": 6
+  },
+  "files_written": 151,
+  "joined": {
+   "0": true,
+   "2": true,
+   "3": true
+  },
+  "level_cm": {
+   "0": 2467.5,
+   "1": 4558.5,
+   "2": 0.0,
+   "3": 2730.5,
+   "4": -543.0
+  },
+  "links": [
+   {
+    "blocks": [
+     0,
+     2
+    ],
+    "from_tile": [
+     766,
+     862
+    ],
+    "grade_pct": 0.0,
+    "length_m": 55.3,
+    "mouths_cm": [
+     19996,
+     19996
+    ],
+    "to_tile": [
+     814,
+     850
+    ],
+    "wall_m": 46
+   },
+   {
+    "blocks": [
+     0,
+     3
+    ],
+    "from_tile": [
+     230,
+     1236
+    ],
+    "grade_pct": 0.0,
+    "length_m": 49.2,
+    "mouths_cm": [
+     19872,
+     19872
+    ],
+    "to_tile": [
+     230,
+     1280
+    ],
+    "wall_m": 42
+   },
+   {
+    "blocks": [
+     2,
+     3
+    ],
+    "from_tile": [
+     926,
+     1678
+    ],
+    "grade_pct": 14.3,
+    "length_m": 127.2,
+    "mouths_cm": [
+     21328,
+     23148
+    ],
+    "to_tile": [
+     936,
+     1794
+    ],
+    "wall_m": 114
+   }
+  ],
+  "objects": {
+   "max_move_cm": 3686,
+   "moved": 1979,
+   "removed": 0,
+   "stray": 8
+  },
+  "problems": [],
+  "server_attr": {
+   "agrees": true,
+   "blocked_cells": 1802447,
+   "max_value": 5
+  },
+  "skipped_links": [],
+  "tear_after_cm": 0.0,
+  "void_blocks": [
+   1,
+   4
+  ]
+ }
+}

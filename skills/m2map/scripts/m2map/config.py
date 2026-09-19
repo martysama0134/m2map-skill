@@ -62,6 +62,9 @@ class Paths:
     opengranny: Path | None = None
     pygr2: Path | None = None
     output_dir: Path | None = None
+    #: Folder holding the merged test maps (map_merge_test_*) that
+    #: tools/readapt_regress.py runs.
+    merge_tests: Path | None = None
 
     # --- derived locations under the client pack -------------------------
 

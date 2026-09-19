@@ -19,5 +19,6 @@
   "opengranny": "C:/path/to/OpenGranny",
   "pygr2": null,
 
-  "output_dir": "D:/maps"
+  "output_dir": "D:/maps",
+  "merge_tests": "C:/path/to/merged/test/maps"
 }
