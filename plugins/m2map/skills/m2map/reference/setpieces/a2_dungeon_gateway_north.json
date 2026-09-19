@@ -1,0 +1,49 @@
+{
+ "format": "m2map-setpiece/1",
+ "name": "a2_dungeon_gateway_north",
+ "source_map": "map_a2",
+ "source_point_m": [
+  282.128359375,
+  1459.369921875
+ ],
+ "radius_m": 3.0,
+ "pivot": "centroid",
+ "pivot_m": [
+  282.1284,
+  1459.3699
+ ],
+ "rotation_deg": 0.0,
+ "notes": "Author's WorldEditor selection (WE_OBJECTS_V1 paste, 2 records, 2/2 found on map_a2 at (282, 1459); the same pair stands on map_n_threeway, trent and trent02). FRONTS NORTH (facing 0): the road arrives from the north and ends in it. A rune-carved stone arch set in its own boulder, with a crystal pillar either side -- all ONE model (warpgate01, CRC 2233504330 -- NOT the octagonal arch 929619867, which shares the name) -- sunk 25 cm, with the red portal effect (warpgate03) 4 m in front of it sunk 95 cm. It is a TERRAIN FIT: the arch stands in a notch at the foot of a rock face at the dead end of a road, 75 m from the map edge, so the rock closes round its back and sides. Put it where a road meets a cliff, pad_radius_m 6 so the pad does not level the face. The source adds a carved slab (Pagoda3) and two trees beside it, which the author left out. rotate_deg = (0 - B) mod 360.",
+ "count": 2,
+ "extent_m": [
+  -0.23,
+  0.23,
+  -2.06,
+  2.06
+ ],
+ "relief_cm": 0.2,
+ "headings": {
+  "180": 1,
+  "165": 1
+ },
+ "pieces": [
+  {
+   "dx": 0.2327,
+   "dy": -2.0601,
+   "roll": 180.0,
+   "bias": -95.0,
+   "crc": 1812446801,
+   "z": 17542.824219,
+   "name": "warpgate03"
+  },
+  {
+   "dx": -0.2327,
+   "dy": 2.0601,
+   "roll": 165.0,
+   "bias": -25.0,
+   "crc": 2233504330,
+   "z": 17543.0,
+   "name": "warpgate01"
+  }
+ ]
+}

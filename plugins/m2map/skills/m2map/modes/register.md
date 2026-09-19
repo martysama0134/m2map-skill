@@ -17,7 +17,7 @@ rule and the ground block; this file is the procedure.
 | **A WorldEditorRemix paste** (starts `WE_OBJECTS_V1`) | offsets only, y growing north -- it has no position. Save it verbatim and use `--from-we-objects FILE --locate-on <CORPUS>/<map>` wherever the steps say `--from-areadata`; locating it IS step 1 (`N of N ... exact match`). Identical pastes under different labels are one assembly, or a clipboard that did not update: look at what stands at each site before making three patterns |
 | **A map, a point and a radius** ("b1, around (638, 638), 60 m") | `setpiece.py <map> x y r`. A disc takes whatever is inside it, so look for a clipped neighbour and name it out with `--exclude` (the b1 square at 60 m cut a walled estate in half). Skip step 1 |
 | **A scratch map holding only the group** | its `areadata.txt` is the selection. Step 1 does not apply — there is no corpus to check against |
-| A label with a direction ("looking at north", "opens west") | the **facing**. Keep it; it goes in the notes (step 4) |
+| A label with a direction ("looking at north", "opens west") | the **facing**. Keep it; it goes in the notes (step 4). For a gate it is the way its FRONT looks -- the side the road arrives from -- not the way the player walks into it: the a2 rune arch "looks north" with its road to the north, the walled gatehouse "looks south" with its portal at the north end of the court |
 | Minimap crops with arrows | orientation hints only. Do not read objects off them |
 
 Ask for nothing else up front. The name, the pivot and the ground can all be

@@ -1,0 +1,116 @@
+{
+ "format": "m2map-setpiece/1",
+ "name": "br_dungeon_gatehouse_south",
+ "source_map": "metin2_map_battleroyale",
+ "source_point_m": [
+  832.0,
+  537.0
+ ],
+ "radius_m": 9.0,
+ "pivot": "centroid",
+ "pivot_m": [
+  832.0112,
+  534.6562
+ ],
+ "rotation_deg": 0.0,
+ "notes": "The walled dungeon gatehouse on metin2_map_battleroyale's volcano massif, every record within 9 m of (832, 537): 3 records, all roll 0. FRONTS SOUTH (facing 180): a cobbled tile01 road climbs to it from the south-west. thief_Dungeon_gate (a walled court about 18 x 28 m with a roofed gate at each end and a red banner) with the portal inside at the NORTH end of the court: warpgate03 (effect) 13.1 m and warpgate02_01 14.6 m north of the building's origin. It is metin2_map_n_desert_01's gatehouse, reused at the same coordinates on flame ground (the original is desert_dungeon_gatehouse_south, same records). The same three-record assembly stands at (1014, 1340) on the same map turned 15 as one block, and thief_Dungeon_gate has 12 corpus sites (a3, b3, guild_war4 ...). TERRAIN FIT: it stands in a notch cut into the mountain, rock on three sides. Floor: the valcano_02 court inside the walls and the tile01 approach. pad_radius_m 20. rotate_deg = (180 - B) mod 360.",
+ "count": 3,
+ "extent_m": [
+  -0.14,
+  0.08,
+  -5.34,
+  9.24
+ ],
+ "relief_cm": 27.9,
+ "headings": {
+  "0": 3
+ },
+ "pieces": [
+  {
+   "dx": -0.1427,
+   "dy": -3.8977,
+   "roll": 0.0,
+   "bias": -20.0,
+   "crc": 1812446801,
+   "z": 22969.0,
+   "name": "warpgate03"
+  },
+  {
+   "dx": 0.0775,
+   "dy": -5.3407,
+   "roll": 0.0,
+   "bias": -10.0,
+   "crc": 1013185983,
+   "z": 22971.554688,
+   "name": "warpgate02_01"
+  },
+  {
+   "dx": 0.0652,
+   "dy": 9.2384,
+   "roll": 0.0,
+   "bias": -10.0,
+   "crc": 1430790742,
+   "z": 22943.689453,
+   "name": "thief_Dungeon_gate.GR2"
+  }
+ ],
+ "ground": {
+  "origin_m": [
+   -15.0112,
+   -19.6562
+  ],
+  "size": [
+   30,
+   43
+  ],
+  "palette": [
+   "d:/ymir work/terrainmaps/n/flame area/tile01.dds",
+   "d:/ymir work/terrainmaps/n/flame area/valcano_02.dds"
+  ],
+  "rows": [
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "---------------------00-------",
+   "-------0---0-------00--0------",
+   "------0---0----00--0-0-0------",
+   "------0-0---00000------0------",
+   "------0-0-000000000000-0------",
+   "------0-00000000000000-0------",
+   "------0-00000000000000-0------",
+   "------0-00000000000000-0------",
+   "------0-00000000000000-0------",
+   "------0-00000000000000-0------",
+   "------0-00000000000000-0------",
+   "------0-00000000000000-0------",
+   "------0-00000000000000-0------",
+   "------0-00000000000000-01111--",
+   "--------00000000000000-011-11-",
+   "-----11--0000000000000-01111--",
+   "---11---000-000000-----01111--",
+   "--1---------000000-0000011----",
+   "------------000000----11--1--1",
+   "1-----------0000001------1---1",
+   "1-1--------1-0000-----111-----",
+   "11----11--1000000----11----11-",
+   "111---11110-000001-1--1-1--1--",
+   "-11--111-1000000-111----111---",
+   "111-1-11-0-0000-111---11-1111-",
+   "111-1-1-1000001-1---11-11--111",
+   "1111--1-0-000-111111--11--1111",
+   "11--1---0000--1111111111111111",
+   "-1-11-00000-111111111111111111",
+   "1---1-0000-----111111111111111",
+   "111100000-11-11111111111111111",
+   "-10-000001----1111111111111111"
+  ]
+ }
+}

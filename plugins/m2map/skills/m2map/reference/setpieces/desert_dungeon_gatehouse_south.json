@@ -1,0 +1,116 @@
+{
+ "format": "m2map-setpiece/1",
+ "name": "desert_dungeon_gatehouse_south",
+ "source_map": "metin2_map_n_desert_01",
+ "source_point_m": [
+  832.01122396,
+  534.6561718766667
+ ],
+ "radius_m": 10.0,
+ "pivot": "centroid",
+ "pivot_m": [
+  832.0112,
+  534.6562
+ ],
+ "rotation_deg": 0.0,
+ "notes": "Author's WorldEditor selection (WE_OBJECTS_V1 paste, 3 records, 3/3 found on metin2_map_n_desert_01 about (832, 535), nothing left out). FRONTS SOUTH (facing 180) by the author's label and by the render: the path climbs to it from the south-west. The walled dungeon gatehouse -- thief_Dungeon_gate, a court about 18 x 28 m with a roofed gate at each end and a red banner -- with the portal inside at the NORTH end of the court: warpgate03 (effect, bias -20) 13.1 m and warpgate02_01 14.6 m north of the building's origin, all roll 0. TERRAIN FIT: it stands in a notch cut into a massif, rock on three sides. Floor: a solid field 01 court and approach path, a one-tile sand03 line under the walls, stone03 cliff round it. metin2_map_battleroyale reuses it at the same coordinates on flame ground -- that is br_dungeon_gatehouse_south, same records, valcano_02 court and tile01 road. pad_radius_m 20. rotate_deg = (180 - B) mod 360.",
+ "count": 3,
+ "extent_m": [
+  -0.14,
+  0.08,
+  -5.34,
+  9.24
+ ],
+ "relief_cm": 27.9,
+ "headings": {
+  "0": 3
+ },
+ "pieces": [
+  {
+   "dx": -0.1427,
+   "dy": -3.8977,
+   "roll": 0.0,
+   "bias": -20.0,
+   "crc": 1812446801,
+   "z": 22969.0,
+   "name": "warpgate03"
+  },
+  {
+   "dx": 0.0775,
+   "dy": -5.3407,
+   "roll": 0.0,
+   "bias": -10.0,
+   "crc": 1013185983,
+   "z": 22971.554688,
+   "name": "warpgate02_01"
+  },
+  {
+   "dx": 0.0652,
+   "dy": 9.2384,
+   "roll": 0.0,
+   "bias": -10.0,
+   "crc": 1430790742,
+   "z": 22943.689453,
+   "name": "thief_Dungeon_gate.GR2"
+  }
+ ],
+ "ground": {
+  "origin_m": [
+   -15.0112,
+   -19.6562
+  ],
+  "size": [
+   30,
+   43
+  ],
+  "palette": [
+   "d:/ymir work/terrainmaps/n/desert/field/field 01.dds",
+   "d:/ymir work/terrainmaps/n/desert/sand/sand03.dds"
+  ],
+  "rows": [
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "------------------------------",
+   "---------------------00-------",
+   "-------011-011-111100110------",
+   "------011101111001101010------",
+   "------010111000001111110------",
+   "------010100000000000010------",
+   "------010000000000000010------",
+   "------010000000000000010------",
+   "------010000000000000010------",
+   "------010000000000000010------",
+   "------010000000000000010------",
+   "------010000000000000010------",
+   "------010000000000000010------",
+   "------010000000000000010------",
+   "------010000000000000010------",
+   "-------10000000000000010------",
+   "-------11000000000000010------",
+   "-------10001000000111110------",
+   "--------1111000000100000------",
+   "-----------10000001-----------",
+   "------------000000------------",
+   "------------1000011-----------",
+   "-----------0000001------------",
+   "----------0100000-------------",
+   "----------0000001-------------",
+   "--------10100001--------------",
+   "-------1-00000-1--------------",
+   "-------1010001----------------",
+   "-------1000011----------------",
+   "--1---000001------------------",
+   "---1-1000011------------------",
+   "----000001--------------------",
+   "1-0100000---------------------"
+  ]
+ }
+}
