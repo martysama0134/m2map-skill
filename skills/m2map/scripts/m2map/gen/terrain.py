@@ -260,7 +260,9 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
           ridge_gap: np.ndarray | None = None,
           pads: "list | None" = None,
           scarp_cm: np.ndarray | None = None,
-          benches: "list | None" = None) -> np.ndarray:
+          benches: "list | None" = None,
+          bridges: "list | None" = None,
+          channels: "list | None" = None) -> np.ndarray:
     """Whole-map vertex height grid in world cm.
 
     Returns ``(h*128+1, w*128+1)`` -- the shared logical vertex grid. Splitting
@@ -336,6 +338,34 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
     # sits in a channel and the banks read as banks.
     if carve_cm is not None and carve_cm.any():
         height = height - _to_cells(carve_cm, height.shape)
+        height = np.clip(height, 0.0, 32767.5)
+
+    # A river with a stated surface gets an absolute bed under it -- see
+    # `Layout.channels`. `min`, not assignment: ground already lower stays.
+    for grade, surface, depth in (channels or []):
+        g = _to_cells(grade, height.shape)
+        height = np.where(g > 0.0, np.minimum(height, float(surface) - g * float(depth)), height)
+
+    # Bridges last of all: both banks to ONE height, then the channel cut to the
+    # span under it. After the river bed, so the cut deepens a channel that
+    # exists rather than being softened by it, and after the road levelling, so
+    # "the ground at the two ends" is already the road's own level.
+    for fit in (bridges or []):
+        core = _to_cells(fit.bank_core.astype(np.float64), height.shape) > 0.5
+        # The bank is set from the WATER where the water has a stated level:
+        # a stone bridge stands 2-5 m over it, a rope bridge 10-40 m. Only a
+        # dry crossing, or an auto-levelled river, falls back to the ground.
+        level = fit.spec.bank_cm
+        if level is None and fit.water_cm is not None:
+            level = fit.water_cm + float(fit.model["water_below_bank_cm"])
+        if level is None:
+            level = float(np.median(height[core])) if core.any() else float(np.median(height))
+        fit.bank_cm = float(level)
+        w = np.clip(_to_cells(fit.bank_weight, height.shape), 0.0, 1.0)
+        height = height * (1.0 - w) + level * w
+        bed = level - float(fit.model["bed_below_bank_cm"])
+        c = np.clip(_to_cells(fit.cut_weight, height.shape), 0.0, 1.0)
+        height = np.minimum(height, height * (1.0 - c) + bed * c)
         height = np.clip(height, 0.0, 32767.5)
 
     return height

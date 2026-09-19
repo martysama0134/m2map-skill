@@ -197,6 +197,11 @@ class SetPiece:
     notes: str = ""
     #: the paint under it, if it was read -- see :func:`with_ground`
     ground: Optional[Ground] = None
+    #: the water surface the source stood at, world cm -- set for SHORE patterns
+    #: (rafts, piers, fish huts), which are fitted to the water and not to the
+    #: ground. With it, `stamp(water_cm=...)` hangs every piece at the same
+    #: height over the target's water that it had over the source's.
+    water_cm: Optional[float] = None
 
     # --- geometry ---------------------------------------------------------
     def rotated(self, deg: float) -> "SetPiece":
@@ -207,8 +212,12 @@ class SetPiece:
                        ground=self.ground.rotated(deg) if self.ground else None)
 
     def stamp(self, anchor: Tuple[float, float], label: Optional[str] = None,
-              tier: str = "filler") -> List[ObjectTier]:
-        return stamp(self.pieces, anchor, label=label or self.name, tier=tier)
+              tier: str = "filler", water_cm: Optional[float] = None) -> List[ObjectTier]:
+        if water_cm is not None and self.water_cm is None:
+            raise ValueError("pattern %s has no water_cm to be fitted from" % self.name)
+        return stamp(self.pieces, anchor, label=label or self.name, tier=tier,
+                     rise_cm=(None if water_cm is None
+                              else float(water_cm) - float(self.water_cm)))
 
     def extent_m(self) -> Tuple[float, float, float, float]:
         return extent_m(self.pieces)
@@ -246,6 +255,8 @@ class SetPiece:
         }
         if self.ground is not None:
             d["ground"] = self.ground.to_dict()
+        if self.water_cm is not None:
+            d["water_cm"] = float(self.water_cm)
         return d
 
     @classmethod
@@ -263,7 +274,8 @@ class SetPiece:
                    pivot=d.get("pivot", "centroid"),
                    rotation_deg=float(d.get("rotation_deg", 0.0)),
                    notes=d.get("notes", ""),
-                   ground=Ground.from_dict(d["ground"]) if d.get("ground") else None)
+                   ground=Ground.from_dict(d["ground"]) if d.get("ground") else None,
+                   water_cm=(float(d["water_cm"]) if d.get("water_cm") is not None else None))
 
     def save(self, path) -> pathlib.Path:
         path = pathlib.Path(path)
@@ -536,9 +548,16 @@ def rotate(pieces: Iterable[Piece], deg: float) -> List[Piece]:
 
 
 def stamp(pieces: Union[SetPiece, Iterable[Piece]], anchor: Tuple[float, float],
-          label: str = "set-piece", tier: str = "filler") -> List[ObjectTier]:
+          label: str = "set-piece", tier: str = "filler",
+          rise_cm: Optional[float] = None) -> List[ObjectTier]:
     """Authored tiers that reproduce ``pieces`` with the pivot on ``anchor``
     (tile metres).
+
+    ``rise_cm`` switches from "the bias it was shipped with, over whatever ground
+    is there" to "the HEIGHT it was shipped at, moved by this much" -- a shore
+    pattern passes target water minus source water, so each deck keeps its
+    clearance over the surface. Such tiers carry `absolute_z` and no footprint:
+    a pier is walked on.
 
     One tier per ``(crc, height_bias)`` so every record keeps the bias it was
     shipped with; positions are ``(x, y, roll)`` triples so every record keeps
@@ -552,7 +571,8 @@ def stamp(pieces: Union[SetPiece, Iterable[Piece]], anchor: Tuple[float, float],
     order: List[Tuple[int, float]] = []
     nm: Dict[int, str] = {}
     for p in ps:
-        key = (p.crc, p.height_bias)
+        key = (p.crc, p.height_bias if rise_cm is None
+               else round(p.z + p.height_bias + rise_cm, 2))
         if key not in groups:
             groups[key] = []
             order.append(key)
@@ -561,11 +581,15 @@ def stamp(pieces: Union[SetPiece, Iterable[Piece]], anchor: Tuple[float, float],
             nm[p.crc] = p.name
     tiers = []
     for crc, bias in order:
-        tiers.append(ObjectTier(crc=crc, name="%s %s" % (label, nm.get(crc) or crc),
-                                tier=tier, density=0.0, spacing_cm=0.0, max_slope=90.0,
-                                road_clearance_cm=0.0,
-                                positions=list(groups[(crc, bias)]),
-                                height_bias=(bias, bias)))
+        t = ObjectTier(crc=crc, name="%s %s" % (label, nm.get(crc) or crc),
+                       tier=tier, density=0.0, spacing_cm=0.0, max_slope=90.0,
+                       road_clearance_cm=0.0,
+                       positions=list(groups[(crc, bias)]),
+                       height_bias=(bias, bias) if rise_cm is None else (0.0, 0.0))
+        if rise_cm is not None:
+            t.absolute_z = float(bias)          # the key holds the absolute height here
+            t.footprint = False
+        tiers.append(t)
     return tiers
 
 
@@ -603,8 +627,11 @@ def expand(spec):
         sp = load(path)
         if sps.rotate_deg:
             sp = sp.rotated(sps.rotate_deg)
-        objects += sp.stamp(tuple(sps.anchor), label=sps.label or sp.name, tier=sps.tier)
+        objects += sp.stamp(tuple(sps.anchor), label=sps.label or sp.name, tier=sps.tier,
+                            water_cm=sps.water_cm)
         r = sps.pad_radius_m
+        if r is None and sps.water_cm is not None:
+            r = 0.0                       # a pad would flatten the shore it stands on
         if r is None:
             x0, x1, y0, y1 = sp.extent_m()
             r = max(4.0, max(abs(x0), abs(x1), abs(y0), abs(y1)) + 4.0)
@@ -760,6 +787,10 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="keep only tiles whose texture path contains this (repeatable); "
                          "name the feature, e.g. 'field' for a camp's dirt")
     ap.add_argument("--ground-margin", type=float, default=8.0, metavar="M")
+    ap.add_argument("--water-cm", type=float, default=None,
+                    help="the water surface the group stands at, world cm -- for a SHORE "
+                         "pattern (rafts, piers), which is then stamped relative to the "
+                         "target's water instead of its ground")
     ap.add_argument("--save", help="write the pattern as JSON here")
     ap.add_argument("--notes", default="")
     a = ap.parse_args(argv)
@@ -786,6 +817,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         sp = with_ground(sp, ground_map, keep=a.ground_keep, margin_m=a.ground_margin)
     if a.rotate:
         sp = sp.rotated(a.rotate)
+    sp.water_cm = a.water_cm
     sp.notes = a.notes
     for line in describe(sp).splitlines():
         print("# " + line)

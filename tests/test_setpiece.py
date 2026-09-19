@@ -165,6 +165,31 @@ def test_a_paste_is_checked_against_the_map_it_came_from(source, tmp_path):
     assert len(rep["missing_from_map"]) == 1 and rep["missing_from_map"][0]["roll"] == 61.0
 
 
+def test_a_shore_pattern_hangs_from_the_water_not_the_ground(source, tmp_path):
+    """Rafts, piers and fish huts are fitted to the WATER SURFACE.
+
+    The a1 fishing bays: three raft decks within -32..+50 cm of the river's
+    15,305 cm while the sand under them is 1.0-1.4 m down, a hut +120 on dry
+    sand, a pier +300 running 32 m out. Their stored biases (+60..+220) are
+    whatever made that true on that shore; on another shore they are wrong.
+    """
+    sp = setpiece.extract(source, (333, 307), 32, exclude=["1099929426"])
+    sp.water_cm = 17826.0 - 5.0 - 100.0          # source ground 17826, bias -5 => decks 100 over water
+    path = sp.save(tmp_path / "rafts.json")
+    assert setpiece.load(path).water_cm == sp.water_cm
+
+    from m2map.gen.spec import SetPieceSpec
+    spec = make_spec(plazas=[], objects=[], height_range_cm=(16000.0, 19000.0))
+    spec.setpieces = [SetPieceSpec(pattern=str(path), anchor=(128.0, 60.0), water_cm=16400.0)]
+    b = pipeline.run(spec)
+    rail = [r for r in b.records if r.crc in RAIL_CRCS]
+    assert len(rail) == 5
+    for r in rail:
+        assert r.z + r.height_bias == pytest.approx(16400.0 + 100.0, abs=1.0)
+    # no levelling pad was added for it: a pad would flatten the shore it stands on
+    assert not [p for p in b.layout.plazas if abs(p.centre[0] - 128.0) < 1 and abs(p.centre[1] - 60.0) < 1]
+
+
 # --- the ground under a compound ------------------------------------------
 #
 # A pattern is records only, and half of what makes a camp read is paint: the

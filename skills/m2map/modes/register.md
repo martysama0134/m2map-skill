@@ -22,6 +22,14 @@ rule and the ground block; this file is the procedure.
 Ask for nothing else up front. The name, the pivot and the ground can all be
 decided from the data.
 
+## 0. Is it a pattern at all?
+
+| What was handed over | What it becomes |
+|---|---|
+| a compound on dry ground | a pattern (the rest of this file) |
+| props at a waterline -- rafts, piers, fish huts | a **shore pattern**: same steps, plus `--water-cm <surface at the source>` in step 4 and `water_cm:` on the check sheet. Measure deck-vs-water for every piece first; the stored biases mean nothing on another shore |
+| a **single prop whose placement is a terrain fit** -- a bridge, a waterfall, a gate in a wall | NOT a pattern. Measure the fit over every instance offered (profile along and across its axis, water level, `z + bias` against the banks, `attr` under and beside it), find what is CONSTANT across instances, and put it in `reference/structures.md` and, if the generator should do it, a spec surface. Seven bridges became `BRIDGE_MODELS` + `BridgeSpec` this way; the constant was `bank - (z + bias)`, which no single instance shows |
+
 ## 1. Check the paste against the map it came from
 
 ```

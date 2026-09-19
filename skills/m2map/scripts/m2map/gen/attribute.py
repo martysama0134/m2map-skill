@@ -138,6 +138,12 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
         authored &= ~corr.core
     cells[authored] |= attr_codec.ATTR_BLOCK
 
+    # The deck of a bridge is the one strip across a river the player walks.
+    # On `metin2_map_a1` it carries neither BLOCK nor WATER under all seven
+    # bridges, while the river 15 m to either side is 91-100% blocked.
+    for fit in getattr(lay, "bridges", []):
+        cells[fit.deck] &= np.uint8(~(attr_codec.ATTR_BLOCK | attr_codec.ATTR_WATER) & 0xFF)
+
     # Named regions declared safe. Note that these are NOT cleared of block:
     # safe-zone and block overlap freely in the corpus -- 923,325 of the
     # 1,282,946 safe-zone cells across the 37 maps that use the flag also carry

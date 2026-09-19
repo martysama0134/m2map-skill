@@ -365,7 +365,8 @@ generic green terrain.
 1. **Slot 1 is a road, painted in dirt.** A visible, looping, 4-6 m wide track web with
    T and Y junctions, painted with an ordinary field texture and flattened under itself.
    No paved road exists in the art. The paved `tile01` appears only as a ~0.2 % town plaza.
-2. **A river and a beach.** 28.9 % water cover, and the beach slots (14/16) carry 10 % of
+2. **A river and a beach -- and bridges over it.** The river on `a1` is one level for the whole map, crossed by three stone and four rope bridges whose banks are fitted to them (`../structures.md` sec 5; `bridges:` in the mapspec), with fishing bays on the inside of a bend (`setpieces: a1_fishing_bays`).
+   28.9 % water cover, and the beach slots (14/16) carry 10 % of
    the ground. `beach sand 01` has 100 % of its tiles within 4 m of water and clump 7.80
    -- the shoreline is one of the few genuinely *solid* regions in the palette.
 3. **The ground is stipple, not regions.** Half of the base texture's connected

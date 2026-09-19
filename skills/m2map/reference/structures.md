@@ -134,6 +134,122 @@ design decision.
 
 ---
 
+## 5. Bridges -- the terrain is built for the bridge
+
+Measured on the seven bridges of `metin2_map_a1`, which the map's author pointed
+out one by one. Rule 23 applies without modification: the model is fixed, so the
+ground is what gets fitted.
+
+### 5.1 Two kinds, anchored differently
+
+| model | key | size | deck runs along | origin | material |
+|---|---|---|---|---|---|
+| `general_obj_suspension bridge01` | `suspension01` | 71.8 x 10.5 m | model **Y** | **one end**, on the lip of a bank | wood and rope |
+| `general_obj_suspension bridge02` | `suspension02` | 47.6 x 10.4 m | model **Y** | one end | wood and rope |
+| `a1-024-10m-bridge` | `a1_stone` | 28.9 x 8.2 m | model **X** | **mid-span**, in the channel | stone arch |
+| `b1-022-10m-bridge` | `b1_stone` | 39.5 x 13.7 m | model **X** | mid-span | stone, flat deck |
+
+Roll is counter-clockwise with north up, so in y-down tile space the span runs
+along `(cos r, -sin r)` for a stone bridge and along `(-sin r, -cos r)` **from
+the origin** for a rope one: roll 270 reaches east, 0 north, 180 south. A stone
+bridge carrying a north-south road has roll 90.
+
+### 5.2 What every one of the seven has
+
+| | stone (n = 3) | rope (n = 4) |
+|---|---|---|
+| **the two banks stand at ONE height** | 2, 2 and 7 cm apart | 10, 36, 56 and 82 cm |
+| approach behind each end | flat within 0-40 cm for 20 m (one slopes 1.7 m) | flat or rising away |
+| where the bank reaches full height | ~2 m inside the bridge end | 4 m inside end A, 8-11 m inside end B |
+| channel, lip to lip | = the bridge length less ~4 m | 57-59 m under the 72 m, 36 m under the 48 m |
+| walls | bank to water in ~4 m | **68-78 deg** |
+| **water below the bank** | **210 / 237 / 488 cm** | **1,033 / 1,706 / 1,751 / 4,027 cm** |
+| bed below the bank | 658 / 895 / 978 cm | 1,554 - 4,346 cm |
+| `z + height_bias` below the bank | **948 / 951** (`a1-024`), **1,706** (`b1-022`) | **0 - 15** |
+| stored `height_bias` | 0, -290, -930 | -15, 0, -5, -5 |
+| road texture at both ends | slot 1 (the road) on all three | grass, rock or road |
+| `attr` under the deck | **0 % block, 0 % water** | **0 % block, 0 % water** |
+| `attr` 15 m up- or downstream | 100 % blocked, 65-87 % water-flagged | 91-100 % blocked |
+
+Three things to take from that table.
+
+**The bias is an output.** The two `a1-024` placements store 0 and -290 and land
+on the same datum to 3 cm, because one origin sits on a bed 290 cm higher than
+the other. What is constant is `bank - (z + bias)`. Compute the bias from the
+bank; never copy one.
+
+**The river is the constant, the banks are the variable.** Four of the seven
+stand over the same water, 15,305 cm -- one level for the whole river. The stone
+bridge there has its banks 4.9 m above it; the rope bridges 17 m and 40 m. So
+the kind of bridge is chosen by **how high the banks stand over the water**:
+2-5 m takes stone, 10 m and up takes rope. A rope bridge over a 3 m bank is a
+hammock over a ditch.
+
+**The deck is the only strip across.** Under all seven, `attr` carries neither
+block nor water, while the river beside it is blocked end to end. Note this is
+not the `0xCA` "bridge, walkable over water" byte of a ford (`attributes.md`):
+under a bridge the water flag is cleared too.
+
+### 5.3 In a mapspec
+
+```yaml
+water:
+  - waypoints: [[0, 128], [128, 128], [255, 128]]
+    width_m: 20
+    surface_z: 15700          # a STATED level makes the river a moat -- see below
+roads:
+  - waypoints: [[60, 0], [60, 128], [60, 255]]     # through the bridge centre, along the span
+    width_m: 5
+    tile_index: 1
+bridges:
+  - {model: a1_stone, centre: [60, 128], roll_deg: 90}
+```
+
+`gen/spec.py` `BRIDGE_MODELS` holds the table above. The terrain stage, last of
+all: sets both banks to `surface_z + water_below_bank` (or `bank_cm` if given, or
+the ground at the two ends if the water has no stated level), levels the
+approaches, and cuts the channel under the span to `bank - bed_below_bank` with
+the cut running 40 m along the river before it fades. The model is hung at
+`bank - datum_below_bank` whatever the ground under its origin is, and the attr
+stage clears the deck. The build log prints one line per bridge and marks it `!`
+if the water is outside 0.6-3x the model's measured clearance, or missing.
+
+**Give the river a `surface_z`.** An auto-levelled river is banded to follow the
+ground it crosses, which is right for a stream and wrong under a bridge: the
+bands sit at different heights, the levelled banks cut across them, and the
+planes hang in the air over the grass (`failure-atlas.md` sec 5). With a stated
+surface the bed is cut to an ABSOLUTE level -- a moat, one continuous plane, 0 %
+exposed edge -- and the waterline falls exactly on the channel edge.
+
+For a rope bridge the surrounding land has to be high already. `bank_cm` will
+raise two mesas out of a plain if asked, and they will look like it.
+
+---
+
+## 6. Shore props hang from the water
+
+The a1 fishing bays -- three rafts, a fish hut and a 32 m pier along 112 m of
+beach -- are the same lesson from the other side:
+
+| prop | deck vs WATER | ground under its origin vs water | stored bias |
+|---|---|---|---|
+| raft `B_general_obj_01_2` (x3) | **-32 / +30 / +50 cm** | -105 ... -140 (standing in the shallows) | +110 / +135 / +155 |
+| hut `B_general_obj_01_1` | +120 | +60, on dry sand 5 m back | +60 |
+| pier `B_general_obj_01` | +300 | +80 at the root, -150 at the far end | +220 |
+
+The biases are whatever put the deck at the surface on that beach. Saved as a
+pattern with `water_cm` (`reference/setpieces/a1_fishing_bays.json`) and stamped
+with the target's surface, each piece keeps its clearance over the water and no
+levelling pad is added -- a pad would flatten the shore it stands on. See
+`reference/setpieces/README.md`.
+
+The shore has to be where the pattern expects it, and on a generated LAKE it is
+not: the bowl is graded over ~0.35 x its width, so the waterline lands 14-40 m
+inside the polygon. Put shore props on a river with a stated `surface_z`, whose
+waterline is its channel edge; a1's bank reaches 1.2 m of water within ~5 m.
+
+---
+
 ## Sources
 
 `catalog/stats-objects.json.by_crc` (roll histograms, `nn_same_crc_cm`),

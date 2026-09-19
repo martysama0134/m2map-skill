@@ -185,7 +185,7 @@ def _candidate_mask(spec: MapSpec, lay: Layout, tier: ObjectTier,
 
 def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarray,
           tiles: np.ndarray, submerged: Optional[np.ndarray] = None,
-          wet: Optional[np.ndarray] = None, bbox_lookup=None):
+          wet: Optional[np.ndarray] = None, bbox_lookup=None, extra=()):
     """Place every tier. Returns ``(records, footprints)``.
 
     ``records`` are whole-map :class:`ObjectRecord`s in map-local cm;
@@ -220,7 +220,7 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
     overlap = _Grid(w, h, cell=4.0)
     OVERLAP_M = 1.5
 
-    for tier in spec.objects:
+    for tier in list(spec.objects) + list(extra):
         # Authored placements bypass every filter. See `ObjectTier.positions`:
         # a landmark is put where the author wants it, and the candidate mask
         # exists to scatter fillers, not to second-guess that.
@@ -238,6 +238,8 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
                 bias_lo, bias_hi = tier.height_bias
                 bias = (bias_lo if bias_hi <= bias_lo
                         else rng.uniform(bias_lo, bias_hi))
+                if tier.absolute_z is not None:
+                    bias = float(tier.absolute_z) - gz
                 records.append(ad.ObjectRecord(
                     x=tx * 100.0, y=-(ty * 100.0), z=gz, crc=tier.crc,
                     yaw=0.0, pitch=0.0,
@@ -251,7 +253,8 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
                 # the roll, not a disc: the b1 hotel is 36 x 20 m and a disc of
                 # its long side seals the square it faces.
                 box = bbox_lookup(tier.crc) if bbox_lookup else None
-                if box and tier.tier != "accent" and min(box[0], box[1]) >= 200.0:
+                if (box and tier.footprint and tier.tier != "accent"
+                        and min(box[0], box[1]) >= 200.0):
                     footprints.append((tx, ty,
                                        FOOTPRINT_SHRINK * box[0] / 200.0,
                                        FOOTPRINT_SHRINK * box[1] / 200.0,

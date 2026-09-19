@@ -131,6 +131,39 @@ def _note_shoreline(b: "Build") -> None:
            % (share, "  <-- it will step" if share > 8.0 else ""))
 
 
+def _bridge_tiers(b) -> list:
+    """One authored tier per bridge, hung at its datum below the fitted bank.
+
+    Kept out of `spec.objects` so the mapspec written beside the map still says
+    `bridges:` and rebuilds to the same thing instead of placing each twice.
+    """
+    from .spec import ObjectTier
+    tiers = []
+    for fit in (b.layout.bridges if b.layout else []):
+        br, m = fit.spec, fit.model
+        ax, ay = br.anchor()
+        datum = fit.bank_cm - float(m["datum_below_bank_cm"])
+        tiers.append(ObjectTier(crc=int(m["crc"]), name="bridge %s" % m["name"],
+                                tier="signature", density=0.0, max_slope=90.0,
+                                positions=[(ax, ay, float(br.roll_deg) % 360.0)],
+                                absolute_z=datum, footprint=False))
+        line = "bridge: %s at (%g, %g) roll %g -- banks %.0f cm, datum %.0f" % (
+            br.model, br.centre[0], br.centre[1], br.roll_deg, fit.bank_cm, datum)
+        if b.water_heights and b.water_cells is not None:
+            cy, cx = int(br.centre[1] // 2), int(br.centre[0] // 2)
+            idx = int(b.water_cells[cy, cx])
+            if idx != 0xFF and idx < len(b.water_heights):
+                drop = fit.bank_cm - b.water_heights[idx]
+                lo, hi = 0.6 * m["water_below_bank_cm"], 3.0 * m["water_below_bank_cm"]
+                line += ", water %.0f cm below the bank (a1: %.0f)" % (drop, m["water_below_bank_cm"])
+                if not lo <= drop <= hi:
+                    line = "! " + line
+            else:
+                line = "! " + line + ", NO WATER under mid-span"
+        b.log.append(line)
+    return tiers
+
+
 def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
         stages: Tuple[str, ...] = STAGES, build: Optional[Build] = None,
         progress: Optional[Callable[[str], None]] = None) -> Build:
@@ -164,7 +197,11 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
                                     scarp_cm=(b.layout.scarp_cm
                                               if b.layout else None),
                                     benches=(b.layout.benches
-                                             if b.layout else None))
+                                             if b.layout else None),
+                                    bridges=(b.layout.bridges
+                                             if b.layout else None),
+                                    channels=(b.layout.channels
+                                              if b.layout else None))
         b.slope_deg = terrain.slope_degrees(b.height_cm)
         # Report the PLAYABLE interior, not the whole grid. The border ridge is
         # a 40 deg wall by design, and including it pushed the reported slope
@@ -210,7 +247,8 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
     if step("objects"):
         b.records, b.footprints, shortfalls = objects.build(
             spec, b.layout, b.height_cm, b.slope_deg, b.tiles,
-            submerged=b.submerged, wet=b.wet, bbox_lookup=bbox_lookup)
+            submerged=b.submerged, wet=b.wet, bbox_lookup=bbox_lookup,
+            extra=_bridge_tiers(b))
         os_ = objects.stats(b.records)
         b.note("objects: %d placed, %d distinct CRCs, roll-snap %.0f%%"
                % (os_.get("count", 0), os_.get("distinct_crcs", 0),

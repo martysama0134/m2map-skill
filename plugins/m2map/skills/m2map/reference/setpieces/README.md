@@ -28,6 +28,7 @@ matched the source render did no generating at all (`placement.md` §6.w,
 | `desert_camp_northwest.json` | same map, about (435, 709) | 83 | centroid | x -38.2 … +16.5 · y -28.9 … +18.9 | 27 cm | opens **north-west** (315) |
 | `desert_camp_northeast.json` | same map, about (158, 981) | 135 | centroid | x -37.5 … +41.6 · y -40.8 … +36.9 | 191 cm | opens **north-east** (45) |
 | `desert_camp_west2.json` | same map, about (429, 1207) | 157 | centroid | x -42.1 … +43.2 · y -50.0 … +33.4 | 70 cm | opens **west** (270) |
+| `a1_fishing_bays.json` | `metin2_map_a1`, author's selection about (359, 375) | 5 | centroid | x -18.9 … +31.8 · y -53.2 … +58.8 | **shore pattern**, `water_cm` 15,305 | water to the **east** (90) |
 
 `desert_camp`: two fence rails of 5 and 6 panels (fence01…05 mixed, steps
 232–521 cm) flanking three tents, a brazier with its stall clutter, banana
@@ -89,6 +90,28 @@ textures:
 setpieces:
   - {pattern: c1_camp_north, anchor: [68, 66]}
 ```
+
+## Shore patterns
+
+`a1_fishing_bays` -- three rafts, a fish hut and a 32 m pier -- is fitted to the
+**water**, not the ground: raft decks within -32 ... +50 cm of the surface while
+the sand under them is a metre down. A pattern saved with `--water-cm <source
+surface>` records that, and
+
+```yaml
+setpieces:
+  - {pattern: a1_fishing_bays, anchor: [110, 128], water_cm: 15880}   # the TARGET's surface
+```
+
+hangs every piece as far over the target's water as it was over the source's
+(`absolute_z` tiers, no footprint -- a pier is walked on) and adds **no pad**.
+Read back on `map_shore_check`: decks at +30 / +300 / +120 / +50 / -32 cm, the
+source's figures exactly, rafts standing in 1.2 m of water.
+
+The shore has to be where the pattern expects it. Build, read the waterline off
+the written `height.raw`, move the anchor or the water, build again
+(`structures.md` sec 6 -- a generated lake's waterline is 14-40 m inside its
+polygon; a river with `surface_z` puts it on the channel edge).
 
 ## The ground under a pattern
 

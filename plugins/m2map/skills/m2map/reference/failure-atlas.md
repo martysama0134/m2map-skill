@@ -1102,6 +1102,28 @@ Ordering note: the carve must come from the **layout** (stage 2), because terrai
 is stage 3 and water is stage 4. The water polygons are known early; only their
 surface levels need the finished terrain.
 
+### Water planes hanging in the air over a bridge's banks
+
+**Cause.** An auto-levelled river is banded along its channel, each band a plane
+over its own reach of the bed, so the levels follow the ground. Level two banks
+to one height across that and the bands upstream sit above them: sheets of water
+at three heights over the grass, 42% of the plane edge exposed.
+
+**Fix.** A river under a bridge is a moat -- give it `WaterSpec.surface_z`. The
+bed is then cut to an absolute level (`Layout.channels`), there is ONE plane, and
+the banks are set from it. This is what `metin2_map_a1` does: one river level,
+15,305 cm, under four of its seven bridges.
+
+### The whole map blocked and painted rock, on flat ground
+
+**Cause.** Reachability was seeded from the free cell nearest the map centre. A
+walled river through the middle of the map put that cell on the river bed; the
+flood filled the channel and every bank was sealed as "stranded". 99% blocked.
+
+**Fix.** The interior is the LARGEST free component (`gen/walkable.py`), which
+is what the corpus figure it quotes was about. A bank with no bridge or road to
+it is still sealed, correctly -- that is what an unreachable bank is.
+
 ### An upper basin that is dry in the file
 
 **Cause.** One plane's overrun written over another body's basin. A plane runs

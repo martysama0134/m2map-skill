@@ -490,6 +490,114 @@ def test_an_overrun_never_takes_another_basin():
     assert (heights[0] > height_cm[50:70, 75:90]).all()
 
 
+def test_the_playable_interior_is_the_largest_ground_not_the_middle():
+    """A moat through the centre of the map must not become "the interior".
+
+    Reachability was seeded from the free cell nearest the map centre. With a
+    walled river running through (128, 128) that cell is the flat river bed: the
+    flood filled the channel, judged every bank unreachable, and the whole map
+    came out blocked (99%) and painted rock. The corpus rule is about the
+    LARGEST component -- its complement is 0.00-0.13% of a map.
+    """
+    from m2map.gen import walkable
+    free = np.zeros((200, 200), bool)
+    free[10:190, 10:90] = True              # the west bank: 14,400 tiles
+    free[10:190, 96:106] = True             # a channel through the centre: 1,800
+    free[10:190, 112:150] = True            # the east bank: 6,840, unconnected
+    keep = walkable.reachable(free)
+    assert keep[100, 50] and not keep[100, 100] and not keep[100, 130]
+    assert keep.sum() == 180 * 80
+    # a seed still wins when one is given
+    seed = np.zeros_like(free)
+    seed[100, 130] = True
+    assert walkable.reachable(free, seed)[100, 130]
+
+
+# --- bridges ---------------------------------------------------------------
+#
+# Measured on the seven bridges of metin2_map_a1. A bridge is not placed ON the
+# terrain, the terrain is built FOR it (rule 23): both banks at one height
+# (2-7 cm apart under the three stone bridges, 10-82 cm under the four rope
+# ones), the channel cut to the span, the model hung at a fixed datum below the
+# bank, and attr cleared under the deck while the river beside it is 91-100%
+# blocked.
+
+MOAT_CM = 16400.0
+
+
+def _bridge_spec(model="a1_stone", roll=90.0):
+    from m2map.gen.spec import BridgeSpec
+    return make_spec(
+        plazas=[], objects=[], regions=[], safezone_regions=[],
+        height_range_cm=(16000.0, 19000.0),          # a gorge needs ground to be cut from
+        roads=[RoadSpec(waypoints=[(128, 0), (128, 128), (128, 255)], width_m=5.0, tile_index=1)],
+        water=[WaterSpec(waypoints=[(0, 128), (128, 128), (255, 128)], width_m=18.0,
+                         surface_z=MOAT_CM)],
+        bridges=[BridgeSpec(model=model, centre=(128.0, 128.0), roll_deg=roll)])
+
+
+def test_bridge_gets_level_banks_a_cut_channel_and_its_datum():
+    from m2map.gen.spec import BRIDGE_MODELS
+    b = pipeline.run(_bridge_spec())
+    m = BRIDGE_MODELS["a1_stone"]
+    half = m["length_cm"] / 200.0                       # metres
+    h = b.height_cm                                     # 2 m vertex grid, [y, x]
+    north, south = h[int((128 - half) / 2), 64], h[int((128 + half) / 2) + 1, 64]
+    assert abs(north - south) <= 10.0, "banks %.0f / %.0f -- a1 measures 2-7 cm" % (north, south)
+    bank = (north + south) / 2.0
+    for d in (4, 10, 18):                               # the approach is flat for 20 m
+        assert abs(h[int((128 - half - d) / 2), 64] - bank) <= 60.0
+        assert abs(h[int((128 + half + d) / 2) + 1, 64] - bank) <= 60.0
+    # the bank comes from the WATER: a1 stone bridges stand 210-237 cm over it
+    assert bank == pytest.approx(MOAT_CM + m["water_below_bank_cm"], abs=10.0)
+    # ...and the moat is one continuous surface, whatever ground it crosses
+    mid = b.submerged[128, 8:248]
+    assert mid.mean() > 0.95, "the river is dry along %.0f%% of its length" % (100 * (1 - mid.mean()))
+    assert len(b.water_heights) == 1 and b.water_heights[0] == MOAT_CM
+    assert not any(line.startswith("! bridge") for line in b.log)
+    bed = h[64, 64]
+    assert bank - bed >= 600.0, "bed only %.0f below the bank; a1 measures 658-978" % (bank - bed)
+
+    rec = [r for r in b.records if r.crc == m["crc"]]
+    assert len(rec) == 1 and rec[0].roll == 90.0
+    assert rec[0].x == pytest.approx(12800.0) and -rec[0].y == pytest.approx(12800.0)
+    datum = rec[0].z + rec[0].height_bias
+    assert datum == pytest.approx(bank - m["datum_below_bank_cm"], abs=15.0)
+
+    a = b.attr_cells
+    deck = a[128 - int(half) + 1:128 + int(half), 126:131]
+    assert not (deck & 0x03).any(), "block or water flag under the deck"
+    beside = a[120:137, 148]                            # the river 20 m downstream
+    assert (beside & 0x03).any()
+    assert any(line.startswith("bridge:") for line in b.log)
+
+
+def test_a_rope_bridge_is_anchored_at_one_end():
+    from m2map.gen.spec import BRIDGE_MODELS
+    m = BRIDGE_MODELS["suspension02"]
+    b = pipeline.run(_bridge_spec(model="suspension02", roll=180.0))   # spans south from its origin
+    rec = [r for r in b.records if r.crc == m["crc"]][0]
+    half = m["length_cm"] / 2.0
+    assert rec.x == pytest.approx(12800.0, abs=1.0)
+    assert -rec.y == pytest.approx(12800.0 - half, abs=1.0)            # the NORTH end of the span
+    h = b.height_cm
+    north, south = h[int((128 - half / 100.0) / 2), 64], h[int((128 + half / 100.0) / 2) + 1, 64]
+    assert abs(north - south) <= 10.0
+    assert rec.z + rec.height_bias == pytest.approx(north - m["datum_below_bank_cm"], abs=15.0)
+    assert north - h[64, 64] >= 1400.0, "a rope bridge hangs over a gorge: a1 measures 15-43 m"
+
+
+def test_bad_bridges_are_caught_before_building():
+    from m2map.gen.spec import BridgeSpec
+    spec = _bridge_spec()
+    spec.bridges = [BridgeSpec(model="drawbridge", centre=(128.0, 128.0))]
+    assert any("bridge model" in p for p in spec.validate())
+    spec.bridges = [BridgeSpec(model="a1_stone", centre=(5.0, 128.0), roll_deg=0.0)]
+    assert any("runs off" in p for p in spec.validate())
+    spec.bridges = [BridgeSpec(model="a1_stone", centre=(128.0, 128.0), roll_deg=50.0)]
+    assert any("multiple of 15" in p for p in spec.validate())
+
+
 # --- border occlusion -----------------------------------------------------
 #
 # Outdoor maps wall their edges so the player cannot see past the world

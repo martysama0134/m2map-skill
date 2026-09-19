@@ -48,26 +48,50 @@ def _grow(mask: np.ndarray) -> np.ndarray:
 
 
 def reachable(free: np.ndarray, seed: np.ndarray | None = None) -> np.ndarray:
-    """4-connected flood fill of ``free``, from the interior outward.
+    """The playable interior: the LARGEST 4-connected component of ``free``,
+    or the one holding ``seed`` when a seed is given.
 
-    Seeded from the free cell nearest the map centre unless ``seed`` is given --
-    the centre is playable ground on every outdoor map by construction, since the
-    border band is what gets sealed.
+    It used to be the component nearest the map centre, on the grounds that the
+    centre is always playable. A moat through the middle of the map disproves
+    that: the nearest free cell was the flat river bed between its two walls, so
+    the channel became "the interior" and both banks were sealed as stranded --
+    99% of the map blocked and painted rock. The corpus figure this module
+    quotes is about the largest component, so that is what it keeps.
+
+    The centre-nearest component is still tried first, because it nearly always
+    IS the largest and one flood then settles it.
     """
     h, w = free.shape
     if not free.any():
         return np.zeros_like(free)
-    if seed is None or not (seed & free).any():
-        ys, xs = np.nonzero(free)
+
+    def flood(start: np.ndarray) -> np.ndarray:
+        seen = start & free
+        frontier = seen.copy()
+        while frontier.any():
+            frontier = _grow(frontier) & free & ~seen
+            seen |= frontier
+        return seen
+
+    if seed is not None and (seed & free).any():
+        return flood(seed)
+
+    left = free.copy()
+    best = np.zeros_like(free)
+    best_n = 0
+    while True:
+        n_left = int(left.sum())
+        if n_left <= best_n:                 # nothing unvisited can beat it
+            return best
+        ys, xs = np.nonzero(left)
         i = int(np.argmin((ys - h // 2) ** 2 + (xs - w // 2) ** 2))
-        seed = np.zeros_like(free)
-        seed[ys[i], xs[i]] = True
-    seen = seed & free
-    frontier = seen.copy()
-    while frontier.any():
-        frontier = _grow(frontier) & free & ~seen
-        seen |= frontier
-    return seen
+        start = np.zeros_like(free)
+        start[ys[i], xs[i]] = True
+        comp = flood(start)
+        n = int(comp.sum())
+        if n > best_n:
+            best, best_n = comp, n
+        left &= ~comp
 
 
 def terrain_block(spec: MapSpec, slope_deg: np.ndarray, shape, roads=None,

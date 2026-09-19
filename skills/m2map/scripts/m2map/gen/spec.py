@@ -15,6 +15,7 @@ Stored as YAML when PyYAML is available, JSON otherwise; both load through
 from __future__ import annotations
 
 import json
+import math
 import pathlib
 import random
 import zlib
@@ -125,6 +126,15 @@ class ObjectTier:
     name: str = ""
     #: signature | filler | accent
     tier: str = "filler"
+    #: For authored `positions` only: hang the prop at this absolute height
+    #: (world cm) instead of a bias over the ground -- `height_bias` becomes
+    #: `absolute_z - ground`. A bridge is fitted to its banks, not to the river
+    #: bed under its origin: two `a1-024` placements store biases of 0 and -290
+    #: and land on the same datum to 3 cm.
+    absolute_z: Optional[float] = None
+    #: stamp the model's rectangle into attr.atr (authored buildings). False for
+    #: a bridge, whose deck is the one place the player must be able to walk.
+    footprint: bool = True
     #: placements per 100 m^2 (0 for `count`-driven props)
     density: float = 0.0
     #: exact number to place, when the prop is a landmark rather than scatter
@@ -304,6 +314,86 @@ class PlazaSpec:
     safezone: bool = True
 
 
+#: The bridge models, with the fit each one was measured at on the seven
+#: bridges of `metin2_map_a1` (`reference/structures.md` sec 5). Lengths are
+#: the catalog bounding boxes. `axis` is the model axis the deck runs along and
+#: `origin` says where on the span the model's origin sits -- the stone bridges
+#: are placed by their middle, in the channel; the rope bridges by ONE END,
+#: standing on the lip of a bank and reaching out along +Y.
+#:
+#: `datum_below_bank_cm` is `bank - (z + height_bias)`: 951 / 948 on the two
+#: `a1-024` placements whose stored biases are 0 and -290, which is the point --
+#: the bias is whatever makes the datum right, never a constant.
+BRIDGE_MODELS: Dict[str, Dict[str, Any]] = {
+    "a1_stone": {"crc": 359886641, "name": "a1-024-10m-bridge", "length_cm": 2893.0,
+                 "width_cm": 818.0, "axis": "x", "origin": "centre",
+                 "datum_below_bank_cm": 950.0, "lip_inset_m": 2.0,
+                 "bed_below_bank_cm": 820.0, "water_below_bank_cm": 225.0},
+    "b1_stone": {"crc": 2349765063, "name": "b1-022-10m-bridge", "length_cm": 3946.0,
+                 "width_cm": 1369.0, "axis": "x", "origin": "centre",
+                 "datum_below_bank_cm": 1706.0, "lip_inset_m": 2.0,
+                 "bed_below_bank_cm": 900.0, "water_below_bank_cm": 490.0},
+    "suspension01": {"crc": 59728437, "name": "general_obj_suspension bridge01",
+                     "length_cm": 7177.0, "width_cm": 1045.0, "axis": "y", "origin": "end",
+                     "datum_below_bank_cm": 5.0, "lip_inset_m": 6.0,
+                     "bed_below_bank_cm": 2000.0, "water_below_bank_cm": 1500.0},
+    "suspension02": {"crc": 1244865174, "name": "general_obj_suspension bridge02",
+                     "length_cm": 4759.0, "width_cm": 1044.0, "axis": "y", "origin": "end",
+                     "datum_below_bank_cm": 5.0, "lip_inset_m": 6.0,
+                     "bed_below_bank_cm": 2000.0, "water_below_bank_cm": 1500.0},
+}
+
+
+@dataclass
+class BridgeSpec:
+    """A bridge, and the ground built for it.
+
+    Rule 23 again: the prop is fixed, the terrain is not. On `metin2_map_a1` the
+    two banks of every bridge stand at ONE height (2-7 cm apart under the stone
+    ones, 10-82 cm under the rope ones), the approach is flat for 20 m behind
+    each end, the channel is cut lip-to-lip to the span, and `attr.atr` is
+    cleared of block AND water under the deck while the river 15 m to either
+    side is 91-100% blocked. None of that comes from placing a model on a river.
+
+    ``centre`` is mid-span in tile metres whichever way the model is anchored;
+    ``roll_deg`` is the model's roll (multiples of 15). The span runs along
+    model X for the stone bridges and along +Y from the origin for the rope
+    ones, so a stone bridge carrying a north-south road has roll 90 and a rope
+    bridge reaching south from its anchor has roll 180. Route the road through
+    ``centre`` along the span; put a river under it.
+    """
+
+    model: str
+    centre: Tuple[float, float] = (0.0, 0.0)
+    roll_deg: float = 0.0
+    #: absolute bank height, world cm. None = the stated surface of the water
+    #: under mid-span plus the model's measured clearance (`WaterSpec.surface_z`
+    #: -- give the river one, it is what makes it a moat); failing that, the
+    #: ground at the two ends, averaged.
+    bank_cm: Optional[float] = None
+    #: how far the levelled approach reaches behind each end
+    approach_m: float = 20.0
+
+    def __post_init__(self):
+        self.centre = (float(self.centre[0]), float(self.centre[1]))
+
+    def span_dir(self) -> Tuple[float, float]:
+        """Unit vector along the span in y-down tile space."""
+        t = math.radians(self.roll_deg)
+        if BRIDGE_MODELS[self.model]["axis"] == "x":
+            return (math.cos(t), -math.sin(t))
+        return (-math.sin(t), -math.cos(t))
+
+    def anchor(self) -> Tuple[float, float]:
+        """Where the model's origin goes, tile metres."""
+        m = BRIDGE_MODELS[self.model]
+        if m["origin"] == "centre":
+            return self.centre
+        dx, dy = self.span_dir()
+        half = m["length_cm"] / 200.0
+        return (self.centre[0] - dx * half, self.centre[1] - dy * half)
+
+
 @dataclass
 class GroundStampSpec:
     """Paint copied from under a set-piece -- what `expand` makes of a
@@ -359,6 +449,10 @@ class SetPieceSpec:
     #: paint the pattern's own ground under it, where the palette has the
     #: textures (see `GroundStampSpec`). False leaves the ground to the map.
     ground: bool = True
+    #: For a SHORE pattern (one saved with `water_cm`): the surface of the water
+    #: it is being put on, world cm. Every piece then hangs as far over this
+    #: water as it did over the source's, and no levelling pad is added.
+    water_cm: Optional[float] = None
 
     def __post_init__(self):
         self.anchor = tuple(self.anchor)
@@ -387,6 +481,7 @@ class MapSpec:
     regions: List[RegionSpec] = field(default_factory=list)
     plazas: List[PlazaSpec] = field(default_factory=list)
     scarps: List[ScarpSpec] = field(default_factory=list)
+    bridges: List[BridgeSpec] = field(default_factory=list)
     setpieces: List[SetPieceSpec] = field(default_factory=list)
     #: filled by `setpiece.expand`; written out so the map rebuilds from its spec
     ground_stamps: List[GroundStampSpec] = field(default_factory=list)
@@ -521,6 +616,22 @@ class MapSpec:
                     out.append("object %s has a position (%.0f, %.0f) outside "
                                "the %dx%d m map"
                                % (o.name or o.crc, px, py, *span_tiles))
+        for br in self.bridges:
+            m = BRIDGE_MODELS.get(br.model)
+            if m is None:
+                out.append("unknown bridge model %r (known: %s)"
+                           % (br.model, ", ".join(sorted(BRIDGE_MODELS))))
+                continue
+            if br.roll_deg % 15:
+                out.append("bridge %s roll %g is not a multiple of 15" % (br.model, br.roll_deg))
+            reach = m["length_cm"] / 200.0 + br.approach_m
+            dx, dy = br.span_dir()
+            for sgn in (-1.0, 1.0):
+                ex, ey = br.centre[0] + sgn * dx * reach, br.centre[1] + sgn * dy * reach
+                if not (0 <= ex < span_tiles[0] and 0 <= ey < span_tiles[1]):
+                    out.append("bridge %s at (%g, %g) runs off the %dx%d m map with its "
+                               "approach" % (br.model, br.centre[0], br.centre[1], *span_tiles))
+                    break
         for sc in self.scarps:
             if len(sc.waypoints) < 2:
                 out.append("scarp with %d waypoint(s) -- need at least 2"
@@ -626,6 +737,7 @@ class MapSpec:
         d["regions"] = [RegionSpec(**r) for r in d.get("regions", [])]
         d["plazas"] = [PlazaSpec(**p) for p in d.get("plazas", [])]
         d["scarps"] = [ScarpSpec(**x) for x in d.get("scarps", [])]
+        d["bridges"] = [BridgeSpec(**x) for x in d.get("bridges", [])]
         d["setpieces"] = [SetPieceSpec(**x) for x in d.get("setpieces", [])]
         d["ground_stamps"] = [GroundStampSpec(**x) for x in d.get("ground_stamps", [])]
         d["objects"] = [ObjectTier(**o) for o in d.get("objects", [])]

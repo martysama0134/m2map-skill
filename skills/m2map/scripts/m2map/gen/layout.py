@@ -14,7 +14,7 @@ the corpus paints its splat at 1 m, not at the 2 m cell (measured
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Sequence, Tuple
+from typing import Optional, Dict, List, Sequence, Tuple
 
 import numpy as np
 
@@ -197,6 +197,27 @@ class Plaza:
 
 
 @dataclass
+class BridgeFit:
+    """A `BridgeSpec` rasterised: where to level, where to cut, where to walk."""
+
+    spec: object
+    model: dict
+    #: 0..1 pull toward the bank height: the two approaches and the abutments
+    bank_weight: np.ndarray
+    #: the solid core of the two approaches, for reading the bank level back
+    bank_core: np.ndarray
+    #: 0..1 pull DOWN to the bed: 1 across the gap, ramped at the two walls,
+    #: faded along the river so the cut joins the channel
+    cut_weight: np.ndarray
+    #: the walkable deck
+    deck: np.ndarray
+    #: the stated surface of the water under mid-span, if it has one
+    water_cm: Optional[float] = None
+    #: filled in by the terrain stage
+    bank_cm: float = 0.0
+
+
+@dataclass
 class Layout:
     """Everything stage 2 produces, in tile space."""
 
@@ -221,6 +242,12 @@ class Layout:
     benches: List[Tuple[np.ndarray, float]] = field(default_factory=list)
     #: True where the water body is a lake (one flat surface, not banded).
     lake_mask: np.ndarray | None = None
+    #: ``(grade, surface_cm, depth_cm)`` per river with a STATED surface: the
+    #: bed is cut to an absolute level under it, not relative to the ground it
+    #: crosses. Tile space; ``grade`` is 0 at the shore and 1 mid-channel.
+    channels: List[Tuple[np.ndarray, float, float]] = field(default_factory=list)
+    #: One per `BridgeSpec` -- the masks its terrain fit and attr need.
+    bridges: List["BridgeFit"] = field(default_factory=list)
     #: 0..1 suppression of the border ridge, so water can leave the map.
     ridge_gap: np.ndarray | None = None
 
@@ -336,7 +363,53 @@ def build(spec: MapSpec) -> Layout:
             depth = max(120.0, min(600.0, eff_w * 22.0))
             inner = _distance_inside(mask)
             grade = np.clip(inner / max(1.0, eff_w * 0.35), 0.0, 1.0)
-            carve = np.maximum(carve, grade * depth * mask)
+            if wat.surface_z is not None and not wat.lake:
+                # A river with a STATED level is a moat: one flat surface, so the
+                # bed has to be absolute too. Carved relative to the ground it
+                # crosses, the channel climbs every rise with it and the single
+                # plane is buried on the hills and floods the hollows. On
+                # `metin2_map_a1` the river is one level (15,305 cm) under four
+                # of its seven bridges; it is the BANKS that vary.
+                lay.channels.append((grade * mask, float(wat.surface_z), depth))
+            else:
+                carve = np.maximum(carve, grade * depth * mask)
+
+    # Bridges. In span coordinates: s along the deck from mid-span, t along the
+    # river. See `BridgeSpec` for the measurements behind each number.
+    if spec.bridges:
+        from .spec import BRIDGE_MODELS
+        ys, xs = np.mgrid[0:shape[0], 0:shape[1]]
+        for br in spec.bridges:
+            m = BRIDGE_MODELS[br.model]
+            dx, dy = br.span_dir()
+            px, py = xs + 0.5 - br.centre[0], ys + 0.5 - br.centre[1]
+            s_ = px * dx + py * dy
+            t_ = -px * dy + py * dx
+            half = m["length_cm"] / 200.0
+            wid = m["width_cm"] / 200.0
+            lip = half - m["lip_inset_m"]                # the bank reaches full height here
+            a_s, a_t = np.abs(s_), np.abs(t_)
+            # banks: from the lip out to the end of the approach, a road-and-a-bit wide
+            along = np.clip((a_s - (lip - 1.0)) / 1.0, 0.0, 1.0) * \
+                np.clip((half + br.approach_m + 8.0 - a_s) / 8.0, 0.0, 1.0)
+            across = np.clip((wid + 10.0 - a_t) / 6.0, 0.0, 1.0)
+            bank_w = along * across
+            core = (a_s >= lip) & (a_s <= half + br.approach_m) & (a_t <= wid + 2.0)
+            # the cut: walls ramp over 3 m inside the lip, and the gorge runs
+            # along the river well past the deck before it fades
+            wall = np.clip((lip - a_s) / 3.0, 0.0, 1.0)
+            run = np.clip((wid + 40.0 - a_t) / 24.0, 0.0, 1.0)
+            cut_w = wall * run
+            deck = (a_s <= half) & (a_t <= max(1.0, wid - 1.0))
+            under = None
+            cy_, cx_ = int(br.centre[1]), int(br.centre[0])
+            for wmask, wsurf in zip(lay.water_masks, lay.water_surfaces):
+                if wsurf is not None and wmask[cy_, cx_]:
+                    under = float(wsurf)
+                    break
+            lay.bridges.append(BridgeFit(spec=br, model=m, bank_weight=bank_w,
+                                         bank_core=core, cut_weight=cut_w, deck=deck,
+                                         water_cm=under))
 
     # Scarps: a signed cut that leaves one side of a line standing and drops the
     # other. Signed distance comes from the cross product against the nearest

@@ -1,0 +1,79 @@
+{
+ "format": "m2map-setpiece/1",
+ "name": "a1_fishing_bays",
+ "source_map": "metin2_map_a1",
+ "source_point_m": [
+  359.086835938,
+  374.655371094
+ ],
+ "radius_m": 63.0,
+ "pivot": "centroid",
+ "pivot_m": [
+  359.0868,
+  374.6554
+ ],
+ "rotation_deg": 0.0,
+ "notes": "Fishing bays on the west bank of the a1 river, hand-selected by the map author (5 records): three rafts, a fish hut and a 32 m pier with a shed, strung along 112 m of beach on the inside of a bend. WATER IS TO THE EAST (facing 90). A SHORE pattern: every piece is fitted to the water surface (15,305 cm at the source), not to the ground -- raft decks -32..+50 cm of the surface standing in 1.0-1.4 m of water, the hut +120 on dry sand 5 m back, the pier +300 starting on the beach and running out over 1.5 m of water. Stamp with water_cm = the target's surface; no pad. Ground not saved: beach sand 01/03 with a pebble band, 10 m wide. To put the water on bearing B, rotate_deg = (90 - B) mod 360.",
+ "count": 5,
+ "extent_m": [
+  -18.85,
+  31.84,
+  -53.24,
+  58.8
+ ],
+ "relief_cm": 222.0,
+ "headings": {
+  "270": 2,
+  "90": 1,
+  "135": 1,
+  "225": 1
+ },
+ "pieces": [
+  {
+   "dx": -5.5372,
+   "dy": 7.7578,
+   "roll": 270.0,
+   "bias": 135.0,
+   "crc": 234517142,
+   "z": 15199.724609,
+   "name": "B_general_obj_01_2"
+  },
+  {
+   "dx": -18.8529,
+   "dy": 30.2322,
+   "roll": 90.0,
+   "bias": 220.0,
+   "crc": 3515438753,
+   "z": 15385.464844,
+   "name": "B_general_obj_01"
+  },
+  {
+   "dx": 0.0369,
+   "dy": -43.549,
+   "roll": 135.0,
+   "bias": 60.0,
+   "crc": 3142948920,
+   "z": 15364.754883,
+   "name": "B_general_obj_01_1"
+  },
+  {
+   "dx": -7.4828,
+   "dy": 58.799,
+   "roll": 270.0,
+   "bias": 155.0,
+   "crc": 234517142,
+   "z": 15200.012695,
+   "name": "B_general_obj_01_2"
+  },
+  {
+   "dx": 31.836,
+   "dy": -53.2399,
+   "roll": 225.0,
+   "bias": 110.0,
+   "crc": 234517142,
+   "z": 15163.4375,
+   "name": "B_general_obj_01_2"
+  }
+ ],
+ "water_cm": 15305.0
+}
