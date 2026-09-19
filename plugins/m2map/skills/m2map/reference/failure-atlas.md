@@ -947,6 +947,46 @@ The general shape: a pattern carries what `areadata.txt` carries. Paint, the
 levelling pad, collision and the keep-out around it live in other files and the
 spec has to say them -- `reference/setpieces/README.md` has the five lines.
 
+## 3.12 A merged map audits clean and is torn along every join
+
+`map_merge_test_01` -- `metin2_map_guild_01/02/03`, 2x2 each, stacked 2x6 by
+MapForge -- read **zero findings** and rendered with slits of sky along both
+joins. Every file is valid. The fault is *between* files: a sector's bottom row
+and its southern neighbour's top row are the same vertices, a merge copies each
+sector verbatim, and the two source maps never agreed about that row.
+
+| Border | Mean disagreement | Max |
+|---|---|---|
+| `000001`\|`000002` | 2,466 cm | 4,072 |
+| `001001`\|`001002` | 2,697 cm | 5,220 |
+| `000003`\|`000004` | 4,047 cm | 6,720 |
+| `001003`\|`001004` | 1,712 cm | -- |
+| inside one source map (`000000`\|`000001`) | 0 | 0 |
+
+Across the corpus one border in 142 maps exceeds 50 cm mean
+(`metin2_guild_war4`, 344 cm -- a real crack). The audit now compares
+neighbours: `M2MAP-HGT-001`.
+
+Three traps met while fixing it (`modes/readapt.md`, rule 28):
+
+- **Levelling to the map's median.** `guild_01` is tiered -- 17,320 and
+  19,720 cm. Its walkable median is 19,434; the island the road lands on is at
+  17,320. Shifting by the median sinks that island 21 m under its neighbour.
+  Level to the floor within ~120 m of the mouth. Not to the mouth either: the
+  pass into `guild_03` lands on a side terrace.
+- **A datum shift is three writes in two units.** Terrain and water layer
+  heights are RAW, object `z` is centimetres, and the height bias is none of
+  them -- it is an offset from a ground that moved with it. Check it from disk
+  with relations, not values: pond depth and object-minus-ground, before and
+  after (−7 / 0 / 4 cm at p5/p50/p95, both).
+- **A record's sector is not its position.** One record of 513 stood outside the
+  source map whose `areadata.txt` lists it. Re-seating it against "its own"
+  ground read zero terrain and moved it 204 m. Such a record takes the datum
+  shift only.
+
+**The tell:** `MapSize` is a multiple of the source maps' size and the texture
+set name is three names joined with `_merged`.
+
 ## 4. Unit boundaries — the faults a round trip cannot see
 
 Every entry above describes a file that is wrong in a way some check can notice.

@@ -45,6 +45,12 @@ statistics so the addition matches. Do not fill with flat default terrain.
 
 ## Afterwards
 
+**A merge is step one.** The result is valid and is not yet one map: the shared
+border vertices of the joined sectors disagree (slits in the terrain,
+`M2MAP-HGT-001`), each source map still has its sealed mountain ring, and each
+still stands at its own datum. `modes/readapt.md` is step two — level, weld, cut
+a pass, run a road.
+
 Audit the result, render previews, and look specifically at the **seams**: the
 sector grid overlay exists for this. Height discontinuity at a join is the most
 likely merge artefact, followed by a texture that changed identity because a

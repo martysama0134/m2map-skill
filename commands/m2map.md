@@ -1,6 +1,6 @@
 ---
-description: Generate, improve, audit, merge, reskin or populate Metin2 client maps, or register a group of objects as a reusable pattern
-argument-hint: "[generate|improve|audit|merge|reskin|server|register] <description, map path or pasted areadata>"
+description: Generate, improve, audit, merge, readapt, reskin or populate Metin2 client maps, or register a group of objects as a reusable pattern
+argument-hint: "[generate|improve|audit|merge|readapt|reskin|server|register] <description, map path or pasted areadata>"
 ---
 
 Invoke the `m2map` skill with: $ARGUMENTS
@@ -18,3 +18,4 @@ If no arguments were given, ask which of these the user wants:
 - **(e) Reskin** a map to another biome
 - **(f) Server** files — spawns and registration
 - **(g) Register** a group of objects as a reusable pattern
+- **(h) Readapt** a merged map — level it, close the joins, connect the pieces with a road

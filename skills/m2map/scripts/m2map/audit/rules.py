@@ -407,6 +407,18 @@ def audit(map_dir, corpus_root=None, property_crcs: Optional[Iterable[int]] = No
             except Exception:                                # noqa: BLE001
                 pass
 
+    # --- sector borders -------------------------------------------------
+    for na, nb, mean_cm, max_cm in torn_borders(terrain_root, sector_names):
+        out.append(Finding(
+            "M2MAP-HGT-001", "major", "%s/%s|%s" % (terrain_root.name, na, nb),
+            "slits in the terrain you can see the sky through, along a sector line",
+            "The two sectors disagree about their SHARED border vertices by "
+            "%.0f cm on average (max %.0f). Corpus borders agree on 99.86%% of "
+            "vertices; a whole border torn like this is two maps merged side by "
+            "side and never joined." % (mean_cm, max_cm),
+            "readapt_map.py welds the borders, levels the source maps and cuts "
+            "a pass between them (modes/readapt.md)."))
+
     # --- server_attr ----------------------------------------------------
     saf = root / "server_attr"
     if saf.exists():
@@ -446,6 +458,33 @@ def audit(map_dir, corpus_root=None, property_crcs: Optional[Iterable[int]] = No
 
     order = {s: i for i, s in enumerate(SEVERITIES)}
     out.sort(key=lambda f: (order.get(f.severity, 9), f.rule, f.where))
+    return out
+
+
+#: Mean disagreement along one whole border above which it is a merge seam and
+#: not an authoring crack. Merged guild maps measured 1,712-4,047 cm.
+TORN_BORDER_CM = 50.0
+
+
+def torn_borders(terrain_root, sector_names) -> List[Tuple[str, str, float, float]]:
+    """``(sector, neighbour, mean_cm, max_cm)`` for every border whose two copies
+    of the shared vertices were never the same terrain."""
+    wins = {}
+    for name in sector_names:
+        try:
+            hm = height_codec.read_height(pathlib.Path(terrain_root) / name / "height.raw")
+        except (OSError, ValueError):
+            continue
+        wins[int(name[:3]), int(name[3:])] = hm.raw[1:130, 1:130].astype(np.float64) * 0.5
+    out = []
+    for (sx, sy), w in sorted(wins.items()):
+        for (nx, ny), mine, theirs in (((sx + 1, sy), w[:, -1], lambda n: n[:, 0]),
+                                       ((sx, sy + 1), w[-1, :], lambda n: n[0, :])):
+            if (nx, ny) in wins:
+                d = np.abs(mine - theirs(wins[nx, ny]))
+                if d.mean() > TORN_BORDER_CM:
+                    out.append(("%03d%03d" % (sx, sy), "%03d%03d" % (nx, ny),
+                                float(d.mean()), float(d.max())))
     return out
 
 

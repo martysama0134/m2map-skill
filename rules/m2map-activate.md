@@ -12,7 +12,7 @@ touching the map file formats themselves.
 > "make me a snowy mountain map", "generate a 4x4 field map with a road",
 > "the north sector looks empty", "widen this road", "add undergrowth",
 > "why do my objects not show up", "players fall through the floor here",
-> "merge these two maps", "make a desert version of this map",
+> "merge these two maps", "connect the merged maps with a road", "make a desert version of this map",
 > "add spawns to this map", "check this map for errors"
 
 **By file** — the user references any of these:
@@ -38,7 +38,8 @@ Read these before writing anything, in this order:
    arithmetic, the positional-array text grammar, textureset slot 0, the YPRT
    property container. Skipping this produces confidently wrong output.
 3. The mode file under `skills/m2map/modes/` that matches the task —
-   `generate`, `improve`, `audit`, `merge`, `reskin`, `server` or `register`.
+   `generate`, `improve`, `audit`, `merge`, `readapt`, `reskin`, `server` or
+   `register`.
 4. Whatever that mode tells you to load from `skills/m2map/reference/`.
 
 The byte-level format specification is vendored at

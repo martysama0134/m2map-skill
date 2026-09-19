@@ -5,7 +5,8 @@ description: >
   Metin2 client maps — user says "/m2map", "make a map", "generate a map",
   "add a road", "the north sector is empty", "why do my objects not show up",
   "register this pattern", "save this group of objects", pasted AreaDataFile text,
-  "players fall through the floor", "merge these maps", "add spawns"; provides a
+  "players fall through the floor", "merge these maps", "connect these merged
+  maps", "there are gaps where the maps join", "add spawns"; provides a
   map folder or a screenshot of terrain to match; or references any map file
   (setting.txt, height.raw, tile.raw, attr.atr, water.wtr, areadata.txt,
   server_attr, a textureset, an .msenv, a .pr* property file, an XXXYYY sector
@@ -22,7 +23,8 @@ Dispatched as a subagent with a specific task? Skip mode detection and execute t
 
 Priority order:
 
-1. **Explicit keyword**: args start with `generate`, `improve`, `audit`, `merge`, `reskin`, `server` or `register` → that mode
+1. **Explicit keyword**: args start with `generate`, `improve`, `audit`, `merge`, `readapt`, `reskin`, `server` or `register` → that mode
+1b. **One map that is already a merge** — "connect them", "join the maps with a road", "gaps / slits where the maps meet", "the merged maps are at different heights", or an audit showing `M2MAP-HGT-001` → **readapt mode**. Merging is step one and MapForge does it; readapt is step two
 1a. **Pasted `areadata.txt` text** (`AreaDataFile`, `Start Object000` …) or "register / save this group / pattern for later" → **register mode**. A paste is a selection to keep, not a map to audit
 2. **Symptom report**: args contain a visible-fault phrase ("objects don't show", "falls through the floor", "blocked in open ground", "error texture", "map won't load", "seams", "blank minimap", "walks on water") → **audit mode first**, then `improve` if a fix is wanted
 3. **Two or more map paths**, or "combine"/"stitch"/"expand" → merge mode
@@ -32,7 +34,7 @@ Priority order:
 7. **Spawn words** ("regen", "spawns", "npc", "boss", "stone", "add monsters") → server mode
 8. **Text description of a place** → generate mode
 9. **Image attached** → generate mode, using the image only for *style cues* (biome, density, palette feel). See "Screenshots" below.
-10. **No args**: ask — "(a) Generate a new map, (b) Improve an existing one, (c) Audit for problems, (d) Merge or expand, (e) Reskin to another biome, (f) Add spawns, (g) Register a group of objects as a reusable pattern" — then dispatch
+10. **No args**: ask — "(a) Generate a new map, (b) Improve an existing one, (c) Audit for problems, (d) Merge or expand, (e) Reskin to another biome, (f) Add spawns, (g) Register a group of objects as a reusable pattern, (h) Readapt a merged map — level it, close the joins, connect the pieces" — then dispatch
 
 Read the matching mode file from `modes/` adjacent to this SKILL.md.
 
@@ -49,6 +51,7 @@ Read the matching mode file from `modes/` adjacent to this SKILL.md.
 | Generating a new map | `reference/archetypes/README.md` → walk its selection tree → the one archetype doc |
 | Any placement decision | `reference/placement.md` — the family's section |
 | Registering a new pattern | `modes/register.md` — verify the paste, read the ground, render source and copy |
+| Joining the pieces of a merged map | `modes/readapt.md` — blocks from the tears, the three-layer datum shift, weld, pass, road |
 | A bridge, a moat, a pier or anything at a waterline | `reference/structures.md` §5-6 — the measured fit, `BRIDGE_MODELS`, shore patterns |
 | Reusing a shipped compound (camp, town square, yard, shrine) | `reference/setpieces/README.md` — the patterns, and how to turn and stamp one |
 | Choosing or composing a palette | `reference/textures.md` |
@@ -120,6 +123,10 @@ All modes, all generated output. Reference files cite these by number — number
 25. **A compound is copied whole, not assembled — and turned only as a block.** Three generated versions of the desert camp — posts on a ring, an arc at the corpus median pitch, a "run" chained from nearby records — each read as debris while every statistic passed; the copy that matched the reference render did no generating: every record within 32 m of (333, 307) in `metin2_map_n_desert_01`, offsets, rolls and height biases verbatim (`gen/setpiece.py`; the pattern is `reference/setpieces/desert_camp.json`, about its centroid — in a mapspec, `setpieces: [{pattern: desert_camp, anchor: [x, y], rotate_deg: θ}]`). To face it another way use `SetPiece.rotated(θ)`, θ a multiple of 15: roll increases **counter-clockwise with north up** (1,681 corpus fences: `roll + atan2(Δy_tile, Δx_tile)` constant at concentration 0.84, the difference 0.08), so the y-down offsets turn clockwise — turn both the same way and the rails come apart while every spacing statistic still passes. Level a pad under the pivot, and render the source at the same camera before judging the copy. `reference/placement.md` §6.w, `reference/setpieces/README.md`, `failure-atlas.md` §3.10.
 26. **A pattern is records, and the ground if it was saved with them.** Copying a compound (rule 25) copies what `areadata.txt` holds, plus -- when the pattern has a `ground` -- the paint under it, keyed by texture path and painted only where the map's palette declares that texture (declare it at `weight: 0.0`; a `! ground: ... no slot for` line means it was skipped). The safezone disc, the road spokes, the levelling pad and the collision are still the spec's to supply: a `PlazaSpec` on the same anchor, `pad_radius_m` past the largest footprint on the rim. Scatter keeps off plazas and pads, and authored buildings block their own rectangle with the road kept open through it -- the b1 hotel stands on its road. `reference/setpieces/README.md`, `failure-atlas.md` §3.11.
 27. **A bridge is fitted to the water, and the banks to the bridge.** Seven bridges on `metin2_map_a1`: both banks at ONE height (2-7 cm apart under stone, 10-82 cm under rope), the channel cut lip-to-lip to the span, `attr` cleared of block AND water under the deck while the river beside it is 91-100% blocked. The river is one level and the banks vary -- **2-5 m over the water takes a stone bridge, 10 m and up a rope one** -- and `bank − (z + bias)` is a constant per model (948/951 cm on two `a1-024` whose stored biases are 0 and −290), so the bias is computed, never copied. Use `bridges:` with a river that has a `surface_z`; an auto-levelled river is banded to the ground and its planes hang over the levelled banks. Shore props (rafts, piers) follow the same rule from the other side: a pattern saved with `water_cm` is stamped against the target's surface. `reference/structures.md` §5-6.
+
+28. <EXTREMELY-IMPORTANT>
+    **A merge is not a map: the borders are torn, the rings are double and the datums differ.** Sectors are copied verbatim, so each keeps its OWN copy of the shared border vertices — 1,712–4,047 cm apart on average on three merged guild maps, against 99.86% agreement in the corpus — and the terrain renders with slits. Every file is valid, so the audit passed until `M2MAP-HGT-001` compared neighbours. `scripts/readapt_map.py` recovers the source maps from the tears, then: **a datum shift moves terrain, water layers and object `z` by the same number — never the height bias**, and levels to the floor the road *joins* (a tiered map has no single floor; the median would have sunk `guild_01`'s landing island 21 m); borders are welded to the mean with a 16-cell fade that spares walkable ground; the pass is the cheapest path between the two floors, cut by *clamping* the ground to `target ± bank` so one formula cuts rock and fills a moat; road, ground and cliff slots are read **per source map**, because a merged palette is a union. Verify from disk: tear 0, one walkable component, pond depths and object-to-ground offsets unchanged. `modes/readapt.md`, `failure-atlas.md` §3.12.
+    </EXTREMELY-IMPORTANT>
 
 ## Verification — not optional
 
