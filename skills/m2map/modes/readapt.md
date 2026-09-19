@@ -17,6 +17,33 @@ Measured on `map_merge_test_01`, three 2x2 guild maps stacked 2x6:
 The audit reports the first as `M2MAP-HGT-001`. Before that rule existed the
 merged map audited **clean** — every file was valid; the fault is between files.
 
+The second map it was run on, `map_merge_test_02` (`n_desert_01` beside
+`n_flame_01`, 11x6), broke the first version three ways — each is marked **(02)**
+below. Expect the third map to find a fourth: the procedure is the part to keep.
+
+## Procedure
+
+1. `python scripts/audit_map.py <map>` — `M2MAP-HGT-001` lines confirm it is a
+   merge and name the torn borders. No such line: it is one map, use `improve`.
+2. `python scripts/readapt_map.py <map> --out <map>_readapt`. Exit 1 means a
+   `problems` entry or a floor that did not join — read the report, do not retry
+   blind.
+3. Read `_readapt.json` against what you know of the map: are `blocks` the
+   source maps? Is each `level_cm` plausible? `grade_pct` ≤ 18? `joined` all
+   true, `tear_after_cm` 0? `removed` objects few, `stray` near zero?
+4. Look at `_preview/readapt_route.png` — where the pass went, and what it
+   crossed — then `readapt_tile.png` at the pass.
+5. Copy `<out>/textureset/*.txt` beside the editor, render every link **before
+   and after with one camera** (`--target` = midpoint of `from_tile`/`to_tile`
+   ×100, `--cam 45,0,9000`), plus one long shot down an open join.
+6. Show the user the renders. Whatever they correct becomes code, a line in this
+   file, a test and a failure-atlas entry — then `tools/sync.py`,
+   `tests/run-all.sh`, commit.
+
+If it breaks, the three questions that found every fault so far: *are the blocks
+right* (`MergedMap.torn_borders` / `.blocks`), *is there floor on the join*
+(`_cell_free` along the seam column), *how long is the path* (`route`).
+
 ## Run it
 
 ```
@@ -36,6 +63,11 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
    Nothing about the merge needs to be remembered or passed in — a 2x6 stack, a
    row, or an L all fall out of the same test.
 
+   **(02)** The test is the border's **median**, not its mean. A sound border
+   that *ends* on a torn one shares its corner vertex, and one 40 m corner in 129
+   vertices is a 31 cm mean: four borders inside `n_desert_01` read 57–67 cm,
+   were called torn, and the tool tried to route a block to itself.
+
 2. **Route one pass per pair of neighbouring blocks.** The floor of a block is
    its largest walkable, dry component. The pass is the cheapest path from one
    floor to the other: rock costs by how much of it stands above the local
@@ -44,11 +76,14 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
    its very end rather than through the middle, which is where a person would
    have put the causeway.
 
-3. **Level.** Each block is shifted so the floor the road **joins** matches
-   across the link — the commonest floor height within 120 m of each mouth, not
-   the map's median and not the mouth itself. `guild_01` is tiered (islands at
-   17,320 and 19,720 cm): its median would have sunk the island the road lands
-   on 21 m below its neighbour. Floors already within 1 m are left alone.
+3. **Level.** Each block is shifted so the two **mouths** of the link — the
+   median floor within 16 m of each end of the pass — stand at one height.
+   Nothing wider. `guild_01` is tiered (islands at 17,320 and 19,720 cm): its
+   median would have sunk the island the road lands on 21 m below its neighbour.
+   **(02)** And "the commonest floor within 120 m" is only right on flat maps:
+   between desert dunes and a volcano's flank it left the mouths 13.3 m apart
+   and the pass at 26%. Levelled by the mouths the flame map rises 13.63 m and
+   the pass is flat. Mouths already within 1 m are left alone.
 
    A datum shift moves **three** things by the same number, and forgetting any
    one is invisible in the other two:
@@ -63,7 +98,11 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
    offset did not. `--no-level` keeps every datum and lets the pass climb
    instead; the report flags a grade over 18% (corpus cuts run 5–18%).
 
-4. **Weld.** Every shared vertex takes the mean of its owners, and each sector
+4. **Weld.** Every shared vertex takes the mean of its owners — **(02)** with
+   walkable ground outvoting rock 50 to 1. Two sealed maps meet wall to wall and
+   the plain mean is right; `n_desert_01` has no ring on that side, its floor
+   runs to the join (548 free cells on the seam column, 0 opposite), and a plain
+   mean lifts that floor half-way up the neighbour's cliff in one row. Each sector
    is pulled onto it with a smoothstep fade over 16 cells, so a 40 m tear becomes
    a slope rather than a spike. The fade stops short of walkable ground — the
    wall is ours to reshape, the floor is not — except on the border row itself,
@@ -86,6 +125,12 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
    walkable tiles, cliff is any slot ≥ 75% blocked, road is its most-used other
    `field*` slot. The two palettes hand over in an 8 m dither across the join.
    `--road-slot BLOCK:SLOT` overrides.
+
+   **(02)** Every join is dithered for 12 m either side along its whole length,
+   not only at the pass. Wall to wall nobody sees it; sand against lava rock
+   along a ruled line 1.5 km long is the first thing anyone sees. A faint line
+   survives at the sector edge itself — the splat is per sector — and only a
+   re-save in the editor softens that.
 
 7. **Objects ride the ground.** Every record's `z` moves by exactly what the
    terrain under it moved — level, weld and carve in one number. Records on the

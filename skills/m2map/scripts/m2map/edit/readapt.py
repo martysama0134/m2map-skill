@@ -92,8 +92,6 @@ class Link:
     line: List[Tuple[float, float]] = field(default_factory=list)   # smoothed, cells
     mouth_a_cm: float = 0.0
     mouth_b_cm: float = 0.0
-    floor_a_cm: float = 0.0                  # the floor the mouth opens onto
-    floor_b_cm: float = 0.0
     wall_cells: int = 0
 
 
@@ -188,11 +186,14 @@ class MergedMap:
         for sx, sy in self.sectors():
             if sx + 1 < self.W:
                 t = tear[sy * CELLS:sy * CELLS + 129, (sx + 1) * CELLS]
-                if t.mean() > TEAR_CM:
+                if np.median(t) > TEAR_CM:
                     out.append(((sx, sy), (sx + 1, sy), float(t.mean())))
             if sy + 1 < self.H:
                 t = tear[(sy + 1) * CELLS, sx * CELLS:sx * CELLS + 129]
-                if t.mean() > TEAR_CM:
+                # Median, not mean: a border that merely ENDS on a torn one
+                # shares its corner vertex, and one 40 m corner in 129 vertices
+                # is a 30-60 cm mean on a border that is perfectly sound.
+                if np.median(t) > TEAR_CM:
                     out.append(((sx, sy), (sx, sy + 1), float(t.mean())))
         return out
 
@@ -413,7 +414,8 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
     floors = [reachable(free & (bcell == b)) for b in range(nblocks)]
 
     # 2. one pass per pair of neighbouring source maps -----------------------
-    pairs = sorted({tuple(sorted((block_of[a], block_of[b]))) for a, b, _ in torn})
+    pairs = sorted({tuple(sorted((block_of[a], block_of[b]))) for a, b, _ in torn
+                    if block_of[a] != block_of[b]})
     links: List[Link] = []
     for a, b in pairs:
         seam = np.zeros(bcell.shape, bool)
@@ -442,8 +444,6 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
         lk.wall_cells = sum(1 for x, y in path if not free[y, x])
         lk.mouth_a_cm = _mouth(zc0, floors[a], path[0])
         lk.mouth_b_cm = _mouth(zc0, floors[b], path[-1])
-        lk.floor_a_cm = _local_floor(zc0, floors[a], path[0])
-        lk.floor_b_cm = _local_floor(zc0, floors[b], path[-1])
         links.append(lk)
 
     # 3. one datum -----------------------------------------------------------
@@ -454,13 +454,15 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
         while todo:
             cur = todo.pop()
             for lk in links:
-                for me, other, zm, zo in ((lk.a, lk.b, lk.floor_a_cm, lk.floor_b_cm),
-                                          (lk.b, lk.a, lk.floor_b_cm, lk.floor_a_cm)):
+                for me, other, zm, zo in ((lk.a, lk.b, lk.mouth_a_cm, lk.mouth_b_cm),
+                                          (lk.b, lk.a, lk.mouth_b_cm, lk.mouth_a_cm)):
                     if me == cur and other not in seen:
-                        # Level to the floor the road JOINS, not to the map's
-                        # median: a tiered map has no single floor. And not to
-                        # the mouth itself -- a pass that lands on a side terrace
-                        # would sink the whole map to match it.
+                        # Level to the ground the road JOINS -- the two mouths --
+                        # and to nothing wider. The map's median is wrong on a
+                        # tiered map (guild_01: 21 m off), and the commonest
+                        # floor within 120 m is wrong on rolling ground: between
+                        # desert dunes and a volcano's flank it left the mouths
+                        # 13 m apart and the pass at 26%.
                         d = (zm + delta[me]) - zo
                         delta[other] = round(d / HS) * HS if abs(d) >= LEVEL_MIN_CM else 0.0
                         seen.add(other)
@@ -475,13 +477,14 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
             m.wraw[cs] = np.where(w == DRY, DRY, w + int(round(delta[b] / HS)))
 
     # 4. weld ------------------------------------------------------------------
-    z_mean, _ = m.stitch(windows)
+    z_mean = _weld_target(m, windows, free)
     z = _weld(m, windows, z_mean, free, opt.feather_cells)
 
     # 5. carve, open, paint ------------------------------------------------------
     hw = opt.floor_m / 2.0
     slots = _slots(m, btile, nblocks, opt, report)
     removed_mask = np.zeros(m.attr.shape, bool)
+    report["seam_tiles_dithered"] = _blend_seam(m.tile, btile, rng)
     for lk in links:
         line, s_a, s_b = centreline(lk.path, opt.apron_m / 2.0, rng)
         lk.line = line
@@ -549,23 +552,34 @@ def _cell_attr(attr: np.ndarray, flag: int) -> np.ndarray:
     return a.reshape(a.shape[0] // 2, 2, -1, 2).any(axis=(1, 3))
 
 
-def _local_floor(zc: np.ndarray, floor: np.ndarray, cell: Tuple[int, int], r: int = 60) -> float:
-    """The commonest floor height within 120 m of a mouth, in 50 cm bins."""
-    x, y = cell
-    ys, xs = slice(max(0, y - r), y + r + 1), slice(max(0, x - r), x + r + 1)
-    v = zc[ys, xs][floor[ys, xs]]
-    if v.size < 50:
-        return _mouth(zc, floor, cell)
-    bins = np.floor(v / 50.0).astype(np.int64)
-    top = np.bincount(bins - bins.min()).argmax() + bins.min()
-    return float(np.median(v[bins == top]))
-
-
 def _mouth(zc: np.ndarray, floor: np.ndarray, cell: Tuple[int, int], r: int = 8) -> float:
     x, y = cell
     ys, xs = slice(max(0, y - r), y + r + 1), slice(max(0, x - r), x + r + 1)
     f = floor[ys, xs]
     return float(np.median(zc[ys, xs][f])) if f.any() else float(zc[y, x])
+
+
+def _weld_target(m: MergedMap, windows, free: np.ndarray) -> np.ndarray:
+    """What each shared vertex becomes: the mean of its owners, with walkable
+    ground outvoting rock 50 to 1.
+
+    Two sealed maps meet wall to wall and the plain mean is right. A map with an
+    OPEN edge (n_desert_01 has no ring) brings its floor to the join, and a plain
+    mean would lift that floor half-way up the neighbour's cliff in one row."""
+    shape = (m.H * CELLS + 1, m.W * CELLS + 1)
+    acc, wsum = np.zeros(shape), np.zeros(shape)
+    for key, win in windows.items():
+        f = free[m._cslice(*key)]
+        v = np.zeros((129, 129), bool)
+        v[:-1, :-1] |= f
+        v[1:, :-1] |= f
+        v[:-1, 1:] |= f
+        v[1:, 1:] |= f
+        w = np.where(v, 1.0, 0.02)
+        vs = m._vslice(*key)
+        acc[vs] += win * w
+        wsum[vs] += w
+    return acc / wsum
 
 
 def _weld(m: MergedMap, windows, z_mean: np.ndarray, free: np.ndarray, n: int) -> np.ndarray:
@@ -632,6 +646,29 @@ def _slots(m: MergedMap, btile: np.ndarray, nblocks: int, opt: Options, report: 
     report["slots"] = {b: dict(v, names={k: names.get(v[k], "") for k in ("ground", "road")})
                        for b, v in out.items()}
     return out
+
+
+def _blend_seam(tile: np.ndarray, btile: np.ndarray, rng, reach: int = 12) -> int:
+    """Dither the two palettes into each other for ``reach`` metres either side
+    of every join. Wall to wall nobody sees the join; where an open-edged map
+    meets its neighbour the merge leaves sand against lava rock along a ruled
+    line 1.5 km long, and nothing in the corpus is painted with a ruler."""
+    seam = np.zeros(btile.shape, bool)
+    seam[:, 1:] |= btile[:, 1:] != btile[:, :-1]
+    seam[:, :-1] |= btile[:, 1:] != btile[:, :-1]
+    seam[1:, :] |= btile[1:, :] != btile[:-1, :]
+    seam[:-1, :] |= btile[1:, :] != btile[:-1, :]
+    d = _distance_to(seam, cap=float(reach))
+    ys, xs = np.nonzero(d < reach)
+    # Borrow from a tile up to ``reach`` away; it counts only if it lies in the
+    # OTHER source map, and less often the further this tile is from the join.
+    sy = np.clip(ys + rng.integers(-reach, reach + 1, ys.size), 0, tile.shape[0] - 1)
+    sx = np.clip(xs + rng.integers(-reach, reach + 1, xs.size), 0, tile.shape[1] - 1)
+    fade = 0.9 * (1.0 - d[ys, xs] / reach)
+    take = (btile[sy, sx] != btile[ys, xs]) & (rng.random(ys.size) < fade)
+    src = tile.copy()
+    tile[ys[take], xs[take]] = src[sy[take], sx[take]]
+    return int(take.sum())
 
 
 def _paint(tile: np.ndarray, btile: np.ndarray, dm: np.ndarray, hw: float, road_hw: float,

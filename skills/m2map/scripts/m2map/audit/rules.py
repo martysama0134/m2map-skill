@@ -482,7 +482,9 @@ def torn_borders(terrain_root, sector_names) -> List[Tuple[str, str, float, floa
                                        ((sx, sy + 1), w[-1, :], lambda n: n[0, :])):
             if (nx, ny) in wins:
                 d = np.abs(mine - theirs(wins[nx, ny]))
-                if d.mean() > TORN_BORDER_CM:
+                # Median: a sound border that ends on a torn one shares its
+                # corner vertex, and one 40 m corner lifts the MEAN past 50 cm.
+                if np.median(d) > TORN_BORDER_CM:
                     out.append(("%03d%03d" % (sx, sy), "%03d%03d" % (nx, ny),
                                 float(d.mean()), float(d.max())))
     return out

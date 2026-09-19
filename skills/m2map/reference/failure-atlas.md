@@ -969,11 +969,18 @@ neighbours: `M2MAP-HGT-001`.
 
 Three traps met while fixing it (`modes/readapt.md`, rule 28):
 
-- **Levelling to the map's median.** `guild_01` is tiered -- 17,320 and
-  19,720 cm. Its walkable median is 19,434; the island the road lands on is at
-  17,320. Shifting by the median sinks that island 21 m under its neighbour.
-  Level to the floor within ~120 m of the mouth. Not to the mouth either: the
-  pass into `guild_03` lands on a side terrace.
+- **Levelling to anything wider than the mouths.** `guild_01` is tiered --
+  17,320 and 19,720 cm. Its walkable median is 19,434; the island the road lands
+  on is at 17,320, and the median sinks it 21 m under its neighbour. The next
+  guess, the commonest floor within 120 m, agreed with the mouths to 8 cm on the
+  flat guild maps and failed on the first rolling ones: `n_desert_01` |
+  `n_flame_01` came out with mouths 13.3 m apart and a 26% pass. Level the two
+  mouths (median floor within 16 m of each end) to each other.
+- **One map is not a test.** Built on three sealed guild maps, the tool crashed
+  on its second input. A border's MEAN tear called four sound borders torn
+  (57-67 cm, all from one shared 40 m corner vertex) and paired a block with
+  itself; the plain-mean weld assumed rock on both sides of every join, and
+  `n_desert_01` has floor there. Median; walkable outvotes rock 50:1.
 - **A datum shift is three writes in two units.** Terrain and water layer
   heights are RAW, object `z` is centimetres, and the height bias is none of
   them -- it is an offset from a ground that moved with it. Check it from disk

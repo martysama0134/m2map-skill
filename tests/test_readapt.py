@@ -122,3 +122,22 @@ def test_no_level_leaves_the_datums_and_grades_the_road(tmp_path):
     assert all(report["joined"].values())
     a, b = report["links"][0]["mouths_cm"]
     assert abs(abs(a - b) - abs(FLOORS[0] - FLOORS[1])) < 60
+
+
+def test_a_sound_border_ending_on_a_torn_one_is_not_torn(tmp_path):
+    """2x2: the left column is one source map, the right column another, 40 m
+    higher. The two horizontal borders are sound, but each ENDS on the torn
+    vertical one and shares its corner vertex -- one 40 m corner in 129 vertices
+    is a 31 cm mean, and with any relief a false tear. On map_merge_test_02 the
+    mean called four such borders torn (57-67 cm) and paired a block with
+    itself."""
+    for sx in range(2):
+        for sy in range(2):
+            d = tmp_path / ("%06u" % (sx * 1000 + sy))
+            d.mkdir()
+            z = np.full((129, 129), 16000.0 + 8000.0 * sx)
+            z[:, 0 if sx else 128] += 60.0        # relief on the torn edge only
+            raw = np.pad(np.round(z / 0.5), 1, mode="edge").astype("<u2")
+            height_codec.write_height(d / "height.raw", height_codec.HeightMap(raw))
+    torn = torn_borders(tmp_path, ["000000", "000001", "001000", "001001"])
+    assert sorted((a, b) for a, b, _, _ in torn) == [("000000", "001000"), ("000001", "001001")]
