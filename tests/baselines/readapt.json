@@ -33,6 +33,10 @@
      16395,
      16395
     ],
+    "road_joined_m": [
+     138.0,
+     null
+    ],
     "to_tile": [
      92,
      548
@@ -49,10 +53,14 @@
      974
     ],
     "grade_pct": 0.0,
-    "length_m": 78.5,
+    "length_m": 78.4,
     "mouths_cm": [
      16391,
      16390
+    ],
+    "road_joined_m": [
+     104.0,
+     null
     ],
     "to_tile": [
      444,
@@ -70,7 +78,7 @@
   "problems": [],
   "server_attr": {
    "agrees": true,
-   "blocked_cells": 403894,
+   "blocked_cells": 403901,
    "max_value": 5
   },
   "skipped_links": [],
@@ -107,6 +115,10 @@
     "mouths_cm": [
      18204,
      18204
+    ],
+    "road_joined_m": [
+     null,
+     54.0
     ],
     "to_tile": [
      1324,
@@ -169,6 +181,10 @@
      19996,
      19996
     ],
+    "road_joined_m": [
+     104.0,
+     142.0
+    ],
     "to_tile": [
      814,
      850
@@ -190,6 +206,10 @@
      19872,
      19872
     ],
+    "road_joined_m": [
+     null,
+     30.0
+    ],
     "to_tile": [
      230,
      1280
@@ -210,6 +230,10 @@
     "mouths_cm": [
      21328,
      23148
+    ],
+    "road_joined_m": [
+     40.0,
+     null
     ],
     "to_tile": [
      936,

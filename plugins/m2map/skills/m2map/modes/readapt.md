@@ -154,8 +154,12 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
    The road is solid in a 7 m core and dithered for 3 m at the rim (rule 19).
    A merged palette is a union, so ground, cliff and road slots are read **per
    block** off how that block is painted: ground is the commonest slot on its
-   walkable tiles, cliff is any slot ≥ 75% blocked, road is its most-used other
-   `field*` slot. The two palettes hand over in an 8 m dither across the join.
+   walkable tiles, cliff is any slot ≥ 75% blocked, road is the other `field*` slot
+   that is most **solid, walkable and away from water** (the product of the
+   three). **(03)** Not the most-used one: on `b1`, `c1` and `a1` that is
+   `field 04`, a third of it the band round the water, and the pass came out a
+   darker brown than every road it met; the roads are `field 01` at 3-8% of the
+   map (0.49-0.56 against 0.21-0.38). The two palettes hand over in an 8 m dither across the join.
    `--road-slot BLOCK:SLOT` overrides.
 
    **(02)** Every join is dithered for 12 m either side along its whole length,
@@ -163,6 +167,15 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
    along a ruled line 1.5 km long is the first thing anyone sees. A faint line
    survives at the sector edge itself — the splat is per sector — and only a
    re-save in the editor softens that.
+
+   **The road runs on to the map's own.** A pass ends where the wall was
+   thinnest, which is rarely where the road is. From each mouth the road is
+   painted on -- paint only, over walkable dry floor -- to the block's nearest
+   real road, up to `road_reach_m` (150). A real road is solid: the slot itself
+   and ≥ 70% of the 10 m round it; the guild maps have ~50% stipple patches of
+   their "road" slot and no roads, and at 40% a pass was painted 126 m to one.
+   The report has `road_joined_m` per link: metres painted at each end, `0.0`
+   already on a road, `null` none in reach.
 
 7. **Objects ride the ground.** Every record's `z` moves by exactly what the
    terrain under it moved — level, weld and carve in one number. Records on the

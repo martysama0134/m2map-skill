@@ -81,6 +81,9 @@ class Options:
     #: Steepest longitudinal grade before the report complains. Corpus mountain
     #: cuts run 5-18%.
     max_grade_pct: float = 18.0
+    #: How far past a mouth the road is painted on to reach the map's own road.
+    #: Further than this the pass is simply somewhere roads are not.
+    road_reach_m: float = 150.0
     seed: int = 1
     #: ``{block: slot}`` overrides for the road texture.
     road_slots: Dict[int, int] = field(default_factory=dict)
@@ -523,7 +526,7 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
 
     # 5. carve, open, paint ------------------------------------------------------
     hw = opt.floor_m / 2.0
-    slots = _slots(m, btile, nblocks, opt, report)
+    slots = _slots(m, btile, nblocks, opt, report, wet)
     # Filler's "ground" is slot 0, the eraser: painted from, it punches blank
     # holes in the road wherever a pass crosses a join.
     slots = {b: v for b, v in slots.items() if b not in void}
@@ -558,6 +561,13 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
         removed_mask[wt] |= dm <= hw + 1.0
         _paint(m.tile[wt], btile[wt], dm, hw, opt.road_m / 2.0, slots, rng)
 
+        # A pass ends where the wall was thinnest, which is rarely where the
+        # map's road is: paint on, over open floor, to the nearest one.
+        reach = []
+        for blk, cell in ((lk.a, lk.path[0]), (lk.b, lk.path[-1])):
+            reach.append(_join_road(m, floors[blk] & dry, cell, slots[blk], btile, slots,
+                                    opt, rng))
+
         length_m = (s_b - s_a) * 2.0
         grade = abs(zb - za) / max(length_m, 1.0)
         report.setdefault("links", []).append({
@@ -566,6 +576,7 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
             "to_tile": [lk.path[-1][0] * 2, lk.path[-1][1] * 2],
             "length_m": round(length_m, 1), "wall_m": lk.wall_cells * 2,
             "mouths_cm": [round(za), round(zb)], "grade_pct": round(grade, 1),
+            "road_joined_m": reach,
         })
         if grade > opt.max_grade_pct:
             report.setdefault("problems", []).append(
@@ -685,7 +696,8 @@ def _weld(m: MergedMap, windows, z_mean: np.ndarray, free: np.ndarray, n: int,
     return out / cnt
 
 
-def _slots(m: MergedMap, btile: np.ndarray, nblocks: int, opt: Options, report: dict):
+def _slots(m: MergedMap, btile: np.ndarray, nblocks: int, opt: Options, report: dict,
+           wet: Optional[np.ndarray] = None):
     """Per source map: the ground slot, the cliff slots and a road slot, read off
     how the map itself is painted -- a merged palette is a union, and block 0's
     grass is not block 1's."""
@@ -697,6 +709,9 @@ def _slots(m: MergedMap, btile: np.ndarray, nblocks: int, opt: Options, report: 
             names = {i: (e.filename if e else "") for i, e in enumerate(ts.slots)}
             break
     blocked = (m.attr & ATTR_BLOCK) != 0
+    shore = np.zeros(m.tile.shape, bool)
+    if wet is not None and wet.any():
+        shore = _distance_to(wet.repeat(2, 0).repeat(2, 1), cap=12.0) < 10.0
     out = {}
     for b in range(nblocks):
         sel = btile == b
@@ -713,11 +728,31 @@ def _slots(m: MergedMap, btile: np.ndarray, nblocks: int, opt: Options, report: 
             cands = [i for i in np.argsort(share)[::-1]
                      if i and i != ground and i not in cliff and share[i] >= 0.02]
             fields = [i for i in cands if texture_gen.motif_of(names.get(i, "")) == "field"]
-            road = int((fields or cands or [ground])[0])
+            # Not the most-used one: on b1, c1 and a1 that is `field 04`, a third
+            # of it the band round the water, while the roads are `field 01` at
+            # 3-8% of the map. A road is SOLID, WALKABLE and AWAY FROM WATER, and
+            # the product picks field 01 on all three (0.49-0.56 against
+            # 0.21-0.38).
+            road = int(max(fields or cands or [ground],
+                           key=lambda i: _roadness(m.tile, i, sel, blocked, shore)))
         out[b] = {"ground": ground, "cliff": cliff, "road": int(road)}
     report["slots"] = {b: dict(v, names={k: names.get(v[k], "") for k in ("ground", "road")})
                        for b, v in out.items()}
     return out
+
+
+def _roadness(tile: np.ndarray, slot: int, sel: np.ndarray, blocked: np.ndarray,
+              shore: np.ndarray) -> float:
+    t = (tile == slot) & sel
+    n = int(t.sum())
+    if not n:
+        return 0.0
+    same = t.copy()
+    same[1:, :] &= t[:-1, :]
+    same[:-1, :] &= t[1:, :]
+    same[:, 1:] &= t[:, :-1]
+    same[:, :-1] &= t[:, 1:]
+    return float(same.sum() / n * (1.0 - blocked[t].mean()) * (1.0 - shore[t].mean()))
 
 
 def _blend_seam(tile: np.ndarray, btile: np.ndarray, rng, reach: int = 12) -> int:
@@ -764,6 +799,48 @@ def _paint(tile: np.ndarray, btile: np.ndarray, dm: np.ndarray, hw: float, road_
         tile[floor] = sl["ground"]
         p_road = np.clip((road_hw + 3.0 - dm) / 3.0, 0.0, 1.0)
         tile[own & (rng.random(tile.shape) < p_road)] = sl["road"]
+
+
+def _road_cells(tile: np.ndarray, slot: int) -> np.ndarray:
+    """Cells on a real road: solid in the slot, in a 10 m neighbourhood at least
+    70% of it. Ground is a stipple (rule 11) and the road slot turns up in it a
+    tile at a time -- the guild maps have patches of it at ~50% and no road at
+    all, and at 40% the pass was painted 126 m to one of them. A road is solid
+    (rule 19)."""
+    on = (tile == slot).reshape(tile.shape[0] // 2, 2, -1, 2).mean(axis=(1, 3))
+    c = np.pad(on, 3, mode="edge").cumsum(0).cumsum(1)
+    c = np.pad(c, ((1, 0), (1, 0)))
+    k = 5
+    box = (c[k:, k:] - c[:-k, k:] - c[k:, :-k] + c[:-k, :-k]) / (k * k)
+    box = box[1:1 + on.shape[0], 1:1 + on.shape[1]]
+    return (on >= 1.0) & (box >= 0.7)
+
+
+def _join_road(m: "MergedMap", floor: np.ndarray, cell: Tuple[int, int], slot: dict,
+               btile: np.ndarray, slots, opt: Options, rng) -> Optional[float]:
+    """Paint the road from a mouth to the block's nearest existing road, over
+    walkable dry floor only. Paint and nothing else: no carve, no attr, nothing
+    removed -- the ground there is already the map's own. Returns the metres
+    painted, 0.0 when the mouth is on a road already, None when no road is
+    within reach."""
+    roads = _road_cells(m.tile0, slot["road"]) & floor
+    if not roads.any():
+        return None
+    x, y = cell
+    r = int(opt.road_reach_m / 2.0)
+    ys, xs = slice(max(0, y - r), y + r + 1), slice(max(0, x - r), x + r + 1)
+    start = np.zeros(floor.shape, bool)[ys, xs]
+    start[y - ys.start, x - xs.start] = True
+    path = route(start, roads[ys, xs] & ~start, floor[ys, xs] | start, np.ones(start.shape))
+    if path is None or len(path) * 2.0 > opt.road_reach_m:
+        return None
+    if len(path) < 5:
+        return 0.0
+    path = [(px + xs.start, py + ys.start) for px, py in path]
+    line, _, _ = centreline(path, 0.0)
+    dt, _, wt = line_field(m.attr.shape, np.asarray(line), 2.0, opt.road_m / 2.0 + 4.0)
+    _paint(m.tile[wt], btile[wt], dt * 2.0, 0.0, opt.road_m / 2.0, slots, rng)
+    return round(len(path) * 2.0, 1)
 
 
 def _bilinear(grid: np.ndarray, x_cm: float, y_cm: float) -> float:

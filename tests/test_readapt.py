@@ -42,6 +42,7 @@ CRC = 26807040
 
 FORD_ROWS = slice(76, 80)            # a river across bowl 0, flagged water, NOT blocked
 FILLER_CM = 20000.0
+ROAD_ROWS = slice(150, 158)          # tiles; south of the pond in each bowl
 
 
 def _bowl(floor_cm: float, seed: int, ford: bool = False):
@@ -75,7 +76,8 @@ def _write_filler(d: pathlib.Path) -> None:
     (d / "areaproperty.txt").write_bytes(b"ScriptType AreaProperty\r\n")
 
 
-def _write_merged(root: pathlib.Path, ford: bool = False, filler: bool = False) -> None:
+def _write_merged(root: pathlib.Path, ford: bool = False, filler: bool = False,
+                  road: bool = False) -> None:
     root.mkdir()
     (root / "setting.txt").write_bytes(SETTING.encode("ascii"))
     if filler:
@@ -94,6 +96,13 @@ def _write_merged(root: pathlib.Path, ford: bool = False, filler: bool = False) 
         attr_codec.write_attr(d / "attr.atr", attr_codec.AttrMap(cells.repeat(2, 0).repeat(2, 1)))
         tiles = tile_codec.new_blank(1)
         tiles.raw[1:257, 1:257][steep.repeat(2, 0).repeat(2, 1)] = 2
+        if road:
+            # Slot 4 is everywhere, a tile at a time; slot 3 is a road: a solid
+            # strip, 8 m wide, a fraction of the share.
+            inner = tiles.raw[1:257, 1:257]
+            speck = (np.random.default_rng(7 + sy).random((256, 256)) < 0.3) & (inner == 1)
+            inner[speck] = 4
+            inner[ROAD_ROWS, 84:172] = 3
         tile_codec.write_tile(d / "tile.raw", tiles)
         wc = np.full((128, 128), water_codec.NO_WATER, np.uint8)
         wc[pond] = 0
@@ -198,3 +207,20 @@ def test_filler_is_not_a_source_map(tmp_path):
     ring = m.hwin[0, 0][40:90, 128] - report["level_cm"][0]
     was = readapt.MergedMap(src).hwin[0, 0][40:90, 128]
     assert np.abs(ring - was).max() < 1.0, "the ring kept its crest; the filler came to it"
+
+
+def test_the_pass_is_painted_on_to_the_maps_own_road(tmp_path):
+    """The road slot is the one that is solid, walkable and dry -- not the one
+    used most: on b1, c1 and a1 the most-used `field` slot is the band round the
+    water. And a pass ends where the wall is thinnest, so its road runs on, over
+    open floor, to the nearest real one."""
+    src, out = tmp_path / "merged", tmp_path / "readapted"
+    _write_merged(src, road=True)
+    report = readapt.readapt(src, out)
+    assert [v["road"] for v in report["slots"].values()] == [3, 3]
+    (link,) = report["links"]
+    assert all(d is not None and 0 < d <= 150 for d in link["road_joined_m"])
+    m = readapt.MergedMap(out)
+    gap = m.tile[256 + 96:256 + ROAD_ROWS.start - 4, :]        # bowl 1: floor north of its road
+    assert (gap == 3).sum() > 100, "road painted across the floor between them"
+    assert not report.get("problems")
