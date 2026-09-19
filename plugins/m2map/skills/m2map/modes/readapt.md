@@ -19,7 +19,9 @@ merged map audited **clean** — every file was valid; the fault is between file
 
 The second map it was run on, `map_merge_test_02` (`n_desert_01` beside
 `n_flame_01`, 11x6), broke the first version three ways — each is marked **(02)**
-below. Expect the third map to find a fourth: the procedure is the part to keep.
+below. The third, `map_merge_test_03` (`b1`, `c1`, `a1` merged with overlap, 7x9,
+two blank filler blocks), ran to exit 0 and was wrong four ways -- **(03)**.
+Expect the next map to find another: the procedure is the part to keep.
 
 ## Procedure
 
@@ -29,8 +31,11 @@ below. Expect the third map to find a fourth: the procedure is the part to keep.
    `problems` entry or a floor that did not join — read the report, do not retry
    blind.
 3. Read `_readapt.json` against what you know of the map: are `blocks` the
-   source maps? Is each `level_cm` plausible? `grade_pct` ≤ 18? `joined` all
-   true, `tear_after_cm` 0? `removed` objects few, `stray` near zero?
+   source maps, and `void_blocks` the filler? Is each `level_cm` plausible?
+   `grade_pct` ≤ 18? `joined` all true, `tear_after_cm` 0, `blank_tiles_added`
+   0? `removed` objects few, `stray` near zero? **Is every `length_m` close to
+   its `wall_m`?** A pass much longer than its wall is crossing open floor --
+   the floors are wrong, not the route **(03)**.
 4. Look at `_preview/readapt_route.png` — where the pass went, and what it
    crossed — then `readapt_tile.png` at the pass.
 5. Copy `<out>/textureset/*.txt` beside the editor, render every link **before
@@ -68,8 +73,19 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
    vertices is a 31 cm mean: four borders inside `n_desert_01` read 57–67 cm,
    were called torn, and the tool tried to route a block to itself.
 
+   **(03)** A block with no paint at all is **filler** -- a staggered or
+   overlapped merge is squared off with blank sectors. It is reported as
+   `void_blocks`, gets no pass, no vote in the weld (it is all "walkable" and
+   would drag a real ring down to its plane), takes the datum of the borders it
+   shares, and is never painted from: its ground slot is 0, the eraser, and
+   dithered across a join it punches lime-green holes in the road.
+
 2. **Route one pass per pair of neighbouring blocks.** The floor of a block is
-   its largest walkable, dry component. The pass is the cheapest path from one
+   its largest component of **unblocked tiles** -- **(03)** not "free and dry":
+   `c1`'s river has the water flag and no block (forded, bridged), and read as a
+   wall it cut the map into three floors and sent two passes 857 m and 897 m
+   across open ground, carved into ramps the whole way. Tiles, because a bridge
+   deck is narrower than a 2 m cell. Only the two mouths must be dry. The pass is the cheapest path from one
    floor to the other: rock costs by how much of it stands above the local
    floor, water is nearly a wall (60×), open ground is free. It finds the thin
    place in the double ring by itself — and on the test map it crossed a moat at
@@ -84,6 +100,12 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
    between desert dunes and a volcano's flank it left the mouths 13.3 m apart
    and the pass at 26%. Levelled by the mouths the flame map rises 13.63 m and
    the pass is flat. Mouths already within 1 m are left alone.
+
+   **(03)** Three maps that all touch make a cycle, and a block has one datum:
+   two links level flat and the third takes what is left (68 m, here). Levelling
+   follows the tree of **thinnest walls**; a spare link is kept only if it comes
+   out under `max_grade_pct`, and is otherwise listed in `skipped_links` -- the
+   two maps are already joined through the third.
 
    A datum shift moves **three** things by the same number, and forgetting any
    one is invisible in the other two:
@@ -162,5 +184,8 @@ untextured. The 2D previews cannot show a tear; only the engine draws one.
 - **No bridge.** A pass that must cross water becomes a causeway. If the water
   is wide, put a `bridges:`-style fit there by hand (rule 27,
   `reference/structures.md` §5).
+- **An overlap crops a map, and the crop is not repaired.** Where `c1` was laid
+  over `b1` and `a1`, a lake and a road end at the join against the newcomer's
+  ring. The weld makes that a cliff; ending the road somewhere is an `improve`.
 - **One pass per pair of blocks.** Want a second, or a specific place? That is
   an `improve` on the result.

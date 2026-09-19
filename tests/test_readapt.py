@@ -40,7 +40,11 @@ BIAS = -35.0
 CRC = 26807040
 
 
-def _bowl(floor_cm: float, seed: int):
+FORD_ROWS = slice(76, 80)            # a river across bowl 0, flagged water, NOT blocked
+FILLER_CM = 20000.0
+
+
+def _bowl(floor_cm: float, seed: int, ford: bool = False):
     """One sealed source map: flat floor, a 40-cell mountain ring, a pond."""
     rng = np.random.default_rng(seed)
     yy, xx = np.mgrid[0:129, 0:129]
@@ -49,16 +53,38 @@ def _bowl(floor_cm: float, seed: int):
     z = floor_cm + wall * (4000 + rng.random((129, 129)) * 1500)
     pond = (xx - 64) ** 2 + (yy - 64) ** 2 < 8 ** 2
     z[pond] -= POND_DEPTH + 100
+    if ford:
+        river = np.zeros((129, 129), bool)
+        river[FORD_ROWS, :] = edge[FORD_ROWS, :] > 36       # bank to bank, into the rock
+        z[river] -= POND_DEPTH + 100
+        pond = pond | river
     return z, pond[:128, :128]
 
 
-def _write_merged(root: pathlib.Path) -> None:
+def _write_filler(d: pathlib.Path) -> None:
+    """What a merge squares an L off with: a blank plane, no paint, no attr."""
+    d.mkdir()
+    raw = np.full((131, 131), FILLER_CM / 0.5).astype("<u2")
+    height_codec.write_height(d / "height.raw", height_codec.HeightMap(raw))
+    attr_codec.write_attr(d / "attr.atr", attr_codec.AttrMap(np.zeros((256, 256), np.uint8)))
+    tiles = tile_codec.new_blank(1)
+    tiles.raw[:] = 0
+    tile_codec.write_tile(d / "tile.raw", tiles)
+    water_codec.write_water(d / "water.wtr", water_codec.WaterMap(
+        np.full((128, 128), water_codec.NO_WATER, np.uint8), []))
+    (d / "areaproperty.txt").write_bytes(b"ScriptType AreaProperty\r\n")
+
+
+def _write_merged(root: pathlib.Path, ford: bool = False, filler: bool = False) -> None:
     root.mkdir()
     (root / "setting.txt").write_bytes(SETTING.encode("ascii"))
+    if filler:
+        for sy in range(2):
+            _write_filler(root / ("%06u" % (1000 + sy)))
     for sy, floor in enumerate(FLOORS):
         d = root / ("%06u" % sy)
         d.mkdir()
-        z, pond = _bowl(floor, sy)
+        z, pond = _bowl(floor, sy, ford and sy == 0)
         raw = np.pad(np.round(z / 0.5), 1, mode="edge").astype("<u2")
         height_codec.write_height(d / "height.raw", height_codec.HeightMap(raw))
         steep = np.zeros((128, 128), bool)
@@ -141,3 +167,32 @@ def test_a_sound_border_ending_on_a_torn_one_is_not_torn(tmp_path):
             height_codec.write_height(d / "height.raw", height_codec.HeightMap(raw))
     torn = torn_borders(tmp_path, ["000000", "000001", "001000", "001001"])
     assert sorted((a, b) for a, b, _, _ in torn) == [("000000", "001000"), ("000001", "001001")]
+
+
+def test_a_forded_river_does_not_split_the_floor(tmp_path):
+    """c1's river carries the water flag and no block. Read as a wall it cut that
+    map into three floors, and the pass set out from the largest: 850 m across
+    open ground, the whole way carved into a ramp (map_merge_test_03)."""
+    src, out = tmp_path / "merged", tmp_path / "readapted"
+    _write_merged(src, ford=True)
+    report = readapt.readapt(src, out)
+    (link,) = report["links"]
+    assert link["from_tile"][1] >= FORD_ROWS.stop * 2, "the pass leaves from the near bank"
+    assert all(report["joined"].values()) and not report.get("problems")
+
+
+def test_filler_is_not_a_source_map(tmp_path):
+    """A staggered merge is squared off with blank sectors. They are not routed
+    to, they do not outvote a real ring in the weld, and their slot 0 -- the
+    eraser -- is never painted from."""
+    src, out = tmp_path / "merged", tmp_path / "readapted"
+    _write_merged(src, filler=True)
+    report = readapt.readapt(src, out)
+    assert report["void_blocks"] == [1]
+    assert [lk["blocks"] for lk in report["links"]] == [[0, 2]]
+    assert report["tear_after_cm"] == 0.0 and report["blank_tiles_added"] == 0
+    assert not report.get("problems")
+    m = readapt.MergedMap(out)
+    ring = m.hwin[0, 0][40:90, 128] - report["level_cm"][0]
+    was = readapt.MergedMap(src).hwin[0, 0][40:90, 128]
+    assert np.abs(ring - was).max() < 1.0, "the ring kept its crest; the filler came to it"

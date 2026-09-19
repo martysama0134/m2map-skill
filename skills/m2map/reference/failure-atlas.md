@@ -991,6 +991,23 @@ Three traps met while fixing it (`modes/readapt.md`, rule 28):
   ground read zero terrain and moved it 204 m. Such a record takes the datum
   shift only.
 
+- **Water is not a wall, filler is not a map, and three maps make a cycle.**
+  `map_merge_test_03` -- `b1`, `c1` and `a1` merged *with overlap* into 7x9, the
+  staggered outline squared off with two blank 3x2 blocks. It ran to exit 0 and
+  tear 0, and was wrong four ways. (1) `c1`'s river carries the water flag and
+  **no block** -- it is forded and bridged -- so "free and dry" cut that map into
+  three floors (53,739 / 41,223 / 34,558 cells against 547,418 tiles in one
+  piece by block alone); the pass set out from the largest and ran **857 m and
+  897 m** across open ground, every metre of it carved into a ramp. A floor is
+  the largest component of unblocked TILES; only the mouths must be dry. The
+  same passes came out 49-127 m. (2) The blank blocks were routed to, levelled,
+  and -- being all "walkable" -- outvoted the real rings 50:1 in the weld.
+  (3) Their ground slot is 0, the eraser, and the pass paint dithered it across
+  every join it crossed: lime-green holes in the road, visible only in the
+  editor. (4) Three maps that all touch are a cycle, and a block has one datum:
+  the third link was left 68 m out of level. Level along the tree of thinnest
+  walls; keep a spare link only if it comes out under 18%.
+
 **The tell:** `MapSize` is a multiple of the source maps' size and the texture
 set name is three names joined with `_merged`.
 

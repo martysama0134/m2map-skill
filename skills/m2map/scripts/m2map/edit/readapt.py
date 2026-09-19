@@ -49,6 +49,7 @@ from ..gen import terrain as terrain_gen
 from ..gen import texture as texture_gen
 from ..gen.layout import _distance_to, catmull_rom
 from ..gen.walkable import reachable
+from ..mine.attr_stats import label_components
 
 CELLS = 128                 # terrain cells per sector edge
 TILES = 256                 # tiles per sector edge
@@ -93,6 +94,7 @@ class Link:
     mouth_a_cm: float = 0.0
     mouth_b_cm: float = 0.0
     wall_cells: int = 0
+    tree: bool = False                       # levelled flat; a spare link is not
 
 
 # --------------------------------------------------------------------------
@@ -411,11 +413,27 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
     zc0 = _cell_z(z0)
     wet = (m.wraw != DRY) & (m.wraw * HS > zc0)
     free = _cell_free(m.attr) & ~wet
-    floors = [reachable(free & (bcell == b)) for b in range(nblocks)]
+    # Filler is not a source map: an L or a staggered merge is squared off with
+    # blank sectors (no paint, no attr), and they get no pass, no vote in the
+    # weld and no share of the seam dither.
+    void = [b for b in range(nblocks) if not m.tile[btile == b].any()]
+    report["void_blocks"] = void
+    # What a player can WALK is everything not blocked: c1's river carries the
+    # water flag and no block -- it is forded, and bridged -- so "free and dry"
+    # cut that map into three floors and sent a pass 850 m across open ground
+    # from the largest one. The floor is one component of unblocked TILES (a
+    # bridge deck is narrower than a cell); the pass still starts and ends dry.
+    walk = (m.attr & ATTR_BLOCK) == 0
+    floors = []
+    for b in range(nblocks):
+        comp = _largest(walk & (btile == b))
+        floors.append(comp.reshape(comp.shape[0] // 2, 2, -1, 2).all(axis=(1, 3)))
+    dry = free
 
     # 2. one pass per pair of neighbouring source maps -----------------------
     pairs = sorted({tuple(sorted((block_of[a], block_of[b]))) for a, b, _ in torn
-                    if block_of[a] != block_of[b]})
+                    if block_of[a] != block_of[b]
+                    and block_of[a] not in void and block_of[b] not in void})
     links: List[Link] = []
     for a, b in pairs:
         seam = np.zeros(bcell.shape, bool)
@@ -436,7 +454,9 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
         # floor that is not the target costs nothing extra.
         cost = np.where(free, 1.0, 3.0 + np.maximum(rel, 0.0) / 300.0)
         cost = np.where(wet | _cell_attr(m.attr, ATTR_WATER), 60.0, cost)
-        path = route(floors[a], floors[b], (bcell == a) | (bcell == b), cost)
+        # A floor is left and entered on dry ground; its fords are not a mouth.
+        region = ((bcell == a) | (bcell == b)) & ~((floors[a] | floors[b]) & ~dry)
+        path = route(floors[a] & dry, floors[b] & dry, region, cost)
         if path is None:
             report.setdefault("problems", []).append("no route between blocks %d and %d" % (a, b))
             continue
@@ -448,25 +468,44 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
 
     # 3. one datum -----------------------------------------------------------
     delta = {b: 0.0 for b in range(nblocks)}
-    if opt.level and links:
-        ref = int(np.argmax([f.sum() for f in floors]))
-        seen, todo = {ref}, [ref]
-        while todo:
-            cur = todo.pop()
-            for lk in links:
-                for me, other, zm, zo in ((lk.a, lk.b, lk.mouth_a_cm, lk.mouth_b_cm),
-                                          (lk.b, lk.a, lk.mouth_b_cm, lk.mouth_a_cm)):
-                    if me == cur and other not in seen:
-                        # Level to the ground the road JOINS -- the two mouths --
-                        # and to nothing wider. The map's median is wrong on a
-                        # tiered map (guild_01: 21 m off), and the commonest
-                        # floor within 120 m is wrong on rolling ground: between
-                        # desert dunes and a volcano's flank it left the mouths
-                        # 13 m apart and the pass at 26%.
-                        d = (zm + delta[me]) - zo
-                        delta[other] = round(d / HS) * HS if abs(d) >= LEVEL_MIN_CM else 0.0
-                        seen.add(other)
-                        todo.append(other)
+    # Three maps that all touch make a cycle, and a block has ONE datum: two
+    # links can be levelled flat, the third gets whatever is left. Level along
+    # the tree of thinnest walls; step 5 keeps a spare link only if it comes out
+    # walkable.
+    ref = int(np.argmax([0 if b in void else f.sum() for b, f in enumerate(floors)]))
+    seen = {ref}
+    while True:
+        edge = [lk for lk in links if (lk.a in seen) != (lk.b in seen)]
+        if not edge:
+            break
+        lk = min(edge, key=lambda e: e.wall_cells)
+        lk.tree = True
+        for me, other, zm, zo in ((lk.a, lk.b, lk.mouth_a_cm, lk.mouth_b_cm),
+                                  (lk.b, lk.a, lk.mouth_b_cm, lk.mouth_a_cm)):
+            if me in seen and other not in seen and opt.level:
+                # Level to the ground the road JOINS -- the two mouths --
+                # and to nothing wider. The map's median is wrong on a
+                # tiered map (guild_01: 21 m off), and the commonest
+                # floor within 120 m is wrong on rolling ground: between
+                # desert dunes and a volcano's flank it left the mouths
+                # 13 m apart and the pass at 26%.
+                d = (zm + delta[me]) - zo
+                delta[other] = round(d / HS) * HS if abs(d) >= LEVEL_MIN_CM else 0.0
+        seen |= {lk.a, lk.b}
+    # Filler has no floor to level to: it follows the borders it shares.
+    for v in void:
+        gaps = []
+        for sa, sb, _ in torn:
+            for mine, nb in ((sa, sb), (sb, sa)):
+                if block_of[mine] == v and block_of[nb] not in void:
+                    wm, wn = m.hwin[mine], m.hwin[nb] + delta[block_of[nb]]
+                    if mine[0] != nb[0]:
+                        e_m, e_n = (wm[:, -1], wn[:, 0]) if mine[0] < nb[0] else (wm[:, 0], wn[:, -1])
+                    else:
+                        e_m, e_n = (wm[-1], wn[0]) if mine[1] < nb[1] else (wm[0], wn[-1])
+                    gaps.append(e_n - e_m)
+        if gaps and opt.level:
+            delta[v] = round(float(np.median(np.concatenate(gaps))) / HS) * HS
     report["level_cm"] = {b: delta[b] for b in range(nblocks)}
 
     windows = {s: m.hwin[s] + delta[block_of[s]] for s in m.hwin}
@@ -477,20 +516,30 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
             m.wraw[cs] = np.where(w == DRY, DRY, w + int(round(delta[b] / HS)))
 
     # 4. weld ------------------------------------------------------------------
-    z_mean = _weld_target(m, windows, free)
-    z = _weld(m, windows, z_mean, free, opt.feather_cells)
+    void_keys = {s for s, b in block_of.items() if b in void}
+    z_mean = _weld_target(m, windows, free, void_keys)
+    z = _weld(m, windows, z_mean, free, opt.feather_cells, void_keys)
 
     # 5. carve, open, paint ------------------------------------------------------
     hw = opt.floor_m / 2.0
     slots = _slots(m, btile, nblocks, opt, report)
+    # Filler's "ground" is slot 0, the eraser: painted from, it punches blank
+    # holes in the road wherever a pass crosses a join.
+    slots = {b: v for b, v in slots.items() if b not in void}
     removed_mask = np.zeros(m.attr.shape, bool)
     report["seam_tiles_dithered"] = _blend_seam(m.tile, btile, rng)
     for lk in links:
         line, s_a, s_b = centreline(lk.path, opt.apron_m / 2.0, rng)
-        lk.line = line
         arr = np.asarray(line)
         s = np.arange(len(arr)) * 0.5
         za, zb = lk.mouth_a_cm + delta[lk.a], lk.mouth_b_cm + delta[lk.b]
+        if not lk.tree and abs(zb - za) / max((s_b - s_a) * 2.0, 1.0) > opt.max_grade_pct:
+            report.setdefault("skipped_links", []).append({
+                "blocks": [lk.a, lk.b], "mouths_cm": [round(za), round(zb)],
+                "why": "both maps are already joined through a third, and this "
+                       "pass would climb %.0f%%" % (abs(zb - za) / max((s_b - s_a) * 2.0, 1.0))})
+            continue
+        lk.line = line
         target = za + (zb - za) * _smoothstep((s - s_a) / max(s_b - s_a, 1.0))
 
         d, idx, win = line_field(z.shape, arr, 1.0, hw / 2.0 + 24.0)
@@ -533,18 +582,31 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
     report["objects"] = _reseat(m, windows, z, delta, block_of, removed_mask)
 
     # 7. cross the boundary: is it one floor now? ----------------------------------
-    free_after = _cell_free(m.attr) & ~((m.wraw != DRY) & (m.wraw * HS > zc))
-    whole = reachable(free_after)
+    whole = _largest(((m.attr & ATTR_BLOCK) == 0) & ~np.isin(btile, void))
+    whole = whole.reshape(whole.shape[0] // 2, 2, -1, 2).all(axis=(1, 3))
     report["joined"] = {b: bool((whole & floors[b]).sum() > 0.9 * floors[b].sum())
-                        for b in range(nblocks)}
+                        for b in range(nblocks) if b not in void}
 
     # 8. write ---------------------------------------------------------------------
     report["written"] = _write(m, z, out, overwrite)
     report["tear_after_cm"] = _tear_on_disk(out)
+    back = MergedMap(out)
+    report["blank_tiles_added"] = int(((back.tile == 0) & (m.tile0 != 0)).sum())
+    if report["blank_tiles_added"]:
+        report.setdefault("problems", []).append(
+            "%d painted tiles became slot 0 (blank)" % report["blank_tiles_added"])
     report["server_attr"] = "regenerate (attr changed)" if report["written"] else "unchanged"
     _previews(m, z0, z, links, pathlib.Path(out) / "_preview")
     (pathlib.Path(out) / "_readapt.json").write_text(json.dumps(report, indent=1), "ascii")
     return report
+
+
+def _largest(mask: np.ndarray) -> np.ndarray:
+    """The largest 4-connected component of ``mask``."""
+    lab, n = label_components(mask, 4)
+    if not n:
+        return np.zeros_like(mask)
+    return lab == int(np.argmax(np.bincount(lab.ravel())[1:])) + 1
 
 
 def _cell_attr(attr: np.ndarray, flag: int) -> np.ndarray:
@@ -559,13 +621,15 @@ def _mouth(zc: np.ndarray, floor: np.ndarray, cell: Tuple[int, int], r: int = 8)
     return float(np.median(zc[ys, xs][f])) if f.any() else float(zc[y, x])
 
 
-def _weld_target(m: MergedMap, windows, free: np.ndarray) -> np.ndarray:
+def _weld_target(m: MergedMap, windows, free: np.ndarray, void_keys=()) -> np.ndarray:
     """What each shared vertex becomes: the mean of its owners, with walkable
     ground outvoting rock 50 to 1.
 
     Two sealed maps meet wall to wall and the plain mean is right. A map with an
     OPEN edge (n_desert_01 has no ring) brings its floor to the join, and a plain
-    mean would lift that floor half-way up the neighbour's cliff in one row."""
+    mean would lift that floor half-way up the neighbour's cliff in one row.
+    Filler has no vote: it is all "walkable", and would drag a real map's ring
+    down to its own blank plane."""
     shape = (m.H * CELLS + 1, m.W * CELLS + 1)
     acc, wsum = np.zeros(shape), np.zeros(shape)
     for key, win in windows.items():
@@ -575,14 +639,15 @@ def _weld_target(m: MergedMap, windows, free: np.ndarray) -> np.ndarray:
         v[1:, :-1] |= f
         v[:-1, 1:] |= f
         v[1:, 1:] |= f
-        w = np.where(v, 1.0, 0.02)
+        w = np.where(v, 1.0, 0.02) if key not in void_keys else np.full((129, 129), 1e-6)
         vs = m._vslice(*key)
         acc[vs] += win * w
         wsum[vs] += w
     return acc / wsum
 
 
-def _weld(m: MergedMap, windows, z_mean: np.ndarray, free: np.ndarray, n: int) -> np.ndarray:
+def _weld(m: MergedMap, windows, z_mean: np.ndarray, free: np.ndarray, n: int,
+          void_keys=()) -> np.ndarray:
     """Pull each sector's border onto the shared value and fade the pull out over
     ``n`` cells, so a 40 m tear becomes a slope and not a spike.
 
@@ -605,7 +670,8 @@ def _weld(m: MergedMap, windows, z_mean: np.ndarray, free: np.ndarray, n: int) -
         pull = num / np.maximum(den, 1.0)
         g = np.ones((129, 129))
         cs = m._cslice(*key)
-        g[:128, :128] = guard[cs]
+        if key not in void_keys:                   # filler has no floor to spare
+            g[:128, :128] = guard[cs]
         g[0, :] = g[-1, :] = 1.0
         g[:, 0] = g[:, -1] = 1.0
         out[vs] += win + pull * g
@@ -667,6 +733,8 @@ def _blend_seam(tile: np.ndarray, btile: np.ndarray, rng, reach: int = 12) -> in
     fade = 0.9 * (1.0 - d[ys, xs] / reach)
     take = (btile[sy, sx] != btile[ys, xs]) & (rng.random(ys.size) < fade)
     src = tile.copy()
+    # Slot 0 is the eraser (rule 8): filler is blank, and blank is not a palette.
+    take &= (src[sy, sx] != 0) & (src[ys, xs] != 0)
     tile[ys[take], xs[take]] = src[sy[take], sx[take]]
     return int(take.sum())
 
