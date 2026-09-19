@@ -14,6 +14,7 @@ rule and the ground block; this file is the procedure.
 | Input | How to read it |
 |---|---|
 | **`areadata.txt` text pasted from the editor** (starts `AreaDataFile`, `Start Object000` …) | a hand selection. Save it verbatim to a scratch file; it IS the group. Go to step 1 |
+| **A WorldEditorRemix paste** (starts `WE_OBJECTS_V1`) | offsets only, y growing north -- it has no position. Save it verbatim and use `--from-we-objects FILE --locate-on <CORPUS>/<map>` wherever the steps say `--from-areadata`; locating it IS step 1 (`N of N ... exact match`). Identical pastes under different labels are one assembly, or a clipboard that did not update: look at what stands at each site before making three patterns |
 | **A map, a point and a radius** ("b1, around (638, 638), 60 m") | `setpiece.py <map> x y r`. A disc takes whatever is inside it, so look for a clipped neighbour and name it out with `--exclude` (the b1 square at 60 m cut a walled estate in half). Skip step 1 |
 | **A scratch map holding only the group** | its `areadata.txt` is the selection. Step 1 does not apply — there is no corpus to check against |
 | A label with a direction ("looking at north", "opens west") | the **facing**. Keep it; it goes in the notes (step 4) |
@@ -28,6 +29,7 @@ decided from the data.
 |---|---|
 | a compound on dry ground | a pattern (the rest of this file) |
 | props at a waterline -- rafts, piers, fish huts | a **shore pattern**: same steps, plus `--water-cm <surface at the source>` in step 4 and `water_cm:` on the check sheet. Measure deck-vs-water for every piece first; the stored biases mean nothing on another shore |
+| a **record that is nothing without its mountain** -- a volcano's smoke effect in its crater | a **landform pattern**: extract the record by point and radius 1, add `--relief-radius R --ground-margin R` and keep the paint that is ON the mountain (`elemental`, `valcano_04`). Measure every instance first (radial height, texture and block profile) and put what is constant in the notes. `setpieces/README.md` "Landforms" |
 | a **single prop whose placement is a terrain fit** -- a bridge, a waterfall, a gate in a wall | NOT a pattern. Measure the fit over every instance offered (profile along and across its axis, water level, `z + bias` against the banks, `attr` under and beside it), find what is CONSTANT across instances, and put it in `reference/structures.md` and, if the generator should do it, a spec surface. Seven bridges became `BRIDGE_MODELS` + `BridgeSpec` this way; the constant was `bank - (z + bias)`, which no single instance shows |
 
 ## 1. Check the paste against the map it came from
@@ -100,8 +102,10 @@ One flat map per biome, every new pattern stamped once, **plus one copy turned
 by 90** whose expected facing you work out beforehand
 (`facing' = facing − rotate_deg`). Palette = a base, a road slot, and every
 texture the patterns' grounds need declared at `weight: 0.0`. No scatter.
-`D:/map_setpiece_check` and `_desert` are the two that exist; rebuild them
-rather than starting a third.
+`<output_dir>/map_setpiece_check`, `_desert` and `_br` (flame ground, the
+battleroyale patterns and the volcano landforms) exist; rebuild them rather than
+starting another. `build_map.py --out` is the MAP FOLDER, not its parent --
+pointed at the data root it writes sector folders into it.
 
 The build log must show `ground: <label> painted N tiles` for each with **no
 `! … no slot for` line** — that line means the ground was skipped.

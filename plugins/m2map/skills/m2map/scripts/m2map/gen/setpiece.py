@@ -178,6 +178,47 @@ class Ground:
                    rows=[str(r) for r in d["rows"]])
 
 
+@dataclass(frozen=True)
+class Relief:
+    """The landform under a pattern: heights on the 2 m vertex grid about the
+    pivot, in cm above the source's own base level.
+
+    For a pattern whose record is nothing without its terrain. The three
+    volcanoes of ``metin2_map_battleroyale`` are ONE record each -- a smoke
+    effect at roll 0, bias 0, standing on the crater floor -- and everything
+    that reads as a volcano is the cone under it: 55-60 m of relief inside a
+    40-50 m radius, a rim 7-13 m over the crater, 100% blocked out to 30-40 m.
+
+    ``rows[j][i]`` is at ``origin_m + (i, j) * cell_m`` in the pattern's
+    UNTURNED frame; :meth:`SetPiece.rotated` only accumulates the angle and the
+    terrain stage samples through it, so a turned cone is not resampled twice.
+    ``base`` is the 25th percentile of the ring between ``radius_m - feather_m``
+    and ``radius_m`` -- a low quantile, because a cone's ring is half foot and
+    half the next ridge, and the foot is the level it stands on.
+    """
+
+    origin_m: Tuple[float, float]
+    rows: List[List[int]]
+    radius_m: float
+    feather_m: float = 16.0
+    cell_m: float = 2.0
+
+    def to_dict(self) -> Dict:
+        return {"origin_m": [round(self.origin_m[0], 4), round(self.origin_m[1], 4)],
+                "size": [len(self.rows[0]) if self.rows else 0, len(self.rows)],
+                "cell_m": self.cell_m, "radius_m": self.radius_m, "feather_m": self.feather_m,
+                # one string per row: `indent=1` would put every vertex on its own line
+                "rows": [" ".join("%d" % v for v in r) for r in self.rows]}
+
+    @classmethod
+    def from_dict(cls, d: Dict) -> "Relief":
+        return cls(origin_m=(float(d["origin_m"][0]), float(d["origin_m"][1])),
+                   rows=[[int(v) for v in (r.split() if isinstance(r, str) else r)]
+                         for r in d["rows"]],
+                   radius_m=float(d["radius_m"]), feather_m=float(d.get("feather_m", 16.0)),
+                   cell_m=float(d.get("cell_m", 2.0)))
+
+
 @dataclass
 class SetPiece:
     """A block of records about a pivot, with where it came from."""
@@ -202,6 +243,8 @@ class SetPiece:
     #: ground. With it, `stamp(water_cm=...)` hangs every piece at the same
     #: height over the target's water that it had over the source's.
     water_cm: Optional[float] = None
+    #: the landform under it, if it was read -- see :func:`with_relief`
+    relief: Optional[Relief] = None
 
     # --- geometry ---------------------------------------------------------
     def rotated(self, deg: float) -> "SetPiece":
@@ -257,6 +300,8 @@ class SetPiece:
             d["ground"] = self.ground.to_dict()
         if self.water_cm is not None:
             d["water_cm"] = float(self.water_cm)
+        if self.relief is not None:
+            d["relief"] = self.relief.to_dict()
         return d
 
     @classmethod
@@ -275,7 +320,8 @@ class SetPiece:
                    rotation_deg=float(d.get("rotation_deg", 0.0)),
                    notes=d.get("notes", ""),
                    ground=Ground.from_dict(d["ground"]) if d.get("ground") else None,
-                   water_cm=(float(d["water_cm"]) if d.get("water_cm") is not None else None))
+                   water_cm=(float(d["water_cm"]) if d.get("water_cm") is not None else None),
+                   relief=Relief.from_dict(d["relief"]) if d.get("relief") else None)
 
     def save(self, path) -> pathlib.Path:
         path = pathlib.Path(path)
@@ -416,6 +462,99 @@ def verify_against(areadata_path, map_dir, names: Optional[Dict[int, str]] = Non
             "left_out": left_out, "exact": not missing and not left_out}
 
 
+WE_OBJECTS_MAGIC = "WE_OBJECTS_V1"
+
+
+def parse_we_objects(path) -> List[Tuple[float, float, int, float, float]]:
+    """``(x_cm, y_cm, crc, roll, bias)`` per record of a WorldEditorRemix
+    clipboard paste (``WE_OBJECTS_V1``, a count, then one line per object:
+    ``x y z crc yaw pitch roll bias ...``).
+
+    Unlike ``areadata.txt`` text the paste has **no absolute position**: ``x`` and
+    ``y`` are offsets from the selection's own bounding box, and ``y`` grows
+    **north** -- it is the stored (negated) ``areadata`` Y minus its minimum, so
+    the record at ``y = 0`` is the southernmost. Measured on five pastes from
+    ``metin2_map_battleroyale``: every record found with the sign flipped, none
+    without. ``z`` is a small relative figure and is not used.
+    """
+    lines = pathlib.Path(path).read_text(encoding="utf-8").split("\n")
+    if not lines or lines[0].strip() != WE_OBJECTS_MAGIC:
+        raise ValueError("%s is not a %s paste" % (path, WE_OBJECTS_MAGIC))
+    out = []
+    for ln in lines[2:]:
+        t = ln.split()
+        if len(t) >= 8:
+            out.append((float(t[0]), float(t[1]), int(t[3]), float(t[6]) % 360.0, float(t[7])))
+    if not out:
+        raise ValueError("no records in %s" % path)
+    return out
+
+
+def locate_we_objects(path, map_dir, tol_cm: float = 3.0) -> List[Dict]:
+    """Every place on ``map_dir`` where a ``WE_OBJECTS_V1`` paste stands.
+
+    The paste carries offsets only, so the group is found by its rarest CRC:
+    each map record of that CRC is tried as the anchor and the rest of the paste
+    is looked up around it -- position within ``tol_cm``, same CRC, roll and
+    bias. Returns one dict per candidate, best first: ``records`` (the matched
+    map records, paste order, ``None`` where nothing matched), ``matched``,
+    ``left_out`` (map records inside the same box the paste does not hold).
+    """
+    pasted = parse_we_objects(path)
+    on_map = [r for f in _sector_files(pathlib.Path(map_dir))
+              for r in ad.AreaData.load(f).records]
+    freq: Dict[int, int] = {}
+    for r in on_map:
+        freq[int(r.crc)] = freq.get(int(r.crc), 0) + 1
+    a = min(pasted, key=lambda p: freq.get(p[2], 0) or 10 ** 9)
+    sites = []
+    for cand in on_map:
+        if int(cand.crc) != a[2]:
+            continue
+        ox, oy = cand.x - a[0], cand.terrain_y + a[1]      # paste y grows north
+        pool = list(on_map)
+        got = []
+        for px, py, crc, roll, bias in pasted:
+            hit = next((r for r in pool if int(r.crc) == crc
+                        and abs(r.x - (ox + px)) <= tol_cm
+                        and abs(r.terrain_y - (oy - py)) <= tol_cm
+                        and float(r.roll) % 360.0 == roll
+                        and float(r.height_bias) == bias), None)
+            if hit is not None:
+                pool.remove(hit)
+            got.append(hit)
+        found = [r for r in got if r is not None]
+        if not found:
+            continue
+        x0, x1 = min(r.x for r in found) - 1.0, max(r.x for r in found) + 1.0
+        y0, y1 = min(r.terrain_y for r in found) - 1.0, max(r.terrain_y for r in found) + 1.0
+        left = [r for r in pool if x0 <= r.x <= x1 and y0 <= r.terrain_y <= y1]
+        sites.append({"records": got, "matched": len(found), "pasted": len(pasted),
+                      "left_out": left})
+    sites.sort(key=lambda s: -s["matched"])
+    return sites
+
+
+def from_we_objects(path, map_dir, name: str = "",
+                    names: Optional[Dict[int, str]] = None,
+                    exclude: Sequence[str] = ()) -> SetPiece:
+    """A ``WE_OBJECTS_V1`` paste as a :class:`SetPiece`, built from the MAP's
+    records once the paste has been found on it -- so the pattern has a
+    ``pivot_m`` to render from and a ground to read, which the paste alone
+    cannot give. Refuses a paste that is not wholly on the map.
+    """
+    map_dir = pathlib.Path(map_dir)
+    sites = locate_we_objects(path, map_dir)
+    if not sites or sites[0]["matched"] != sites[0]["pasted"]:
+        raise ValueError("%s: %d of %d pasted records found on %s"
+                         % (path, sites[0]["matched"] if sites else 0,
+                            len(parse_we_objects(path)), map_dir.name))
+    names = names or {}
+    dropped = _dropper(names, exclude)
+    hits = [(r.x, r.terrain_y, r) for r in sites[0]["records"] if not dropped(int(r.crc))]
+    return _build(hits, map_dir.name, name or pathlib.Path(path).stem, "centroid", names)
+
+
 def _find_textureset(map_dir: pathlib.Path, ref: str) -> Optional[pathlib.Path]:
     """Where ``setting.txt``'s ``TextureSet`` reference actually is.
 
@@ -445,7 +584,7 @@ def _find_textureset(map_dir: pathlib.Path, ref: str) -> Optional[pathlib.Path]:
 
 
 def with_ground(sp: SetPiece, map_dir, keep: Sequence[str] = (), margin_m: float = 8.0,
-                textureset=None) -> SetPiece:
+                textureset=None, within_m: Optional[float] = None) -> SetPiece:
     """``sp`` with the source map's paint under it, as a :class:`Ground`.
 
     Reads ``tile.raw`` over the pattern's extent plus ``margin_m`` and resolves
@@ -455,6 +594,9 @@ def with_ground(sp: SetPiece, map_dir, keep: Sequence[str] = (), margin_m: float
     copied, grass and all, and the window's square edge shows wherever the
     target's ground differs -- so name the FEATURE: ``keep=["field"]`` takes a
     camp's dirt core and halo and leaves the meadow round it alone.
+
+    ``within_m`` keeps only tiles inside that radius of the pivot -- for a
+    landform, whose square window otherwise clips the lava of the next cone.
     """
     from ..codec import setting as setting_codec
     from ..codec import textureset as ts_codec
@@ -488,6 +630,8 @@ def with_ground(sp: SetPiece, map_dir, keep: Sequence[str] = (), margin_m: float
                 sectors[key] = f.read_bytes() if tx >= 0 and ty >= 0 and f.is_file() else b""
             raw = sectors[key]
             tex = path_of.get(raw[(ty % 256 + 1) * 258 + (tx % 256 + 1)]) if raw else None
+            if within_m is not None and math.hypot(tx + 0.5 - px, ty + 0.5 - py) > within_m:
+                tex = None
             if tex is None or (want and not any(k in tex for k in want)):
                 out.append(_GROUND_SKIP)
                 continue
@@ -498,6 +642,55 @@ def with_ground(sp: SetPiece, map_dir, keep: Sequence[str] = (), margin_m: float
             out.append(_GROUND_DIGITS[palette.index(tex)])
         rows.append("".join(out))
     return replace(sp, ground=Ground(origin_m=(X0 - px, Y0 - py), palette=palette, rows=rows))
+
+
+def with_relief(sp: SetPiece, map_dir, radius_m: float, feather_m: float = 16.0) -> SetPiece:
+    """``sp`` with the source map's landform under it, as a :class:`Relief`.
+
+    Reads ``height.raw`` on the vertex grid over a square of ``radius_m`` about
+    the pivot and stores it relative to the base level (see :class:`Relief`).
+    Save the ground with ``--ground-margin`` equal to the radius, so the paint
+    on the mountain -- a volcano's lava head -- comes with it.
+    """
+    import numpy as np
+    from ..codec import height as height_codec
+
+    map_dir = pathlib.Path(map_dir)
+    if sp.rotation_deg:
+        raise ValueError("read the relief before turning the pattern")
+    px, py = sp.pivot_m
+    i0, i1 = int(math.floor((px - radius_m) / 2.0)), int(math.ceil((px + radius_m) / 2.0))
+    j0, j1 = int(math.floor((py - radius_m) / 2.0)), int(math.ceil((py + radius_m) / 2.0))
+    sectors: Dict[Tuple[int, int], Optional[object]] = {}
+
+    def grid(key):
+        if key not in sectors:
+            f = map_dir / ("%03d%03d" % key) / "height.raw"
+            sectors[key] = (height_codec.read_height(f).world_z()
+                            if min(key) >= 0 and f.is_file() else None)
+        return sectors[key]
+
+    z = np.zeros((j1 - j0 + 1, i1 - i0 + 1))
+    for j in range(j0, j1 + 1):
+        for i in range(i0, i1 + 1):
+            # vertex 128 of one sector is vertex 0 of the next; on the map's far
+            # edge only the first exists
+            for key in ((i // 128, j // 128), ((i - 1) // 128, j // 128),
+                        (i // 128, (j - 1) // 128), ((i - 1) // 128, (j - 1) // 128)):
+                g = grid(key)
+                li, lj = i - key[0] * 128, j - key[1] * 128
+                if g is not None and 0 <= li <= 128 and 0 <= lj <= 128:
+                    z[j - j0, i - i0] = g[lj, li]
+                    break
+            else:
+                raise ValueError("relief window leaves %s at vertex (%d, %d)" % (map_dir.name, i, j))
+    yy, xx = np.mgrid[j0:j1 + 1, i0:i1 + 1]
+    r = np.hypot(xx * 2.0 - px, yy * 2.0 - py)
+    ring = (r >= radius_m - feather_m) & (r <= radius_m)
+    base = float(np.percentile(z[ring], 25))
+    rows = [[int(round(v - base)) for v in row] for row in z]
+    return replace(sp, relief=Relief(origin_m=(i0 * 2.0 - px, j0 * 2.0 - py), rows=rows,
+                                     radius_m=float(radius_m), feather_m=float(feather_m)))
 
 
 def _build(hits, source_map: str, name: str, pivot: str, names: Dict[int, str],
@@ -613,13 +806,15 @@ def expand(spec):
     same point.
     """
     from dataclasses import replace as _replace
-    from .spec import GroundStampSpec, PlazaSpec, SpecError, resolve_pattern
+    from .spec import (GroundStampSpec, PlazaSpec, ReliefStampSpec, SpecError,
+                       resolve_pattern)
 
     if not getattr(spec, "setpieces", None):
         return spec
     objects = list(spec.objects)
     plazas = list(spec.plazas)
     grounds = list(spec.ground_stamps)
+    reliefs = list(spec.relief_stamps)
     for sps in spec.setpieces:
         path = resolve_pattern(sps.pattern)
         if path is None:
@@ -632,6 +827,8 @@ def expand(spec):
         r = sps.pad_radius_m
         if r is None and sps.water_cm is not None:
             r = 0.0                       # a pad would flatten the shore it stands on
+        if r is None and sp.relief is not None:
+            r = 0.0                       # ...or the mountain it came with
         if r is None:
             x0, x1, y0, y1 = sp.extent_m()
             r = max(4.0, max(abs(x0), abs(x1), abs(y0), abs(y1)) + 4.0)
@@ -644,8 +841,17 @@ def expand(spec):
                                            palette=list(sp.ground.palette),
                                            rows=list(sp.ground.rows),
                                            label=sps.label or sp.name))
+        if sp.relief is not None:
+            reliefs.append(ReliefStampSpec(anchor=tuple(sps.anchor),
+                                           origin_m=tuple(sp.relief.origin_m),
+                                           rows=[list(x) for x in sp.relief.rows],
+                                           radius_m=sp.relief.radius_m,
+                                           feather_m=sp.relief.feather_m,
+                                           cell_m=sp.relief.cell_m,
+                                           rotate_deg=sp.rotation_deg,
+                                           label=sps.label or sp.name))
     return _replace(spec, objects=objects, plazas=plazas, setpieces=[],
-                    ground_stamps=grounds)
+                    ground_stamps=grounds, relief_stamps=reliefs)
 
 
 # --- describing a block ------------------------------------------------------
@@ -771,6 +977,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="with --from-areadata: check every pasted record exists on this "
                          "map, and list what the map holds in the same box that the paste "
                          "does not; exits 1 if a pasted record is not on the map")
+    ap.add_argument("--from-we-objects", metavar="FILE",
+                    help="take a WorldEditorRemix clipboard paste (WE_OBJECTS_V1). It holds "
+                         "offsets only, so give --locate-on: the group is found on that map "
+                         "and the pattern is built from the map's own records")
+    ap.add_argument("--locate-on", metavar="MAP_DIR",
+                    help="with --from-we-objects: the map the selection was copied from")
     ap.add_argument("--source-map", default="",
                     help="with --from-areadata: the map the group stands on")
     ap.add_argument("--name", default="")
@@ -787,6 +999,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="keep only tiles whose texture path contains this (repeatable); "
                          "name the feature, e.g. 'field' for a camp's dirt")
     ap.add_argument("--ground-margin", type=float, default=8.0, metavar="M")
+    ap.add_argument("--relief-radius", type=float, default=None, metavar="M",
+                    help="also save the LANDFORM: the source heights within this radius "
+                         "of the pivot, relative to the level of the ring at its edge -- "
+                         "for a record that is nothing without its mountain (a volcano). "
+                         "Read from --ground-from / --locate-on / MAP_DIR")
     ap.add_argument("--water-cm", type=float, default=None,
                     help="the water surface the group stands at, world cm -- for a SHORE "
                          "pattern (rafts, piers), which is then stamped relative to the "
@@ -804,7 +1021,29 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             print("#   NOT ON THE MAP: %(name)s %(crc)d at (%(x_m).1f, %(y_m).1f) roll %(roll)g" % r)
         if rep["missing_from_map"]:
             return 1
-    if a.from_areadata:
+    if a.from_we_objects:
+        if not a.locate_on:
+            ap.error("--from-we-objects needs --locate-on MAP_DIR")
+        names = _catalog_names()
+        sites = locate_we_objects(a.from_we_objects, a.locate_on)
+        for s in sites:
+            recs = [r for r in s["records"] if r is not None]
+            print("# located: %d of %d at (%.1f, %.1f) m%s"
+                  % (s["matched"], s["pasted"],
+                     sum(r.x for r in recs) / len(recs) / 100.0,
+                     sum(r.terrain_y for r in recs) / len(recs) / 100.0,
+                     " -- exact match" if s["matched"] == s["pasted"] and not s["left_out"] else ""))
+        if not sites or sites[0]["matched"] != sites[0]["pasted"]:
+            print("#   NOT ON THE MAP as pasted")
+            return 1
+        for r in sites[0]["left_out"]:
+            print("#   left out by the author: %s %d at (%.1f, %.1f) roll %g"
+                  % (names.get(int(r.crc), ""), int(r.crc), r.x / 100.0, r.terrain_y / 100.0,
+                     float(r.roll) % 360.0))
+        sp = from_we_objects(a.from_we_objects, a.locate_on, name=a.name, names=names,
+                             exclude=a.exclude)
+        a.ground_from = a.ground_from or (a.locate_on if a.ground_keep else None)
+    elif a.from_areadata:
         sp = from_areadata(a.from_areadata, source_map=a.source_map, name=a.name,
                            pivot=a.pivot, names=_catalog_names(), exclude=a.exclude)
     elif None in (a.map_dir, a.x_m, a.y_m, a.radius_m):
@@ -814,7 +1053,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                      names=_catalog_names(), exclude=a.exclude)
     ground_map = a.ground_from or (a.map_dir if a.ground_keep and not a.from_areadata else None)
     if ground_map:
-        sp = with_ground(sp, ground_map, keep=a.ground_keep, margin_m=a.ground_margin)
+        sp = with_ground(sp, ground_map, keep=a.ground_keep, margin_m=a.ground_margin,
+                         within_m=(a.relief_radius - 8.0) if a.relief_radius else None)
+    if a.relief_radius:
+        src = a.ground_from or a.locate_on or a.map_dir
+        if not src:
+            ap.error("--relief-radius needs a map: --ground-from, --locate-on or MAP_DIR")
+        sp = with_relief(sp, src, a.relief_radius)
     if a.rotate:
         sp = sp.rotated(a.rotate)
     sp.water_cm = a.water_cm
@@ -831,6 +1076,11 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     if sp.ground is not None:
         print("# ground: %d tiles of %s" % (len(sp.ground.cells()),
                                           ", ".join(t.rsplit("/", 1)[-1] for t in sp.ground.palette)))
+    if sp.relief is not None:
+        flat = [v for row in sp.relief.rows for v in row]
+        print("# relief: %d x %d vertices, %+d .. %+d cm about the base, radius %g m"
+              % (len(sp.relief.rows[0]), len(sp.relief.rows), min(flat), max(flat),
+                 sp.relief.radius_m))
     if a.save:
         print("# saved", sp.save(a.save))
     return 0

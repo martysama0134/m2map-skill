@@ -274,6 +274,13 @@ p75 12.15 deg, p95 22.91 deg -- a *narrower* slope band than any other archetype
 
 ---
 
+**A shipped camp is a pattern**: `setpieces: br_snow_camp_north` -- two yurts and
+a small one, stalls, a watchtower, a carriage and blue spruces behind two fence
+arcs (54 records, `metin2_map_battleroyale`), opening north. Its floor is a
+solid `n/snow.m/field 01` disc ~35 m across with a track leaving it, on
+`snow01`/`snow02` dither; declare `snow.m/field 01` (`weight: 0.0` if the map
+has no road of it). `reference/setpieces/README.md`.
+
 ## Attr policy
 
 `slope_driven` on `map_n_snowm_01` only; `painted_box` on the four sungzi instances

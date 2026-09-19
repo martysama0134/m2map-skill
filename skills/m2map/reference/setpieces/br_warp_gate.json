@@ -1,0 +1,58 @@
+{
+ "format": "m2map-setpiece/1",
+ "name": "br_warp_gate",
+ "source_map": "metin2_map_battleroyale",
+ "source_point_m": [
+  1392.6890104166666,
+  133.92833658666666
+ ],
+ "radius_m": 2.0,
+ "pivot": "centroid",
+ "pivot_m": [
+  1392.689,
+  133.9283
+ ],
+ "rotation_deg": 0.0,
+ "notes": "Author's WorldEditor selection (WE_OBJECTS_V1 paste, 3 records, 3/3 found at (1393, 134), the desert gate). FACES SOUTH (facing 180): the portal is looked into from the south. One assembly of three records 1.6 m apart: warpgate01 (the octagonal stone arch on its two-step dais), warpgate02 (the red portal effect) and warpgate02_01. The map has two more, hand-turned copies of the same assembly -- (148, 135) facing south-east and (107, 1428) facing north-east -- whose inner rolls differ by 15 deg; this one is the pattern. No floor: it stands on the road. The dais is about 14 m across, so pad_radius_m 10. rotate_deg = (180 - B) mod 360.",
+ "count": 3,
+ "extent_m": [
+  -0.25,
+  0.16,
+  -0.63,
+  0.97
+ ],
+ "relief_cm": 0.0,
+ "headings": {
+  "345": 2,
+  "45": 1
+ },
+ "pieces": [
+  {
+   "dx": 0.088,
+   "dy": -0.3433,
+   "roll": 345.0,
+   "bias": 0.0,
+   "crc": 929619867,
+   "z": 19906.0,
+   "name": "warpgate01"
+  },
+  {
+   "dx": 0.1615,
+   "dy": -0.631,
+   "roll": 345.0,
+   "bias": -5.0,
+   "crc": 2077239231,
+   "z": 19906.0,
+   "name": "warpgate02"
+  },
+  {
+   "dx": -0.2495,
+   "dy": 0.9743,
+   "roll": 45.0,
+   "bias": -5.0,
+   "crc": 1013185983,
+   "z": 19906.0,
+   "name": "warpgate02_01"
+  }
+ ]
+}

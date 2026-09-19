@@ -333,6 +333,11 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
     for pad in (pads or []):
         height = _level_pad(height, pad)
 
+    # Copied landforms after the pads and before the water: a stamped mountain
+    # is not to be levelled by anything, and a river may still cut its foot.
+    for rs in getattr(spec, "relief_stamps", None) or []:
+        height = stamp_relief(height, rs)
+
     # Cut the water bed last, so flattening cannot fill it back in. Without a
     # bed the water plane lies on top of the ground as a flat slab; with one it
     # sits in a channel and the banks read as banks.
@@ -369,6 +374,48 @@ def build(spec: MapSpec, flatten_mask: np.ndarray | None = None,
         height = np.clip(height, 0.0, 32767.5)
 
     return height
+
+
+def stamp_relief(height_cm: np.ndarray, rs) -> np.ndarray:
+    """``height_cm`` with a `ReliefStampSpec` raised on it.
+
+    The pattern's grid is sampled bilinearly through the block's turn (the same
+    sign as `setpiece.rotate`: offsets turn clockwise in y-down metres), so a
+    cone lands between vertices and at any angle without being resampled twice.
+    The base is read off the TARGET the way it was read off the source -- the
+    25th percentile of the feather ring -- and the ground is ``base + dz``
+    inside, fading to the target's own across the ring.
+    """
+    src = np.asarray(rs.rows, dtype=np.float64)
+    gh, gw = src.shape
+    t = np.radians(float(rs.rotate_deg))
+    c, sn = np.cos(t), np.sin(t)
+    ax, ay = rs.anchor
+    R, F = float(rs.radius_m), max(float(rs.feather_m), 1e-6)
+    cell = CELL_SCALE / 100.0
+    j0, j1 = max(int((ay - R) // cell), 0), min(int((ay + R) // cell) + 2, height_cm.shape[0])
+    i0, i1 = max(int((ax - R) // cell), 0), min(int((ax + R) // cell) + 2, height_cm.shape[1])
+    if j0 >= j1 or i0 >= i1:
+        return height_cm
+    yy, xx = np.mgrid[j0:j1, i0:i1]
+    x, y = xx * cell - ax, yy * cell - ay
+    r = np.hypot(x, y)
+    u = ((x * c - y * sn) - rs.origin_m[0]) / float(rs.cell_m)      # back into the source
+    v = ((x * sn + y * c) - rs.origin_m[1]) / float(rs.cell_m)
+    inside = (u >= 0) & (u <= gw - 1) & (v >= 0) & (v <= gh - 1) & (r <= R)
+    u0 = np.clip(np.floor(u).astype(int), 0, gw - 2)
+    v0 = np.clip(np.floor(v).astype(int), 0, gh - 2)
+    fu, fv = np.clip(u - u0, 0.0, 1.0), np.clip(v - v0, 0.0, 1.0)
+    dz = (src[v0, u0] * (1 - fu) * (1 - fv) + src[v0, u0 + 1] * fu * (1 - fv)
+          + src[v0 + 1, u0] * (1 - fu) * fv + src[v0 + 1, u0 + 1] * fu * fv)
+    win = height_cm[j0:j1, i0:i1]
+    ring = inside & (r >= R - F)
+    base = float(np.percentile(win[ring], 25)) if ring.any() else float(np.median(win))
+    k = np.clip((R - r) / F, 0.0, 1.0)
+    w = np.where(inside, k * k * (3.0 - 2.0 * k), 0.0)
+    out = height_cm.copy()
+    out[j0:j1, i0:i1] = np.clip(win * (1.0 - w) + (base + dz) * w, 0.0, 32767.5)
+    return out
 
 
 def _to_cells(tile_grid: np.ndarray, shape) -> np.ndarray:

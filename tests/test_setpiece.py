@@ -452,3 +452,90 @@ def test_yaml_setpieces_are_validated():
                                              pad_radius_m=0)])
     ex = setpiece.expand(nopad)
     assert len(ex.plazas) == len(nopad.plazas)
+
+
+# --- WE_OBJECTS_V1 pastes ---------------------------------------------------
+
+def _we_paste(path: pathlib.Path, recs) -> pathlib.Path:
+    """`recs` as WorldEditorRemix copies them: offsets from the selection's own
+    box, y growing NORTH (the stored, negated Y minus its minimum)."""
+    x0 = min(r[0] for r in recs)
+    y0 = min(r[1] for r in recs)
+    lines = ["WE_OBJECTS_V1", str(len(recs))]
+    for x, y, roll, bias, crc in recs:
+        lines.append("%g %g 0 %d 0 0 %g %g 0 0 0,0,0,0,0,0,0,0" % (x - x0, y - y0, crc, roll, bias))
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
+def test_a_we_objects_paste_is_found_on_its_map_with_y_growing_north(source, tmp_path):
+    paste = _we_paste(tmp_path / "rail.txt", RAIL)
+    sites = setpiece.locate_we_objects(paste, source)
+    assert sites[0]["matched"] == sites[0]["pasted"] == 5
+    assert [int(r.crc) for r in sites[0]["left_out"]] == []      # the tent is outside the box
+    sp = setpiece.from_we_objects(paste, source)
+    direct = setpiece.from_areadata(source / "001001" / "areadata.txt", exclude=["1099929426"])
+    assert sorted((p.dx, p.dy, p.roll, p.crc) for p in sp.pieces) == \
+        sorted((p.dx, p.dy, p.roll, p.crc) for p in direct.pieces)
+    # mirrored -- y read as growing south -- it is not on the map
+    flipped = _we_paste(tmp_path / "flipped.txt", [(x, -y, r, b, c) for x, y, r, b, c in RAIL])
+    with pytest.raises(ValueError, match="of 5 pasted records found"):
+        setpiece.from_we_objects(flipped, source)
+
+
+# --- landforms ---------------------------------------------------------------
+
+def _cone_pattern() -> "setpiece.SetPiece":
+    """A 40 m cone, 30 m tall, with a spur to the EAST so a turn can be seen."""
+    n = 41
+    rows = []
+    for j in range(n):
+        row = []
+        for i in range(n):
+            x, y = (i - 20) * 2.0, (j - 20) * 2.0
+            z = max(0.0, 3000.0 * (1.0 - math.hypot(x, y) / 20.0))
+            if 0.0 <= x <= 30.0 and abs(y) <= 3.0:
+                z = max(z, 1500.0)
+            row.append(int(z))
+        rows.append(row)
+    piece = setpiece.Piece(dx=0.0, dy=0.0, roll=0.0, height_bias=0.0, crc=3502139878)
+    return setpiece.SetPiece(name="cone", pieces=[piece],
+                             relief=setpiece.Relief(origin_m=(-40.0, -40.0), rows=rows,
+                                                    radius_m=40.0, feather_m=8.0))
+
+
+def test_relief_round_trips_and_raises_the_mountain_on_the_target(tmp_path):
+    import numpy as np
+    from m2map.gen import terrain
+    from m2map.gen.spec import ReliefStampSpec
+
+    sp = setpiece.load(_cone_pattern().save(tmp_path / "cone.json"))
+    assert sp.relief.rows[20][20] == 3000 and sp.relief.radius_m == 40.0
+
+    def stamped(deg):
+        t = sp.rotated(deg)
+        rs = ReliefStampSpec(anchor=(100.0, 100.0), origin_m=t.relief.origin_m, rows=t.relief.rows,
+                             radius_m=40.0, feather_m=8.0, rotate_deg=t.rotation_deg)
+        return terrain.stamp_relief(np.full((129, 129), 17000.0), rs)
+
+    h = stamped(0.0)
+    assert h.max() == pytest.approx(20000.0) and h[50, 50] == h.max()   # base 170 m + 30 m
+    assert h[0, 0] == 17000.0 and h[50, 91] == 17000.0           # outside the radius: untouched
+    assert h[50, 50 + 12] == pytest.approx(18500.0, abs=60.0)    # the spur, 24 m EAST
+    assert h[50 - 12, 50] == pytest.approx(17000.0, abs=60.0)
+    # roll is counter-clockwise north-up: turned 90, an east spur points NORTH
+    h = stamped(90.0)
+    assert h[50 - 12, 50] == pytest.approx(18500.0, abs=60.0)
+    assert h[50, 50 + 12] == pytest.approx(17000.0, abs=60.0)
+
+
+def test_a_pattern_with_relief_expands_to_a_relief_stamp_and_no_pad(tmp_path):
+    from m2map.gen.spec import SetPieceSpec
+    f = _cone_pattern().save(tmp_path / "cone.json")
+    spec = make_spec(setpieces=[SetPieceSpec(pattern=str(f), anchor=(120.0, 150.0), rotate_deg=90)])
+    ex = setpiece.expand(spec)
+    assert len(ex.plazas) == len(spec.plazas)                     # a pad would level the mountain
+    assert [r.rotate_deg for r in ex.relief_stamps] == [90.0]
+    b = pipeline.run(ex, stages=("layout", "terrain"))
+    around = b.height_cm[75 - 25:75 + 25, 60 - 25:60 + 25]
+    assert around.max() - around.min() > 2500.0

@@ -258,6 +258,17 @@ any archetype, because the smoke effects go on the steep vents (their own slope 
 
 ---
 
+**The volcano is a landform, not a prop.** `volcano_greatsmoke2` is one effect
+record at roll 0, bias 0 on a crater floor; the cone under it is 57-98 m of
+relief, 100% blocked out to 30-60 m, with an `elemental_02_07` lava disc 10-20 m
+across in the crater and `valcano_04` veined rock round it down to r 30-50 m,
+`valcano_rock` below (three instances on `metin2_map_battleroyale`). Use
+`setpieces: br_volcano_cone` / `_ridge` / `_great`, which stamp mountain, paint
+and effect together. **The camp**: `br_flame_camp_south`, 29 records on
+`valcano_01` dirt mottled with `sand03`, a cobbled `flame area/tile01` spur
+arriving from the south -- on this ground `tile01` is the road and `valcano_01`
+the walkable dirt, `valcano_rock` the cliff. `reference/setpieces/README.md`.
+
 ## Attr policy
 
 `slope_driven` on `metin2_map_n_flame_01` and `metin2_map_labyrinth`; `painted_box` on

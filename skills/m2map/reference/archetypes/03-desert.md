@@ -550,6 +550,12 @@ its side. On the reference map the road bears 68° there and the gate is set to
 
 ---
 
+**A seventh, on a different floor**: `br_desert_camp_south` is `desert_camp_south`
+as `metin2_map_battleroyale` reuses it -- same coordinates, two fence panels
+fewer, sunk 13-46 cm -- standing on a solid `field 01` patch with `a/grass/grass
+03` under the palms instead of `sand02`. The camp floor is whatever dark, solid
+texture the palette has; it is never the dithered base sand.
+
 ## Attr policy
 
 **Mixed, and the split matters**: `slope_driven` on `metin2_map_n_desert_01`,

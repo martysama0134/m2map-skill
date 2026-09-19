@@ -28,6 +28,13 @@ matched the source render did no generating at all (`placement.md` §6.w,
 | `desert_camp_northwest.json` | same map, about (435, 709) | 83 | centroid | x -38.2 … +16.5 · y -28.9 … +18.9 | 27 cm | opens **north-west** (315) |
 | `desert_camp_northeast.json` | same map, about (158, 981) | 135 | centroid | x -37.5 … +41.6 · y -40.8 … +36.9 | 191 cm | opens **north-east** (45) |
 | `desert_camp_west2.json` | same map, about (429, 1207) | 157 | centroid | x -42.1 … +43.2 · y -50.0 … +33.4 | 70 cm | opens **west** (270) |
+| `br_snow_camp_north.json` | `metin2_map_battleroyale`, author's selection about (435, 712) | 54 | centroid | x -35.5 … +17.3 · y -32.6 … +16.1 | 124 cm | opens **north** (0) |
+| `br_desert_camp_south.json` | same map, about (891, 147) | 78 | centroid | x -27.6 … +23.0 · y -25.2 … +19.5 | 15 cm | opens **south** (180) |
+| `br_flame_camp_south.json` | same map, about (814, 800) | 29 | centroid | x -17.6 … +19.3 · y -8.3 … +12.6 | 40 cm | opens **south** (180) |
+| `br_warp_gate.json` | same map, the desert gate at (1393, 134) | 3 | centroid | 1.6 m | 0 cm | faces **south** (180) |
+| `br_volcano_cone.json` | same map, (863, 763) | 1 | centroid | **landform**, radius 64 m | +62 m | none |
+| `br_volcano_ridge.json` | same map, (733, 620) | 1 | centroid | **landform**, radius 64 m | +69 m | none |
+| `br_volcano_great.json` | same map, (1011, 546) | 1 | centroid | **landform**, radius 120 m | +98 m | none |
 | `a1_fishing_bays.json` | `metin2_map_a1`, author's selection about (359, 375) | 5 | centroid | x -18.9 … +31.8 · y -53.2 … +58.8 | **shore pattern**, `water_cm` 15,305 | water to the **east** (90) |
 
 `desert_camp`: two fence rails of 5 and 6 panels (fence01…05 mixed, steps
@@ -69,6 +76,22 @@ Declare `sand02`, `grass 01`, `grass 02` and `field 01` (`weight: 0.0` for the
 ones the map does not otherwise use). Verified against the source from the same
 camera, and `desert_camp_west` turned 90 verified to open south
 (`map_setpiece_check_desert`).
+
+`br_*`: what the author picked out of `metin2_map_battleroyale`, a 6x6 map of
+five biomes. They arrived as **`WE_OBJECTS_V1`** pastes (see "Making one") and
+each was found on the map record for record, nothing left out.
+
+| pattern | what it is | floor -- declare these |
+|---|---|---|
+| `br_snow_camp_north` | two yurts and a small one behind a fence arc with stalls, a watchtower, a carriage, blue spruces; 53 x 49 m | a solid `n/snow.m/field 01` disc ~35 m across with a track leaving north |
+| `br_desert_camp_south` | `desert_camp_south` again -- the map reuses `n_desert_01`'s camp at the same coordinates -- less two fence panels and sunk deeper (bias -28 / -13 / -46) | **`n/desert/field/field 01`** with `a/grass/grass 03` under the palms, where the original has `sand02`. Use it when the palette has no `sand02` |
+| `br_flame_camp_south` | two canvas tents and a stall, a flag, a brazier, a cart, three dead trees, two short fence arcs; the smallest camp, 37 x 21 m | `flame area/valcano_01` mottled with `desert/sand/sand03`, and a cobbled `flame area/tile01` spur 8 m wide arriving from the south |
+| `br_warp_gate` | `warpgate01` (arch on a two-step dais, ~14 m), `warpgate02` (the portal effect), `warpgate02_01`; three records inside 1.6 m | none -- it stands on the road. `pad_radius_m: 10` |
+
+The map has three gates and they are one assembly hand-turned (inner rolls 15
+deg apart); the desert one is the pattern. Copies verified against the source
+from the same camera on `map_setpiece_check_br`; `br_flame_camp_south` turned 90
+opens east and the gate turned 90 faces east, as `facing - rotate_deg` says.
 
 A camp **faces** somewhere: the side without fence, where the road arrives. The
 facing is a compass bearing in the pattern's notes, and since roll turns
@@ -112,6 +135,53 @@ The shore has to be where the pattern expects it. Build, read the waterline off
 the written `height.raw`, move the anchor or the water, build again
 (`structures.md` sec 6 -- a generated lake's waterline is 14-40 m inside its
 polygon; a river with `surface_z` puts it on the channel edge).
+
+## Landforms
+
+Some records are nothing without their terrain. Each of the three volcanoes on
+`metin2_map_battleroyale` is ONE record -- the `volcano_greatsmoke2` effect,
+roll 0, bias 0 -- and everything that reads as a volcano is under it. Measured
+on all three:
+
+| | cone (863, 763) | ridge (733, 620) | great (1011, 546) |
+|---|---|---|---|
+| effect `z` against the ground under it | +78 cm | +16 cm | -10 cm |
+| crater floor under the highest rim | 13 m | 7.5 m | 8.5 m |
+| relief over the foot | 57 m inside r 40 | 60 m, leaning on a ridge | 98 m; the summit is 55 m SOUTH of the crater |
+| `elemental_02_07` lava, share of r < 10 m | 59% | 34% | 50% |
+| `valcano_04` veined rock | 72% at r 10-20, gone by 40 | 75%, streaks to 60 | 55-63% out to r 40 |
+| 100% blocked out to | 30 m | 40 m | 60 m |
+
+So the effect stands ON the crater floor, the lava is a disc 10-20 m across
+with veined rock round it, and the cone is unwalkable from the rim down. A
+pattern saved with `--relief-radius` carries the mountain as a `relief` block:
+source heights on the 2 m vertex grid inside that radius, in cm above the 25th
+percentile of the outer 16 m ring (a cone's ring is half foot and half the next
+ridge; the foot is what it stands on). Save the paint with it, to the same
+radius:
+
+```
+python -m m2map.gen.setpiece <CORPUS>/metin2_map_battleroyale 863.25 763.41 1 \
+    --relief-radius 64 --ground-margin 64 --ground-keep elemental --ground-keep valcano_04 \
+    --name br_volcano_cone --save reference/setpieces/br_volcano_cone.json
+```
+
+(the ground is cut to a circle 8 m inside the radius -- a square window clipped
+the next cone's lava). Stamped, `terrain.stamp_relief` reads the TARGET's base
+off the same ring, sets `base + dz` inside and fades to the target's own ground
+across the ring; the grid is sampled through the turn, so any `rotate_deg`
+works. No pad is added. The cone comes out blocked and cliff-skinned by itself
+(`gen/walkable.py`, rule 19); the lava needs `elemental_01/elemental_02_07` and
+`flame area/valcano_04` declared at `weight: 0.0`.
+
+```yaml
+setpieces:
+  - {pattern: br_volcano_cone, anchor: [110, 120]}                  # 128 m across
+  - {pattern: br_volcano_great, anchor: [620, 145]}                 # 240 m: a quarter sector
+```
+
+Keep roads and other pads out of the radius: the landform is stamped after
+them and wins. Verified in WorldEditor against the source from the same camera.
 
 ## The ground under a pattern
 
@@ -249,6 +319,23 @@ its own definition -- paste the `areadata.txt` text into a file and
 python -m m2map.gen.setpiece --from-areadata picked.txt --source-map metin2_map_c1     --name c1_camp_north --notes "..." --save reference/setpieces/c1_camp_north.json
 ```
 
+**From a WorldEditorRemix clipboard paste.** Text starting `WE_OBJECTS_V1`, a
+count, then `x y z crc yaw pitch roll bias ...` per object. It has **no absolute
+position**: `x`/`y` are offsets from the selection's own box and `y` grows
+**north** (five pastes, every record found with the sign flipped, none without).
+So it cannot be saved by itself -- it is found on the map it came from, by its
+rarest CRC, and the pattern is built from the map's records:
+
+```
+python -m m2map.gen.setpiece --from-we-objects picked.txt --locate-on <CORPUS>/<map> \
+    --ground-keep field --name ... --save ...
+```
+
+`# located: 54 of 54 at (434.6, 711.5) m -- exact match` is the verify step;
+`left out by the author` lines follow as for an areadata paste, and anything
+short of N of N exits 1. A paste that occurs more than once (a lone record, a
+repeated assembly) lists every site: extract the one wanted by point and radius.
+
 (add `--verify-against <CORPUS>/<map>` first: it checks every pasted record is on
 the map and lists what the author left out of the same box)
 
@@ -300,5 +387,8 @@ the next one — trees included, since Ymir turned the planting with the tents
 
 `dx`/`dy` are metres east/south of the pivot; `roll` degrees; `bias` cm added
 to the ground height; `z` the source ground height in cm (for `relief_cm`
-only); `name` is for reading, the CRC is what is placed. Nothing in a pattern
+only); `name` is for reading, the CRC is what is placed. Optional blocks:
+`ground` (above), `water_cm` (shore patterns) and `relief` -- `origin_m`,
+`cell_m` 2, `radius_m`, `feather_m`, and `rows` as one string of cm per vertex
+row. Nothing in a pattern
 is a host path — the source is named by map, not by directory.

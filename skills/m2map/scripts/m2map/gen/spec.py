@@ -419,6 +419,34 @@ class GroundStampSpec:
 
 
 @dataclass
+class ReliefStampSpec:
+    """The landform under a set-piece -- what `expand` makes of a pattern's
+    `Relief`. A volcano is one smoke effect standing in a crater: the record is
+    nothing without the mountain, so the mountain is copied with it.
+
+    ``rows[j][i]`` is the height in cm above the source's own base level at
+    ``origin_m + (i, j) * cell_m`` in the pattern's UNTURNED y-down metres;
+    ``rotate_deg`` turns it about the anchor at sampling time. The terrain stage
+    reads the target's base off the ring between ``radius_m - feather_m`` and
+    ``radius_m`` (its 25th percentile, as the source's was), sets the ground to
+    ``base + dz`` inside and fades to the target's own ground across the ring.
+    """
+
+    anchor: Tuple[float, float]
+    origin_m: Tuple[float, float]
+    rows: List[List[int]]
+    radius_m: float
+    feather_m: float = 16.0
+    cell_m: float = 2.0
+    rotate_deg: float = 0.0
+    label: str = ""
+
+    def __post_init__(self):
+        self.anchor = (float(self.anchor[0]), float(self.anchor[1]))
+        self.origin_m = (float(self.origin_m[0]), float(self.origin_m[1]))
+
+
+@dataclass
 class SetPieceSpec:
     """A shipped compound stamped whole from a saved pattern.
 
@@ -485,6 +513,7 @@ class MapSpec:
     setpieces: List[SetPieceSpec] = field(default_factory=list)
     #: filled by `setpiece.expand`; written out so the map rebuilds from its spec
     ground_stamps: List[GroundStampSpec] = field(default_factory=list)
+    relief_stamps: List[ReliefStampSpec] = field(default_factory=list)
     objects: List[ObjectTier] = field(default_factory=list)
 
     # --- terrain shaping, clamped to the archetype's mined statistics ------
@@ -740,6 +769,7 @@ class MapSpec:
         d["bridges"] = [BridgeSpec(**x) for x in d.get("bridges", [])]
         d["setpieces"] = [SetPieceSpec(**x) for x in d.get("setpieces", [])]
         d["ground_stamps"] = [GroundStampSpec(**x) for x in d.get("ground_stamps", [])]
+        d["relief_stamps"] = [ReliefStampSpec(**x) for x in d.get("relief_stamps", [])]
         d["objects"] = [ObjectTier(**o) for o in d.get("objects", [])]
         for k in ("size", "base_position", "height_range_cm"):
             if k in d and d[k] is not None:
