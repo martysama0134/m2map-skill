@@ -45,6 +45,7 @@ def summary(report: dict) -> dict:
         "joined": report.get("joined", {}),
         "tear_after_cm": report.get("tear_after_cm"),
         "blank_tiles_added": report.get("blank_tiles_added"),
+        "join_slot_cm": report.get("join_slot_cm"),
         "objects": {k: (round(v) if isinstance(v, float) else v)
                     for k, v in report.get("objects", {}).items()},
         "server_attr": report.get("server_attr"),

@@ -7,6 +7,7 @@
    "2": 4
   },
   "files_written": 42,
+  "join_slot_cm": 3,
   "joined": {
    "0": true,
    "1": true,
@@ -94,6 +95,7 @@
    "1": 36
   },
   "files_written": 117,
+  "join_slot_cm": 0,
   "joined": {
    "0": true,
    "1": true
@@ -156,6 +158,7 @@
    "4": 6
   },
   "files_written": 151,
+  "join_slot_cm": 14,
   "joined": {
    "0": true,
    "2": true,
@@ -249,7 +252,7 @@
    }
   ],
   "objects": {
-   "max_move_cm": 3686,
+   "max_move_cm": 3251,
    "moved": 1979,
    "removed": 0,
    "stray": 8

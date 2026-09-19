@@ -67,6 +67,10 @@ TEAR_CM = audit_rules.TORN_BORDER_CM
 #: Floors closer than this are one datum already; the road takes up the rest.
 LEVEL_MIN_CM = 100.0
 
+#: Deepest slot a sound sector border holds: corpus c1 493, n_desert_01 452,
+#: b1 293, a1 284 cm. The overlap join on map_merge_test_03 measured 4,486.
+SLOT_MAX_CM = 1000.0
+
 
 @dataclass
 class Options:
@@ -524,8 +528,17 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
 
     # 4. weld ------------------------------------------------------------------
     void_keys = {s for s, b in block_of.items() if b in void}
-    z_mean = _weld_target(m, windows, free, void_keys)
-    z = _weld(m, windows, z_mean, free, opt.feather_cells, void_keys)
+    # How far each cell is from walkable ground OF ITS OWN MAP. Measured across
+    # the join, a1's floor 2 m away made the foot of b1's ring "ground we must
+    # not reshape", and the two sides tied.
+    near = np.full(free.shape, 8.0)
+    for b in range(nblocks):
+        if b not in void:
+            mine = bcell == b
+            near[mine] = _distance_to(free & mine, cap=8.0)[mine]
+    z_mean = _weld_target(m, windows, near, void_keys)
+    z = _weld(m, windows, z_mean, near, opt.feather_cells, void_keys)
+    _fill_slots(z, torn)
 
     # 5. carve, open, paint ------------------------------------------------------
     hw = opt.floor_m / 2.0
@@ -615,6 +628,11 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
     report["written"] = _write(m, z, out, overwrite)
     report["tear_after_cm"] = _tear_on_disk(out)
     back = MergedMap(out)
+    report["join_slot_cm"] = _join_slot(back, torn, block_of, void)
+    if report["join_slot_cm"] > SLOT_MAX_CM:
+        report.setdefault("problems", []).append(
+            "a join is a slot %d cm deep: the border row is lower than the ground on BOTH "
+            "sides of it" % report["join_slot_cm"])
     report["blank_tiles_added"] = int(((back.tile == 0) & (m.tile0 != 0)).sum())
     if report["blank_tiles_added"]:
         report.setdefault("problems", []).append(
@@ -650,7 +668,7 @@ def _mouth(zc: np.ndarray, floor: np.ndarray, cell: Tuple[int, int], r: int = 8)
     return float(np.median(zc[ys, xs][f])) if f.any() else float(zc[y, x])
 
 
-def _weld_target(m: MergedMap, windows, free: np.ndarray, void_keys=()) -> np.ndarray:
+def _weld_target(m: MergedMap, windows, near: np.ndarray, void_keys=()) -> np.ndarray:
     """What each shared vertex becomes: the mean of its owners, with walkable
     ground outvoting rock 50 to 1.
 
@@ -661,8 +679,15 @@ def _weld_target(m: MergedMap, windows, free: np.ndarray, void_keys=()) -> np.nd
     down to its own blank plane."""
     shape = (m.H * CELLS + 1, m.W * CELLS + 1)
     acc, wsum = np.zeros(shape), np.zeros(shape)
+    # The vote goes to every cell the fade in `_weld` will refuse to reshape --
+    # walkable ground AND the 12 m round it -- not to walkable cells alone. An
+    # overlap crops a map through its interior: a1's cut edge is floor, banks and
+    # river at 238 m against the foot of b1's ring face at 145-157 m. The rock
+    # and water ON that edge had no vote, the mean came out at 189 m, a1's side
+    # would not move, and the join became a slot 45 m deep and one cell wide.
+    held = near < 6.0
     for key, win in windows.items():
-        f = free[m._cslice(*key)]
+        f = held[m._cslice(*key)]
         v = np.zeros((129, 129), bool)
         v[:-1, :-1] |= f
         v[1:, :-1] |= f
@@ -675,7 +700,7 @@ def _weld_target(m: MergedMap, windows, free: np.ndarray, void_keys=()) -> np.nd
     return acc / wsum
 
 
-def _weld(m: MergedMap, windows, z_mean: np.ndarray, free: np.ndarray, n: int,
+def _weld(m: MergedMap, windows, z_mean: np.ndarray, near: np.ndarray, n: int,
           void_keys=()) -> np.ndarray:
     """Pull each sector's border onto the shared value and fade the pull out over
     ``n`` cells, so a 40 m tear becomes a slope and not a spike.
@@ -685,7 +710,7 @@ def _weld(m: MergedMap, windows, z_mean: np.ndarray, free: np.ndarray, n: int,
     k = np.arange(129, dtype=np.float64)
     f_lo = _smoothstep(1.0 - k / n)               # weight of the row-0 / col-0 edge
     f_hi = f_lo[::-1]
-    guard = np.clip(_distance_to(free, cap=8.0) / 6.0, 0.0, 1.0)
+    guard = np.clip(near / 6.0, 0.0, 1.0)
     out = np.zeros_like(z_mean)
     cnt = np.zeros_like(z_mean)
     for key, win in windows.items():
@@ -706,6 +731,24 @@ def _weld(m: MergedMap, windows, z_mean: np.ndarray, free: np.ndarray, n: int,
         out[vs] += win + pull * g
         cnt[vs] += 1
     return out / cnt
+
+
+def _fill_slots(z: np.ndarray, torn) -> None:
+    """A join row is never left lower than BOTH rows beside it.
+
+    A map's outermost row plunges -- c1's edge stands 31 m below the row inside
+    it -- so two rings meet in a ditch between two ridges, and the mean of two
+    plunging edges is the bottom of it. The fade moves each side by what its
+    edge moved, which keeps the plunge. One shared row is raised, so the skirts
+    still agree."""
+    for a, b, _t in torn:
+        (ax, ay), (bx, by) = a, b
+        if ax != bx:
+            c, rows = bx * CELLS, slice(ay * CELLS, ay * CELLS + 129)
+            z[rows, c] = np.maximum(z[rows, c], np.minimum(z[rows, c - 1], z[rows, c + 1]))
+        else:
+            r, cols = by * CELLS, slice(ax * CELLS, ax * CELLS + 129)
+            z[r, cols] = np.maximum(z[r, cols], np.minimum(z[r - 1, cols], z[r + 1, cols]))
 
 
 def _slots(m: MergedMap, btile: np.ndarray, nblocks: int, opt: Options, report: dict,
@@ -966,6 +1009,26 @@ def _server_attr_on_disk(out, back: "MergedMap") -> dict:
         blocked += int((g & ATTR_BLOCK).astype(bool).sum())
         agrees &= bool(np.array_equal(g, back.attr[back._tslice(sx, sy)] & sa_codec.SERVER_ATTR_MASK))
     return {"max_value": top, "blocked_cells": blocked, "agrees": agrees and top <= 7}
+
+
+def _join_slot(back: "MergedMap", torn, block_of, void) -> int:
+    """The deepest place where a welded border row lies below the rows on BOTH
+    sides of it. A closed tear is not a sound join: tear 0 and a 45 m slot came
+    out of one run."""
+    z, _ = back.stitch()
+    worst = 0.0
+    for a, b, _t in torn:
+        if block_of[a] in void or block_of[b] in void:
+            continue
+        (ax, ay), (bx, by) = a, b
+        if ax != bx:
+            c, rows = bx * CELLS, slice(ay * CELLS + 4, ay * CELLS + 125)
+            d = np.minimum(z[rows, c - 1], z[rows, c + 1]) - z[rows, c]
+        else:
+            r, cols = by * CELLS, slice(ax * CELLS + 4, ax * CELLS + 125)
+            d = np.minimum(z[r - 1, cols], z[r + 1, cols]) - z[r, cols]
+        worst = max(worst, float(d.max()))
+    return int(round(worst))
 
 
 def _tear_on_disk(out) -> float:

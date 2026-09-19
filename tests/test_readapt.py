@@ -136,6 +136,7 @@ def test_readapt_joins_levels_and_keeps_every_relation(tmp_path):
     # -- read it back ------------------------------------------------------
     assert torn_borders(out, ["000000", "000001"]) == []
     assert report["tear_after_cm"] == 0.0
+    assert report["join_slot_cm"] <= 50, "closed is not sound: no ditch along the join"
     assert (out / "server_attr").exists(), "attr changed, so the server file is rebuilt (rule 14)"
     assert report["server_attr"]["agrees"] and report["server_attr"]["max_value"] <= 7
 
@@ -210,9 +211,12 @@ def test_filler_is_not_a_source_map(tmp_path):
     assert report["tear_after_cm"] == 0.0 and report["blank_tiles_added"] == 0
     assert not report.get("problems")
     m = readapt.MergedMap(out)
-    ring = m.hwin[0, 0][40:90, 128] - report["level_cm"][0]
-    was = readapt.MergedMap(src).hwin[0, 0][40:90, 128]
-    assert np.abs(ring - was).max() < 1.0, "the ring kept its crest; the filler came to it"
+    was = readapt.MergedMap(src).hwin[0, 0]
+    now = m.hwin[0, 0] - report["level_cm"][0]
+    crest = np.abs(now[40:90, 127] - was[40:90, 127]).max()
+    assert crest < 1.0, "the ring kept its crest; the filler came to it"
+    assert (now[40:90, 128] >= was[40:90, 128] - 1.0).all(), "and its edge was not dragged down"
+    assert report["join_slot_cm"] <= 50
 
 
 def test_the_pass_is_painted_on_to_the_maps_own_road(tmp_path):
@@ -242,3 +246,30 @@ def test_a_pass_that_must_cross_water_says_so(tmp_path):
     assert link["water_m"] >= 8
     assert any("causeway" in n for n in report["notes"])
     assert all(report["joined"].values())
+
+
+def test_a_cropped_maps_floor_holds_the_join(tmp_path):
+    """An overlap crops a map through its interior: floor and banks run to the
+    join, against the foot of the other map's ring face 60 m lower. The rock on
+    that cut edge has no vote as "walkable", the fade will not move it, and the
+    mean left the join a slot 45 m deep and one cell wide (map_merge_test_03)."""
+    src, out = tmp_path / "merged", tmp_path / "readapted"
+    _write_merged(src)
+    d = src / "000001"
+    z = np.full((129, 129), FLOORS[1])                       # bowl 1 cropped: open floor to
+    z[:3, 40:90] += 300.0                                    # its top edge, a rocky bank on it
+    raw = np.pad(np.round(z / 0.5), 1, mode="edge").astype("<u2")
+    height_codec.write_height(d / "height.raw", height_codec.HeightMap(raw))
+    cells = np.zeros((128, 128), np.uint8)
+    cells[:3, 40:90] = 1
+    attr_codec.write_attr(d / "attr.atr", attr_codec.AttrMap(cells.repeat(2, 0).repeat(2, 1)))
+    hm = height_codec.read_height(src / "000000" / "height.raw")     # bowl 0: its edge plunges
+    hm.raw[-3:, :] -= int(6000 / 0.5)
+    height_codec.write_height(src / "000000" / "height.raw", hm)
+
+    report = readapt.readapt(src, out, readapt.Options(level=False))
+    assert report["tear_after_cm"] == 0.0
+    assert report["join_slot_cm"] <= 50
+    z_after, _ = readapt.MergedMap(out).stitch()
+    assert abs(np.median(z_after[128, 40:90]) - (FLOORS[1] + 300.0)) < 100.0, \
+        "the join stands where the cropped map's ground is"

@@ -1008,6 +1008,13 @@ Three traps met while fixing it (`modes/readapt.md`, rule 28):
   the third link was left 68 m out of level. Level along the tree of thinnest
   walls; keep a spare link only if it comes out under 18%.
 
+- **Tear 0 is not a sound join.** Same map, found only by rendering the crop:
+  the border row stood 45 m BELOW the ground on both sides of it, one cell wide,
+  for the length of the b1/a1 join. A cropped map brings floor to the join, the
+  weld's vote counted walkable cells only, and the distance that protects floor
+  from the fade was measured across the join instead of inside each map. The
+  read-back is `join_slot_cm`; corpus sector borders hold 284-493 cm.
+
 **The tell:** `MapSize` is a multiple of the source maps' size and the texture
 set name is three names joined with `_merged`.
 

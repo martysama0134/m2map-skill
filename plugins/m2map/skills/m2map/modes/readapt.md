@@ -141,6 +141,21 @@ changed are rewritten. The report is printed and kept as `<out>/_readapt.json`;
    which must close. Sectors are written through `to_sector_raw`, so the skirts
    agree by construction.
 
+   **(03) Closed is not sound.** Tear 0 and a slot 45 m deep came out of one
+   run. An overlap crops a map through its interior, so floor, banks and river
+   run to the join -- a1's at 238 m against the foot of b1's ring face at
+   145-157 m. The rock and water ON that cut edge had no vote, the mean came out
+   at 189 m, a1's side would not move, and the join was a ditch one cell wide.
+   So: the 50:1 vote goes to every cell the fade refuses to reshape (walkable
+   ground and the 12 m round it), and that distance is measured **inside each
+   map** -- across the join, a1's floor 2 m away made b1's ring foot "held" too
+   and the sides tied. Then a join row is never left lower than both rows beside
+   it: a map's outermost row plunges (c1's stands 31 m below the row inside),
+   two rings meet in a ditch, and the mean of two plunging edges is its bottom.
+   Read back as `join_slot_cm`: 742 / 360 / 1,314 cm on the three test maps
+   before, 3 / 0 / 14 after; corpus borders hold 284-493; over 1,000 is a
+   `problems` line.
+
 5. **Carve.** The path is smoothed (and bent into a shallow S when the rock was
    uniform — a cheapest path through uniform cost is ruler-straight, and a ruled
    trench is the one shape a hand-cut pass never has). Along it the ground is
@@ -215,8 +230,13 @@ found in the first shot. Ten shots and the sheet take about a minute.
   a line in `notes`. None of the three test maps crosses any, which is why there
   is no automatic fit: it would have nothing to be rendered against. Put a
   `bridges:`-style fit there by hand (rule 27, `reference/structures.md` §5).
-- **An overlap crops a map, and the crop is not repaired.** Where `c1` was laid
-  over `b1` and `a1`, a lake and a road end at the join against the newcomer's
-  ring. The weld makes that a cliff; ending the road somewhere is an `improve`.
+- **An overlap crops a map, and only the join is repaired.** Where `c1` was laid
+  over `b1` and `a1`, a river, a lake and a road end at the join. The water ends
+  cleanly against the rock and the join is sound (step 4), but the rock is a
+  sheer face with the texture smeared down it: a ring's OUTER face plunges
+  30-50 m per cell, nobody was meant to stand at its foot, and now a1's floor
+  is there. It is in the merged map before readapt touches it. A longer weld
+  fade does nothing for it (tried; the pull is a constant, the plunge is the
+  ring's own) -- regrading that face, and ending the road, are an `improve`.
 - **One pass per pair of blocks.** Want a second, or a specific place? That is
   an `improve` on the result.
