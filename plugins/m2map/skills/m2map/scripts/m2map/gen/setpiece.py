@@ -202,8 +202,31 @@ class Relief:
     radius_m: float
     feather_m: float = 16.0
     cell_m: float = 2.0
+    #: the water that stood in it: the surface in cm about the SAME base, and
+    #: the 2 m cells the source's plane covered (`1`), cell (i, j) spanning
+    #: vertices i..i+1 of ``rows``. A moat is a cut with a plane in it; the
+    #: plane runs wider than the water (rule 22) and is copied as it was.
+    water_surface_cm: Optional[float] = None
+    water_rows: Optional[List[str]] = None
+    #: the source's collision inside the unfeathered core, 1 m tiles from
+    #: ``attr_origin_m``: a digit is `attr & 0x07` to force, `-` leaves the
+    #: tile to the target. It is what keeps a bridge deck walkable over a
+    #: blocked moat -- the deck is a record, and the generator only knows the
+    #: ground under it is submerged.
+    attr_origin_m: Optional[Tuple[float, float]] = None
+    attr_rows: Optional[List[str]] = None
 
     def to_dict(self) -> Dict:
+        d = self._base_dict()
+        if self.water_rows is not None:
+            d["water"] = {"surface_cm": self.water_surface_cm, "rows": list(self.water_rows)}
+        if self.attr_rows is not None:
+            d["attr"] = {"origin_m": [round(self.attr_origin_m[0], 4),
+                                       round(self.attr_origin_m[1], 4)],
+                         "rows": list(self.attr_rows)}
+        return d
+
+    def _base_dict(self) -> Dict:
         return {"origin_m": [round(self.origin_m[0], 4), round(self.origin_m[1], 4)],
                 "size": [len(self.rows[0]) if self.rows else 0, len(self.rows)],
                 "cell_m": self.cell_m, "radius_m": self.radius_m, "feather_m": self.feather_m,
@@ -216,7 +239,12 @@ class Relief:
                    rows=[[int(v) for v in (r.split() if isinstance(r, str) else r)]
                          for r in d["rows"]],
                    radius_m=float(d["radius_m"]), feather_m=float(d.get("feather_m", 16.0)),
-                   cell_m=float(d.get("cell_m", 2.0)))
+                   cell_m=float(d.get("cell_m", 2.0)),
+                   water_surface_cm=(float(d["water"]["surface_cm"]) if d.get("water") else None),
+                   water_rows=([str(r) for r in d["water"]["rows"]] if d.get("water") else None),
+                   attr_origin_m=(tuple(float(v) for v in d["attr"]["origin_m"])
+                                  if d.get("attr") else None),
+                   attr_rows=([str(r) for r in d["attr"]["rows"]] if d.get("attr") else None))
 
 
 @dataclass
@@ -644,7 +672,8 @@ def with_ground(sp: SetPiece, map_dir, keep: Sequence[str] = (), margin_m: float
     return replace(sp, ground=Ground(origin_m=(X0 - px, Y0 - py), palette=palette, rows=rows))
 
 
-def with_relief(sp: SetPiece, map_dir, radius_m: float, feather_m: float = 16.0) -> SetPiece:
+def with_relief(sp: SetPiece, map_dir, radius_m: float, feather_m: float = 16.0,
+                water: bool = False, attr: bool = False) -> SetPiece:
     """``sp`` with the source map's landform under it, as a :class:`Relief`.
 
     Reads ``height.raw`` on the vertex grid over a square of ``radius_m`` about
@@ -689,8 +718,54 @@ def with_relief(sp: SetPiece, map_dir, radius_m: float, feather_m: float = 16.0)
     ring = (r >= radius_m - feather_m) & (r <= radius_m)
     base = float(np.percentile(z[ring], 25))
     rows = [[int(round(v - base)) for v in row] for row in z]
+    extra = {}
+    if water:
+        from ..codec import water as water_codec
+        wmaps: Dict[Tuple[int, int], Optional[object]] = {}
+        level = np.full((j1 - j0, i1 - i0), np.nan)
+        for j in range(j0, j1):
+            for i in range(i0, i1):
+                key = (i // 128, j // 128)
+                if key not in wmaps:
+                    f = map_dir / ("%03d%03d" % key) / "water.wtr"
+                    wmaps[key] = (water_codec.read_water(f) if min(key) >= 0 and f.is_file()
+                                  else None)
+                wm = wmaps[key]
+                if wm is None:
+                    continue
+                c = int(wm.cells[j - key[1] * 128, i - key[0] * 128])
+                if c != water_codec.NO_WATER and math.hypot(i * 2.0 + 1.0 - px, j * 2.0 + 1.0 - py) <= radius_m:
+                    level[j - j0, i - i0] = float(wm.world_heights()[c])
+        if np.isfinite(level).any():
+            vals, counts = np.unique(level[np.isfinite(level)], return_counts=True)
+            surface = float(vals[np.argmax(counts)])          # one plane: the commonest level
+            extra["water_surface_cm"] = surface - base
+            extra["water_rows"] = ["".join("1" if v == surface else "0" for v in row)
+                                   for row in level]
+    if attr:
+        core = radius_m - feather_m
+        X0, X1 = int(math.floor(px - core)), int(math.ceil(px + core))
+        Y0, Y1 = int(math.floor(py - core)), int(math.ceil(py + core))
+        amaps: Dict[Tuple[int, int], bytes] = {}
+        arows = []
+        for ty in range(Y0, Y1):
+            out = []
+            for tx in range(X0, X1):
+                key = (tx // 256, ty // 256)
+                if key not in amaps:
+                    f = map_dir / ("%03d%03d" % key) / "attr.atr"
+                    amaps[key] = f.read_bytes() if min(key) >= 0 and f.is_file() else b""
+                raw = amaps[key]
+                if not raw or math.hypot(tx + 0.5 - px, ty + 0.5 - py) > core:
+                    out.append(_GROUND_SKIP)
+                else:
+                    out.append("%d" % (raw[6 + (ty % 256) * 256 + (tx % 256)] & 0x07))
+            arows.append("".join(out))
+        extra["attr_origin_m"] = (X0 - px, Y0 - py)
+        extra["attr_rows"] = arows
     return replace(sp, relief=Relief(origin_m=(i0 * 2.0 - px, j0 * 2.0 - py), rows=rows,
-                                     radius_m=float(radius_m), feather_m=float(feather_m)))
+                                     radius_m=float(radius_m), feather_m=float(feather_m),
+                                     **extra))
 
 
 def _build(hits, source_map: str, name: str, pivot: str, names: Dict[int, str],
@@ -849,6 +924,10 @@ def expand(spec):
                                            feather_m=sp.relief.feather_m,
                                            cell_m=sp.relief.cell_m,
                                            rotate_deg=sp.rotation_deg,
+                                           water_surface_cm=sp.relief.water_surface_cm,
+                                           water_rows=sp.relief.water_rows,
+                                           attr_origin_m=sp.relief.attr_origin_m,
+                                           attr_rows=sp.relief.attr_rows,
                                            label=sps.label or sp.name))
     return _replace(spec, objects=objects, plazas=plazas, setpieces=[],
                     ground_stamps=grounds, relief_stamps=reliefs)
@@ -999,11 +1078,24 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
                     help="keep only tiles whose texture path contains this (repeatable); "
                          "name the feature, e.g. 'field' for a camp's dirt")
     ap.add_argument("--ground-margin", type=float, default=8.0, metavar="M")
+    ap.add_argument("--ground-within", type=float, default=None, metavar="M",
+                    help="keep only paint inside this radius of the pivot (default with "
+                         "--relief-radius: 8 m inside it). Tighten it when the kept texture "
+                         "is also the source map's road: the moat's `field` paths caught the "
+                         "ring road 50 m out")
     ap.add_argument("--relief-radius", type=float, default=None, metavar="M",
                     help="also save the LANDFORM: the source heights within this radius "
                          "of the pivot, relative to the level of the ring at its edge -- "
                          "for a record that is nothing without its mountain (a volcano). "
                          "Read from --ground-from / --locate-on / MAP_DIR")
+    ap.add_argument("--relief-feather", type=float, default=16.0, metavar="M")
+    ap.add_argument("--relief-water", action="store_true",
+                    help="with --relief-radius: also save the water plane that stood in the "
+                         "landform (a moat, a crater lake), its level kept about the same base")
+    ap.add_argument("--relief-attr", action="store_true",
+                    help="with --relief-radius: also save the source's collision inside the "
+                         "unfeathered core -- needed when a bridge deck must stay walkable "
+                         "over blocked water")
     ap.add_argument("--water-cm", type=float, default=None,
                     help="the water surface the group stands at, world cm -- for a SHORE "
                          "pattern (rafts, piers), which is then stamped relative to the "
@@ -1054,12 +1146,14 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     ground_map = a.ground_from or (a.map_dir if a.ground_keep and not a.from_areadata else None)
     if ground_map:
         sp = with_ground(sp, ground_map, keep=a.ground_keep, margin_m=a.ground_margin,
-                         within_m=(a.relief_radius - 8.0) if a.relief_radius else None)
+                         within_m=(a.ground_within if a.ground_within is not None else
+                                   (a.relief_radius - 8.0) if a.relief_radius else None))
     if a.relief_radius:
         src = a.ground_from or a.locate_on or a.map_dir
         if not src:
             ap.error("--relief-radius needs a map: --ground-from, --locate-on or MAP_DIR")
-        sp = with_relief(sp, src, a.relief_radius)
+        sp = with_relief(sp, src, a.relief_radius, feather_m=a.relief_feather,
+                         water=a.relief_water, attr=a.relief_attr)
     if a.rotate:
         sp = sp.rotated(a.rotate)
     sp.water_cm = a.water_cm
@@ -1081,6 +1175,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         print("# relief: %d x %d vertices, %+d .. %+d cm about the base, radius %g m"
               % (len(sp.relief.rows[0]), len(sp.relief.rows), min(flat), max(flat),
                  sp.relief.radius_m))
+        if sp.relief.water_rows is not None:
+            print("# water: surface %+d cm about the base, plane over %d cells"
+                  % (sp.relief.water_surface_cm, sum(r.count("1") for r in sp.relief.water_rows)))
+        if sp.relief.attr_rows is not None:
+            blocked = sum(1 for r in sp.relief.attr_rows for ch in r if ch != "-" and int(ch) & 1)
+            print("# attr: %d tiles saved, %d blocked"
+                  % (sum(len(r) - r.count("-") for r in sp.relief.attr_rows), blocked))
     if a.save:
         print("# saved", sp.save(a.save))
     return 0

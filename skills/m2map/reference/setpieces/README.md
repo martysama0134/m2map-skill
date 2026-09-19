@@ -40,6 +40,8 @@ matched the source render did no generating at all (`placement.md` §6.w,
 | `a2_dungeon_gateway_north.json` | `map_a2`, author's selection about (282, 1459) | 2 | centroid | 4.1 m | 0 cm | fronts **north** (0) |
 | `snow_dungeon_gateway_south.json` | `map_n_snowm_01`, author's selection about (731, 96) | 8 | centroid | x -4.3 … +6.9 · y -3.9 … +9.9 | 95 cm | fronts **south** (180) |
 | `snow_camp_southwest.json` | same map, about (821, 112) | 29 | centroid | x -20.2 … +11.5 · y -17.2 … +20.8 | 246 cm | opens **south-west** (225) |
+| `moat_island_castle.json` / `_snow` / `_grass` | `metin2_map_empirecastle` / `empirewar01` / `empirewar02`, about (108, 246) | 3 | **centre** -- the moat's middle | **landform with water**, radius 64 m | -7.5 m … | bridges leave **north** and **east** |
+| `moat_island_desert.json` | `metin2_map_empirewar03`, about (370, 242) | 3 | **centre** | **landform with water**, radius 72 m; the MIRROR of the others | -12 m … | bridges leave **north** and **west** |
 | `a1_fishing_bays.json` | `metin2_map_a1`, author's selection about (359, 375) | 5 | centroid | x -18.9 … +31.8 · y -53.2 … +58.8 | **shore pattern**, `water_cm` 15,305 | water to the **east** (90) |
 
 `desert_camp`: two fence rails of 5 and 6 panels (fence01…05 mixed, steps
@@ -230,6 +232,43 @@ setpieces:
 
 Keep roads and other pads out of the radius: the landform is stamped after
 them and wins. Verified in WorldEditor against the source from the same camera.
+
+### A landform with water in it: the moat island
+
+`moat_island_castle` / `_snow` / `_grass` / `_desert` -- a moat about 88 m across
+round an off-centre island, two 10 m bridges, one tree. The author picked it on
+four maps: `metin2_map_empirecastle`, `empirewar01` (snow) and `empirewar02`
+(grass) share the terrain (same water plane cell for cell, relief within 22 cm on
+average) and differ in bridge model, tree and paint; `empirewar03` (desert) is
+its **mirror image** -- island east of centre, bridges leaving north and WEST
+where the others leave north and EAST -- rounder, and shallower. No `rotate_deg`
+makes a mirror, so it is its own pattern.
+
+A moat is three things the records do not hold, and the `relief` block carries
+all of them (`--relief-water --relief-attr`):
+
+| | what is saved | why |
+|---|---|---|
+| the cut | heights about the base, as for a volcano (`--relief-radius 64 --relief-feather 10`) | the bridges hang at bias -270/-280 from the moat BED under their origin; copy the bed and the stored bias is right |
+| the water | the surface in cm about the SAME base (-164; desert -94) and the source plane's 2 m cells | the plane is 1,746 cells for ~1,000 submerged (rule 22) -- copied as it was, through the turn; the level follows the target's base |
+| the collision | source `attr & 0x07` per tile inside the unfeathered core, forced LAST | a deck is a record: the generator sees submerged ground under it and blocks it. Read back from disk on the check sheet: decks and island 0, moat 3 |
+
+```
+python -m m2map.gen.setpiece <CORPUS>/metin2_map_empirewar02 108 246 30 --pivot centre \
+    --relief-radius 64 --relief-feather 10 --relief-water --relief-attr \
+    --ground-margin 56 --ground-within 47 --ground-keep stone03 --ground-keep field \
+    --name moat_island_grass --save reference/setpieces/moat_island_grass.json
+```
+
+`--pivot centre` on the moat's middle (an even metre: it is a vertex), not the
+records' centroid. `--ground-within 47`: the kept `field` is also the source
+map's road, and at the default radius the ring road 50 m out came along as a
+dirt halo. Declare the lining, path and bed textures at `weight: 0.0`
+(`stone03` + `field01`/`field03`; castle `dawnmistwood_rock001` +
+`dawnmistwood_field001` + `empire_tile02`; desert `stone01` + `grass02` +
+`sand02`). Roads should arrive at the bridge heads, 27 m from the pivot.
+Verified on `map_setpiece_check_moat` against the source from the same camera;
+the castle one turned 90 has its bridges leaving west and north.
 
 ## The ground under a pattern
 
@@ -438,5 +477,7 @@ to the ground height; `z` the source ground height in cm (for `relief_cm`
 only); `name` is for reading, the CRC is what is placed. Optional blocks:
 `ground` (above), `water_cm` (shore patterns) and `relief` -- `origin_m`,
 `cell_m` 2, `radius_m`, `feather_m`, and `rows` as one string of cm per vertex
-row. Nothing in a pattern
+row; inside it, optional `water` (`surface_cm` about the base, `rows` of `0`/`1`
+per 2 m cell) and `attr` (`origin_m`, `rows` of `attr & 0x07` digits or `-` per
+1 m tile). Nothing in a pattern
 is a host path — the source is named by map, not by directory.

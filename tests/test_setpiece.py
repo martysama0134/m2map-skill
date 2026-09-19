@@ -539,3 +539,38 @@ def test_a_pattern_with_relief_expands_to_a_relief_stamp_and_no_pad(tmp_path):
     b = pipeline.run(ex, stages=("layout", "terrain"))
     around = b.height_cm[75 - 25:75 + 25, 60 - 25:60 + 25]
     assert around.max() - around.min() > 2500.0
+
+
+def test_a_moat_comes_with_its_water_and_its_collision(tmp_path):
+    """A bowl 5 m deep with a plane 2 m under the base and one forced-open strip
+    across it: the water hangs from the TARGET's base and the strip stays
+    walkable over submerged ground -- a bridge deck is a record, not terrain."""
+    import numpy as np
+    from m2map.codec import attr as attr_codec
+    from m2map.gen.spec import SetPieceSpec
+
+    n = 31
+    rows = [[-500 if math.hypot((i - 15) * 2.0, (j - 15) * 2.0) < 16.0 else 0 for i in range(n)]
+            for j in range(n)]
+    water_rows = ["".join("1" if math.hypot((i - 14.5) * 2.0, (j - 14.5) * 2.0) < 22.0 else "0"
+                          for i in range(n - 1)) for j in range(n - 1)]
+    attr_rows = ["".join("0" if abs(ty) <= 2 else ("3" if math.hypot(tx, ty) < 14.0 else "-")
+                         for tx in range(-20, 20)) for ty in range(-20, 20)]
+    piece = setpiece.Piece(dx=0.0, dy=0.0, roll=0.0, height_bias=0.0, crc=1156322039)
+    sp = setpiece.SetPiece(name="moat", pieces=[piece], relief=setpiece.Relief(
+        origin_m=(-30.0, -30.0), rows=rows, radius_m=30.0, feather_m=6.0,
+        water_surface_cm=-200.0, water_rows=water_rows,
+        attr_origin_m=(-20.0, -20.0), attr_rows=attr_rows))
+    sp = setpiece.load(sp.save(tmp_path / "moat.json"))
+    assert sp.relief.water_surface_cm == -200.0 and sp.relief.attr_rows == attr_rows
+
+    spec = make_spec(water=[], height_range_cm=(16000.0, 18000.0),
+                     setpieces=[SetPieceSpec(pattern=str(tmp_path / "moat.json"),
+                                             anchor=(120.0, 150.0))])
+    b = pipeline.run(spec, stages=("layout", "terrain", "water", "texture", "objects", "attr"))
+    rs = b.spec.relief_stamps[0]
+    assert b.water_heights == [pytest.approx(rs.base_cm - 200.0)]
+    assert b.height_cm[75, 60] == pytest.approx(rs.base_cm - 500.0)
+    assert b.submerged[150, 120] and b.submerged[158, 120]
+    assert b.attr_cells[150, 126] & attr_codec.ATTR_BLOCK == 0          # on the strip
+    assert b.attr_cells[158, 120] & (attr_codec.ATTR_BLOCK | attr_codec.ATTR_WATER) == 3

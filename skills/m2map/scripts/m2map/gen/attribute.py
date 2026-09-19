@@ -166,6 +166,23 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
         cells[pz.mask] |= attr_codec.ATTR_SAFEZONE
         cells[pz.mask] &= np.uint8(~attr_codec.ATTR_BLOCK & 0xFF)
 
+    # The collision a copied landform came with, forced last: a bridge deck over
+    # a moat is a record, and nothing above knows the water under it is crossed.
+    for rs in getattr(spec, "relief_stamps", None) or []:
+        if not rs.attr_rows:
+            continue
+        src = np.array([[-1 if ch_ == "-" else int(ch_) for ch_ in row]
+                        for row in rs.attr_rows], np.int16)
+        yy, xx = np.mgrid[0:cells.shape[0], 0:cells.shape[1]]
+        u, v = rs.lookup(xx + 0.5, yy + 0.5,
+                         (rs.attr_origin_m[0] + 0.5, rs.attr_origin_m[1] + 0.5), 1.0)
+        ui, vi = np.rint(u).astype(int), np.rint(v).astype(int)
+        ok = (ui >= 0) & (ui < src.shape[1]) & (vi >= 0) & (vi < src.shape[0])
+        val = np.full(cells.shape, -1, np.int16)
+        val[ok] = src[vi[ok], ui[ok]]
+        hit = val >= 0
+        cells[hit] = (cells[hit] & np.uint8(0xF8)) | val[hit].astype(np.uint8)
+
     return cells
 
 

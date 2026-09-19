@@ -169,7 +169,9 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
     heights: List[float] = []
     wet_tiles = np.zeros((h_tiles, w_tiles), bool)
 
-    if spec.is_box() or not lay.water_masks:
+    stamps = [rs for rs in getattr(spec, "relief_stamps", None) or []
+              if rs.water_rows and rs.base_cm is not None]
+    if spec.is_box() or not (lay.water_masks or stamps):
         return cells, heights, wet_tiles, np.zeros_like(wet_tiles)
 
     lake_tiles = lay.lake_mask if lay.lake_mask is not None else None
@@ -235,6 +237,25 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray):
             _claim(cells, band, _plane_mask(band, height_cm[:ch, :cw], level),
                    len(heights) - 1)
         wet_tiles |= mask
+
+    # Water that came with a copied landform (a moat): the source's plane, cell
+    # for cell through the turn, at the source's height over the landform's base.
+    for rs in stamps:
+        if len(heights) >= wtr.MAX_WATER_NUM:
+            break
+        src = np.array([[ch_ == "1" for ch_ in row] for row in rs.water_rows], bool)
+        yy, xx = np.mgrid[0:ch, 0:cw]
+        u, v = rs.lookup(xx * 2.0 + 1.0, yy * 2.0 + 1.0,
+                         (rs.origin_m[0] + 1.0, rs.origin_m[1] + 1.0), rs.cell_m)
+        ui, vi = np.rint(u).astype(int), np.rint(v).astype(int)
+        ok = (ui >= 0) & (ui < src.shape[1]) & (vi >= 0) & (vi < src.shape[0])
+        plane = np.zeros((ch, cw), bool)
+        plane[ok] = src[vi[ok], ui[ok]]
+        if not plane.any():
+            continue
+        heights.append(float(rs.base_cm) + float(rs.water_surface_cm))
+        cells[plane] = len(heights) - 1
+        wet_tiles |= _cells_to_tiles(plane, h_tiles, w_tiles)
 
     # submerged = wet AND surface above terrain
     submerged_cells = np.zeros((ch, cw), bool)

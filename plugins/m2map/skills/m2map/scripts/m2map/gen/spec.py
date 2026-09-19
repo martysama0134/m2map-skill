@@ -440,10 +440,30 @@ class ReliefStampSpec:
     cell_m: float = 2.0
     rotate_deg: float = 0.0
     label: str = ""
+    #: water that came with the landform: surface in cm about the base, and
+    #: the source plane's 2 m cells (`1`) on the grid of ``rows``
+    water_surface_cm: Optional[float] = None
+    water_rows: Optional[List[str]] = None
+    #: the source's `attr & 0x07` per 1 m tile (`-` = leave), forced last
+    attr_origin_m: Optional[Tuple[float, float]] = None
+    attr_rows: Optional[List[str]] = None
+    #: the base the terrain stage read off the target; the water stage needs it
+    base_cm: Optional[float] = None
 
     def __post_init__(self):
         self.anchor = (float(self.anchor[0]), float(self.anchor[1]))
         self.origin_m = (float(self.origin_m[0]), float(self.origin_m[1]))
+
+    def lookup(self, x, y, origin_m, cell_m):
+        """Grid indices ``(u, v)`` (float arrays) of map points ``x, y`` (metres)
+        in a grid of this stamp, back through the turn -- the sign of
+        `setpiece.rotate`: offsets turn clockwise in y-down metres."""
+        import numpy as np
+        t = np.radians(float(self.rotate_deg))
+        c, sn = np.cos(t), np.sin(t)
+        dx, dy = x - self.anchor[0], y - self.anchor[1]
+        return (((dx * c - dy * sn) - origin_m[0]) / float(cell_m),
+                ((dx * sn + dy * c) - origin_m[1]) / float(cell_m))
 
 
 @dataclass
