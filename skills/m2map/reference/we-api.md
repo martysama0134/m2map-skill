@@ -667,7 +667,7 @@ WorldEditorRemix_<Cfg>[_x64].exe
 | `--target x,y` | `%f,%f`, **world cm** | after the map loads: `UpdateMap(x, -y, 0)` then `UpdateTargetPosition(x - target.x, -y - target.y)`. **You pass a positive y and the editor negates it** (same convention as the Goto dialog). This is the *only* documented way to place the resident 3×3 window. |
 | `--cam pitch,roll,dist` | `%f,%f,%f`, degrees/degrees/**cm** | `RotateEyeAroundTarget(pitch - GetPitch(), roll - GetRoll())` then `SetDistance(dist)`, then a `UpdateTargetPosition(0,0)` to refresh the frustum. Applied whether or not the map loaded. |
 | `--flags <list>` | comma list, `-x` off, `+x`/`x` on | each token goes to `CMapFilePage::ApplyOptionFlag`. Valid names: `wire grid grid2 patchgrid water compass char collision object objshadow terrain tree effect ambience`. Unknown names log `automation: unknown flag <x>` and are ignored. |
-| `--regen` | (no value) | after the map load, sends `VK_INSERT` to the active scene → `CSceneMap` regenerates every sector's shadowmap + minimap (+ MAI atlas) on the following renders. Slow. |
+| `--regen` | (no value) | after the map load, sends `VK_INSERT` to the active scene → `CSceneMap` regenerates every sector's shadowmap + minimap (+ MAI atlas) on the following renders. **Do not use it headless -- it writes garbage** (below). Same handler as **F6** in the GUI (`SceneMap.cpp:1525`, `VK_F6`/`VK_INSERT`), and F6 in the open editor is the one that works. |
 | `--atlas` | (no value) | after the frame count elapses, `GetMapManagerAccessor()->SaveAtlas()` — **writes into the map folder**. |
 | `--shot <out.png>` | path | after the frame count, grabs the back buffer → system-memory surface → **PNG**. |
 | `--shot-frames N` | int, **default 30** | frames to render before the atlas/shot step. |
@@ -700,7 +700,7 @@ WorldEditorRemix_MfcRelease.exe ^
 
 - Raise `--shot-frames` when trees/effects still pop in — the count is idle ticks, not seconds.
 - `--target` is in **world cm with a positive y**; convert from cell coords with `cellX * 200`, `cellY * 200`.
-- Add `--regen` only when you actually changed heights or textures and want the shadowmap/minimap rebuilt; it is slow and it **writes files**.
+- **Never pass `--regen`.** Measured 2026-09-19 on a 7x9 map: it rewrote all 63 sectors' `shadowmap.raw`, `shadowmap.dds` and `minimap.dds` in 12 s, exit 0, every size right -- and the minimaps were black with only the water drawn, because the sectors outside the resident window had no terrain loaded when they were baked. It also creates the three files in sectors that never had them. The only working rebake is a person with the map open in WorldEditorRemix pressing **F6**; hand that step to the user. If you did run it, restore the three files per sector from the map you started from.
 - For a model or effect instead of a map, use `--file` and skip `--map`/`--target`.
 
 ---

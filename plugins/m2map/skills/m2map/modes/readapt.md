@@ -42,7 +42,8 @@ Expect the next map to find another: the procedure is the part to keep.
    and after with one camera** (`--target` = midpoint of `from_tile`/`to_tile`
    ×100, `--cam 45,0,9000`), plus one long shot down an open join.
 6. Show the user the renders. Whatever they correct becomes code, a line in this
-   file, a test and a failure-atlas entry — then `tools/sync.py`,
+   file, a test and a failure-atlas entry. Tell them the two steps left to
+   them: **F6 in WorldEditorRemix** (shadowmap + minimap) and `server_attr` — then `tools/sync.py`,
    `tests/run-all.sh`, commit.
 
 If it breaks, the three questions that found every fault so far: *are the blocks
@@ -175,8 +176,12 @@ untextured. The 2D previews cannot show a tear; only the engine draws one.
 ## What it does not do
 
 - **`shadowmap` and `minimap` are left as merged.** They are stale over the
-  pass. Re-save the map in WorldEditor to rebake them; rebaking two sectors here
-  would put a lighting seam where there was none.
+  pass, and along every welded join. Open the result in WorldEditorRemix and
+  press **F6**: that regenerates both, and for now it is the only way -- the
+  headless `--regen` is the same key and bakes black minimaps (`we-api.md`), nothing
+  in this repo bakes a shadowmap or a minimap, and rebaking two sectors here
+  would put a lighting seam where there was none. Say so when handing the map
+  over; the report carries the same line as `shadowmap_minimap`.
 - **`server_attr` is dropped**, as in a merge — `attr` changed, regenerate it
   (rule 14).
 - **Spawns** are not touched: `regen.txt` heights are the server's business and

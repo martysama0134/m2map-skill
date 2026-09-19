@@ -596,6 +596,9 @@ def readapt(src, out, opt: Optional[Options] = None, overwrite: bool = False) ->
         report.setdefault("problems", []).append(
             "%d painted tiles became slot 0 (blank)" % report["blank_tiles_added"])
     report["server_attr"] = "regenerate (attr changed)" if report["written"] else "unchanged"
+    # Nothing here bakes either; WorldEditorRemix does, on F6.
+    report["shadowmap_minimap"] = ("stale: open in WorldEditorRemix and press F6"
+                                   if report["written"] else "unchanged")
     _previews(m, z0, z, links, pathlib.Path(out) / "_preview")
     (pathlib.Path(out) / "_readapt.json").write_text(json.dumps(report, indent=1), "ascii")
     return report
