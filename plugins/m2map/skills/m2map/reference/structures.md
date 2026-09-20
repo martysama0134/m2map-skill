@@ -190,6 +190,40 @@ block nor water, while the river beside it is blocked end to end. Note this is
 not the `0xCA` "bridge, walkable over water" byte of a ford (`attributes.md`):
 under a bridge the water flag is cleared too.
 
+### 5.2b A rope bridge does not sit evenly, and its lip is rounded
+
+Walking the model's own axis from its origin on **40 placements** (`a1`, `a3`,
+`b1`, `c1`, `map_a2`, `map_n_threeway`), counting ground within 150 cm of the
+datum as bank:
+
+| | under the ORIGIN end | under the FAR end |
+|---|---|---|
+| `suspension bridge01` | **1.5-4 m**, median 2.5 | **7-12 m**, median 9.3 |
+| `suspension bridge02` | 2-4 m | 7.1-9.6 m, median 7.1 |
+
+And the lip is not a sheer edge. Ground minus datum, corpus median, going out
+over the gorge from the origin: **0 cm at 0 m, -69 at 2, -381 at 4, -1,132 at 6,
+-1,838 at 8** -- about `0.28 x d^2` metres. On the banks it is +10 ... +20 cm.
+The deck sags less than that curve, so nothing shows through it.
+
+`map_ad3` was first fitted 6 m / 6 m with a sheer wall 3 m wide, and both ends
+were wrong in ways only a player's-eye view showed: the far landing hung over
+the water, and at the origin the bank stood full height 2 m past the post, so
+ground came up through the sagging deck and the deck end read as a detached
+platform. `BRIDGE_MODELS` now carries `lip_inset_near_m` / `lip_inset_far_m`
+(where LEVEL ground ends: 0.8 / 7.8, and 0.8 / 5.6) and `lip_round_m` 16 (the
+wall reaches the bed over that run, squared), and the bank is set all the way
+down the curve so the wall falls from the bank level rather than from whatever
+relief the top had. Built and re-measured the same way: 2.25 / 9.27 m, and
+0 / -119 / -457 / -1,034 / -1,847 cm.
+
+**The masks are pooled onto a 2 m vertex grid, a metre off.** Vertex *v* takes
+tiles 2v and 2v+1, centred at 2v+1, so every lip landed 1 m toward the map
+origin: a span reaching south or east seated 2 m further onto its far bank than
+one reaching north or west -- "some bridges fit and some do not", by compass.
+`layout.build` samples the terrain weights a metre back; the deck mask is tile
+space and is not moved. Check a fit in all four directions, not one.
+
 ### 5.3 In a mapspec
 
 ```yaml

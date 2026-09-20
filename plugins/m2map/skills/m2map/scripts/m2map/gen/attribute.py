@@ -41,8 +41,37 @@ from .spec import MapSpec, SECTOR_TILES
 CELLS = 256
 
 
+#: A slope-blocked feature narrower than this many tiles, with no rock painted
+#: on it, is opened again. See `_open_slivers`.
+SLIVER_TILES = 9
+
+
+def _open_slivers(blocked: np.ndarray, keep: np.ndarray, tiles, spec: MapSpec) -> np.ndarray:
+    """``blocked`` without the slivers nobody can see.
+
+    The slope rule is per cell, the rock skin is not: `texture.cliff_massif`
+    drops anything under ~5 tiles thick, so a low hump whose flank touches the
+    threshold for a few metres comes out BLOCKED AND STILL SAND -- an invisible
+    fence across open ground. On `map_ad3` they lay in 3-6 m strips all over the
+    tops. A player reads rock as "cannot walk"; block without rock is a bug to
+    them. So: whatever is thinner than `SLIVER_TILES`, carries no cliff paint
+    and is not in ``keep`` (void, border band) is walkable again.
+    """
+    from .texture import _dilate, _erode
+    k = SLIVER_TILES // 2
+    thick = _dilate(_erode(blocked, k), k + 1)
+    sliver = blocked & ~thick & ~keep
+    if tiles is not None:
+        cliff = [i for i, sl in enumerate(spec.textures, start=1) if sl.role == "cliff"]
+        if cliff:
+            rock = _dilate(_erode(np.isin(tiles, cliff), 1), 3)   # not the feather speckle
+            sliver &= ~rock
+    return blocked & ~sliver
+
+
 def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
-          submerged: np.ndarray, footprints: Iterable[Tuple[float, float, float]] = ()):
+          submerged: np.ndarray, footprints: Iterable[Tuple[float, float, float]] = (),
+          tiles: np.ndarray | None = None):
     """Whole-map attribute grid in tile space, ``(h, w)`` uint8.
 
     ``footprints`` is ``(tile_x, tile_y, radius_tiles)`` per blocking placement.
@@ -70,9 +99,14 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
         # high third of the outer 64 m ring is 100% blocked, so Ymir walls the
         # rim all the way over the top rather than only on its faces. See
         # `gen/walkable.py`.
-        cells[walkable.terrain_block(spec, slope_deg, (h, w),
-                                     roads=lay.road_mask,
-                                     void=lay.void)] |= attr_codec.ATTR_BLOCK
+        blocked = walkable.terrain_block(spec, slope_deg, (h, w),
+                                         roads=lay.road_mask, void=lay.void)
+        keep = np.zeros((h, w), bool) if lay.void is None else lay.void.copy()
+        bb = max(0, int(spec.border_band_m))
+        if bb:
+            keep[:bb, :] = keep[-bb:, :] = True
+            keep[:, :bb] = keep[:, -bb:] = True
+        cells[_open_slivers(blocked, keep, tiles, spec)] |= attr_codec.ATTR_BLOCK
 
     # Water: only cells whose surface is actually above the terrain. A buried
     # water plane is invisible and correctly unflagged in every shipped map.

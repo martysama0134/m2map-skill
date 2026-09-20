@@ -333,15 +333,30 @@ BRIDGE_MODELS: Dict[str, Dict[str, Any]] = {
                  "width_cm": 1369.0, "axis": "x", "origin": "centre",
                  "datum_below_bank_cm": 1706.0, "lip_inset_m": 2.0,
                  "bed_below_bank_cm": 900.0, "water_below_bank_cm": 490.0},
+    # A rope bridge does NOT sit evenly on its banks. Walking the model's axis on
+    # 40 placements (a1, a3, b1, c1, map_a2, threeway): the ORIGIN end has
+    # 1.5-4 m of bank-level ground under it (median 2.5) and the FAR end 7-12
+    # (median 9.3 / 7.1) -- the far end carries the landing, and the deck sags
+    # straight off the origin post. Fitted 6 / 6, the landing hangs over the
+    # water and the bank comes up through the deck behind the origin.
+    #
+    # Those figures count ground within 150 cm of the datum. The LEVEL ground
+    # stops sooner, because the lip is rounded, not sheer: past the origin the
+    # corpus median falls 0.7 m at 2 m, 3.8 at 4, 11 at 6, 18 at 8 -- about
+    # 0.28 x d^2 -- and the deck sags less than that, so nothing shows through
+    # it. `lip_inset_*` is where level ground ends (0.8 / 7.8); `lip_round_m` is
+    # the run over which the wall reaches the bed, squared.
     "suspension01": {"crc": 59728437, "name": "general_obj_suspension bridge01",
                      "length_cm": 7177.0, "width_cm": 1045.0, "axis": "y", "origin": "end",
                      "datum_below_bank_cm": 5.0, "lip_inset_m": 6.0,
+                     "lip_inset_near_m": 0.8, "lip_inset_far_m": 7.8, "lip_round_m": 16.0,
                      "bed_below_bank_cm": 2000.0, "water_below_bank_cm": 1500.0,
                      # map_a2 hangs 21 of these 53-95 m over its water
                      "water_below_bank_max_cm": 9600.0},
     "suspension02": {"crc": 1244865174, "name": "general_obj_suspension bridge02",
                      "length_cm": 4759.0, "width_cm": 1044.0, "axis": "y", "origin": "end",
                      "datum_below_bank_cm": 5.0, "lip_inset_m": 6.0,
+                     "lip_inset_near_m": 0.8, "lip_inset_far_m": 5.6, "lip_round_m": 16.0,
                      "bed_below_bank_cm": 2000.0, "water_below_bank_cm": 1500.0,
                      # map_a2 hangs 21 of these 53-95 m over its water
                      "water_below_bank_max_cm": 9600.0},

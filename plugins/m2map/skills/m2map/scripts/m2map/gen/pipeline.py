@@ -267,7 +267,7 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
 
     if step("attr"):
         b.attr_cells = attribute.build(spec, b.layout, b.slope_deg,
-                                       b.submerged, b.footprints)
+                                       b.submerged, b.footprints, tiles=b.tiles)
         b.server_attr = attribute.build_server_attr(spec, b.attr_cells)
         cov = attribute.coverage(b.attr_cells)
         b.note("attr: block %.0f%%, water %.0f%%, safezone %.0f%%"

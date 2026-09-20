@@ -196,6 +196,12 @@ class Plaza:
     radius_m: float
 
 
+#: How far inside the stated lip a bridge's gorge wall starts, metres -- what
+#: max-pooling the cut onto the 2 m vertex grid gives back. Calibrated by walking
+#: the axis of built bridges the way the corpus ones were measured.
+LIP_POOL_M = 1.25
+
+
 @dataclass
 class BridgeFit:
     """A `BridgeSpec` rasterised: where to level, where to cut, where to walk."""
@@ -392,22 +398,46 @@ def build(spec: MapSpec) -> Layout:
             px, py = xs + 0.5 - br.centre[0], ys + 0.5 - br.centre[1]
             s_ = px * dx + py * dy
             t_ = -px * dy + py * dx
+            deck_s, deck_t = np.abs(s_), np.abs(t_)       # the deck is tile space, as is
+            # The terrain weights are pooled onto the 2 m vertex grid, and vertex
+            # v takes tiles 2v and 2v+1 -- centred a metre PAST the vertex. Left
+            # alone, every lip lands 1 m toward the map origin: a span reaching
+            # south or east sat 2 m further onto its far bank than one reaching
+            # north or west. Sample a metre back so the pool is centred.
+            px, py = px - 1.0, py - 1.0
+            s_ = px * dx + py * dy
+            t_ = -px * dy + py * dx
             half = m["length_cm"] / 200.0
             wid = m["width_cm"] / 200.0
-            lip = half - m["lip_inset_m"]                # the bank reaches full height here
+            # The bank reaches full height at the lip, and the two lips are not
+            # the same distance from mid-span on a rope bridge: `s_` runs from the
+            # ORIGIN end (-half) to the far end (+half). See `BRIDGE_MODELS`.
+            lip = np.where(s_ < 0.0,
+                           half - m.get("lip_inset_near_m", m["lip_inset_m"]),
+                           half - m.get("lip_inset_far_m", m["lip_inset_m"]))
             a_s, a_t = np.abs(s_), np.abs(t_)
             # banks: from the lip out to the end of the approach, a road-and-a-bit wide
-            along = np.clip((a_s - (lip - 1.0)) / 1.0, 0.0, 1.0) * \
+            # `LIP_POOL_M`: the pool takes the MAX, so the cut spreads a vertex
+            # outward; the wall starts that much inside the lip it is meant to leave
+            # Under a rounded lip the bank is set all the way down the curve, so
+            # the wall falls from the BANK level and not from whatever relief the
+            # top happened to have there -- the cut below takes it back out.
+            pool = float(m["lip_round_m"]) if "lip_round_m" in m else LIP_POOL_M
+            along = np.clip((a_s - (lip - pool - 1.0)) / 1.0, 0.0, 1.0) * \
                 np.clip((half + br.approach_m + 8.0 - a_s) / 8.0, 0.0, 1.0)
             across = np.clip((wid + 10.0 - a_t) / 6.0, 0.0, 1.0)
             bank_w = along * across
             core = (a_s >= lip) & (a_s <= half + br.approach_m) & (a_t <= wid + 2.0)
             # the cut: walls ramp over 3 m inside the lip, and the gorge runs
             # along the river well past the deck before it fades
-            wall = np.clip((lip - a_s) / 3.0, 0.0, 1.0)
+            if "lip_round_m" in m:
+                # a rope bridge's lip is rounded: see `BRIDGE_MODELS`
+                wall = np.clip((lip - a_s) / float(m["lip_round_m"]), 0.0, 1.0) ** 2
+            else:
+                wall = np.clip((lip - LIP_POOL_M - a_s) / 3.0, 0.0, 1.0)
             run = np.clip((wid + 40.0 - a_t) / 24.0, 0.0, 1.0)
             cut_w = wall * run
-            deck = (a_s <= half) & (a_t <= max(1.0, wid - 1.0))
+            deck = (deck_s <= half) & (deck_t <= max(1.0, wid - 1.0))
             under = None
             cy_, cx_ = int(br.centre[1]), int(br.centre[0])
             for wmask, wsurf in zip(lay.water_masks, lay.water_surfaces):

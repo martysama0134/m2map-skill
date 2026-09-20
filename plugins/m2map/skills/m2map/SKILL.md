@@ -132,6 +132,8 @@ All modes, all generated output. Reference files cite these by number — number
 
 30. **Islands are cut out of a plateau, not raised from a sea.** `map_a2` is ~20 mesas at one level (tops equal to the metre across each of its 21 rope bridges), canyons 54-60 m lip to lip because that is what `suspension bridge01` spans, walls down in 12-18 m, ONE water plane 53-95 m below with rock painted across its bed. State it as `islands:` -- one site per island, the canyons are the bisectors -- and let the stage cut them AFTER roads and pads: cut first, road levelling builds a causeway under every bridge. A road joins two tops for reachability but its paint and open attr stop at the lip; an island no road reaches is sealed as rock. The sea is not `wet` -- desert flora keeps 50-300 m from authored water and no island is that wide. `reference/structures.md` §7.
 
+31. **Block without rock is a bug to the player.** The slope rule is per cell; the rock skin drops anything under ~5 tiles thick. So a low hump whose flank touches the threshold for a few metres comes out blocked and still sand -- an invisible fence in open ground (1.45% of a generated 1x1, strips of 3-6 m all over `map_ad3`'s tops). `attribute._open_slivers` reopens whatever slope-block is thinner than 9 tiles, has no cliff paint within 3, and is not void or border. Rock may be blocked; sand that is blocked must be under a prop or under water. And **a rope bridge sits unevenly on a rounded lip** -- 2.5 m of bank under its origin, 9.3 under its far end, the wall falling as 0.28 d^2 -- measured by walking the model's axis, in all four directions, because the pooled masks were a metre off by compass. `reference/structures.md` §5.2b.
+
 ## Verification — not optional
 
 <EXTREMELY-IMPORTANT>

@@ -599,6 +599,56 @@ def _islands_spec():
                             surface_cm=10000.0, bed_cm=8800.0))
 
 
+def _seat(b, model):
+    """Metres of bank-level ground under each end of a rope bridge, walking the
+    model's own axis from its origin -- how the corpus ones were measured."""
+    from m2map.gen.spec import BRIDGE_MODELS, BridgeSpec
+    m = BRIDGE_MODELS[model]
+    length = m["length_cm"] / 100.0
+    r = [x for x in b.records if x.crc == m["crc"]][0]
+    dx, dy = BridgeSpec(model=model, roll_deg=r.roll).span_dir()
+    ox, oy, datum = r.x / 100.0, -r.y / 100.0, r.z + r.height_bias
+    s = np.arange(-20.0, length + 20.0, 0.25)
+    g = np.array([b.height_cm[int(round((oy + dy * t) / 2.0)), int(round((ox + dx * t) / 2.0))]
+                  for t in s])
+    bank = g > datum - 150.0
+    return s[(s < length / 2) & bank].max(), length - s[(s > length / 2) & bank].min()
+
+
+@pytest.mark.parametrize("roll", [90.0, 270.0])
+def test_a_rope_bridge_sits_unevenly_and_the_same_whichever_way_it_points(roll):
+    """40 corpus placements: 1.5-4 m of bank under the origin end, 7-12 under
+    the far end. Fitted 6 / 6 the landing hung over the water; and the pooled
+    masks sat a metre off, so east and west spans seated 2 m apart."""
+    from m2map.gen.spec import BridgeSpec
+    spec = _islands_spec()
+    spec.bridges = [BridgeSpec(model="suspension01", centre=(256.0, 128.0), roll_deg=roll)]
+    spec.islands.berm_cm = spec.islands.warp_m = spec.islands.wobble_m = 0.0
+    near, far = _seat(pipeline.run(spec), "suspension01")
+    assert 1.0 <= near <= 4.0, "origin end rests %.1f m on its bank (corpus 1.5-4)" % near
+    assert 7.0 <= far <= 12.0, "far end rests %.1f m on its bank (corpus 7-12)" % far
+
+
+def test_block_without_rock_is_never_a_sliver(built):
+    """Steep for a few metres is not a wall: a blocked strip under 9 tiles wide
+    with no cliff paint near it is an invisible fence."""
+    from m2map.gen import attribute
+    from m2map.gen.texture import _dilate, _erode
+    a, t = built.attr_cells, built.tiles
+    blocked = (a & 0x01).astype(bool) & ~(a & 0x02).astype(bool)
+    cliff = [i for i, sl in enumerate(built.spec.textures, start=1) if sl.role == "cliff"]
+    rock = _dilate(np.isin(t, cliff), 4)
+    k = attribute.SLIVER_TILES // 2
+    thin = blocked & ~_dilate(_erode(blocked, k), k + 1) & ~rock
+    bb = built.spec.border_band_m + 1
+    thin[:bb, :] = thin[-bb:, :] = False
+    thin[:, :bb] = thin[:, -bb:] = False
+    for fx, fy, *rest in built.footprints:                 # props block what they stand on
+        r = int(max(rest[:2]) if len(rest) > 1 else rest[0]) + 3
+        thin[max(0, int(fy) - r):int(fy) + r + 1, max(0, int(fx) - r):int(fx) + r + 1] = False
+    assert thin.mean() < 0.0005, "%.2f%% of the map is unpainted sliver block" % (100 * thin.mean())
+
+
 def test_islands_are_mesas_over_one_sea_joined_only_by_the_deck():
     """`map_a2`: equal tops either side of a bridge, a flooded canyon between,
     rock and block on all of it, and the road stopping at each lip."""
