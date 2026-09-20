@@ -196,6 +196,9 @@ class Plaza:
     radius_m: float
 
 
+#: Open ground kept on each side of a road's painted core, metres.
+ROAD_SHOULDER_M = 2.5
+
 #: How far inside the stated lip a bridge's gorge wall starts, metres -- what
 #: max-pooling the cut onto the 2 m vertex grid gives back. Calibrated by walking
 #: the axis of built bridges the way the corpus ones were measured.
@@ -269,6 +272,24 @@ class Layout:
         m = np.zeros(self.shape, bool)
         for c in self.corridors:
             m |= c.core
+        return m
+
+    @property
+    def road_clear(self) -> np.ndarray:
+        """The road AND its shoulder: what collision and the rock skin both keep
+        off. `ROAD_SHOULDER_M` past the painted core on each side.
+
+        Opening only the core left a road through a rock hump as a 5 m slot
+        between saw-toothed block, with the block standing on the road's own
+        dithered rim where no stone is painted. In the corpus block never runs
+        ahead of the rock toward a road: by distance from the road paint,
+        `map_a2` measures rock 20.6 / 24.5 / 28.8 / 35.3% against block
+        19.3 / 21.4 / 24.6 / 30.9% (1-2, 2-3, 3-5, 5-8 m), and
+        `metin2_map_n_desert_01` is 2% blocked anywhere inside 5 m.
+        """
+        m = np.zeros(self.shape, bool)
+        for c in self.corridors:
+            m |= c.distance <= (max(0.5, c.width_m / 2.0) + ROAD_SHOULDER_M)
         return m
 
     @property

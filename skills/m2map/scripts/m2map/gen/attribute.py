@@ -100,7 +100,7 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
         # rim all the way over the top rather than only on its faces. See
         # `gen/walkable.py`.
         blocked = walkable.terrain_block(spec, slope_deg, (h, w),
-                                         roads=lay.road_mask, void=lay.void)
+                                         roads=lay.road_clear, void=lay.void)
         keep = np.zeros((h, w), bool) if lay.void is None else lay.void.copy()
         bb = max(0, int(spec.border_band_m))
         if bb:
@@ -123,9 +123,9 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
     #
     # ATTR_WATER stays set on a ford: Ymir paints exactly this as 0xCA
     # ("bridge, walkable" over water). Only BLOCK is lifted.
-    for corr in lay.corridors:
-        core = corr.core if lay.void is None else (corr.core & ~lay.void)
-        cells[core] &= np.uint8(~attr_codec.ATTR_BLOCK & 0xFF)
+    # ...with its shoulder (`Layout.road_clear`): a route is not a slot.
+    open_ = lay.road_clear if lay.void is None else (lay.road_clear & ~lay.void)
+    cells[open_] &= np.uint8(~attr_codec.ATTR_BLOCK & 0xFF)
 
     # Border seal. Maps stop the player with a block band at the edge; measured
     # widths cluster at a few metres.

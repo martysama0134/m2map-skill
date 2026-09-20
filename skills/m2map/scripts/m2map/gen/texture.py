@@ -393,7 +393,7 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray,
     if cliff_slots:
         massif = cliff_massif(spec, slope, rng,
                               slope_deg_src=slope_deg,
-                              road_mask=lay.road_mask, void=lay.void)
+                              road_mask=lay.road_clear, void=lay.void)
         # A LAKE BED IS NOT ROCK. `taste.md` 1.10 says rock covers the ground the
         # player cannot walk on, and a basin floor qualifies -- it is blocked,
         # and after a scarp cuts it, steep. The rule was written about mountains

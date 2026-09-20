@@ -649,6 +649,37 @@ def test_block_without_rock_is_never_a_sliver(built):
     assert thin.mean() < 0.0005, "%.2f%% of the map is unpainted sliver block" % (100 * thin.mean())
 
 
+def _hilly_road_spec():
+    return make_spec(plazas=[], objects=[], regions=[], safezone_regions=[], water=[],
+                     height_range_cm=(0.0, 9000.0), slope_p50=18.0, slope_p95=44.0,
+                     flat_fraction=0.05, roughness=0.8)
+
+
+def _shoulder_block(b):
+    lay = b.layout
+    bb = b.spec.border_band_m
+    inner = np.zeros(lay.shape, bool)
+    inner[bb:-bb, bb:-bb] = True
+    shoulder = lay.road_clear & ~lay.road_mask & inner
+    return float((b.attr_cells[shoulder] & 0x01).astype(bool).mean())
+
+
+def test_a_road_keeps_a_shoulder_and_block_never_runs_ahead_of_the_rock(monkeypatch):
+    """A road through a rock hump was a 5 m slot between saw-toothed block
+    standing on the road's own rim, where no stone is painted. `map_a2`: rock
+    20.6 / 24.5 / 28.8% against block 19.3 / 21.4 / 24.6% at 1-2, 2-3, 3-5 m."""
+    from m2map.gen import layout
+    assert _shoulder_block(pipeline.run(_hilly_road_spec())) == 0.0
+    monkeypatch.setattr(layout, "ROAD_SHOULDER_M", 0.0)
+    wide = layout.Layout.road_clear
+    monkeypatch.setattr(layout.Layout, "road_clear", property(
+        lambda self: np.logical_or.reduce([c.core for c in self.corridors])))
+    b = pipeline.run(_hilly_road_spec())
+    monkeypatch.setattr(layout.Layout, "road_clear", wide)
+    monkeypatch.setattr(layout, "ROAD_SHOULDER_M", 2.5)
+    assert _shoulder_block(b) > 0.05, "the hilly fixture no longer squeezes its road"
+
+
 def test_islands_are_mesas_over_one_sea_joined_only_by_the_deck():
     """`map_a2`: equal tops either side of a bridge, a flooded canyon between,
     rock and block on all of it, and the road stopping at each lip."""
