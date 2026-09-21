@@ -171,8 +171,12 @@ def _bridge_tiers(b) -> list:
 
 def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
         stages: Tuple[str, ...] = STAGES, build: Optional[Build] = None,
-        progress: Optional[Callable[[str], None]] = None) -> Build:
-    """Run the requested stages, in order, on a fresh or existing build."""
+        progress: Optional[Callable[[str], None]] = None,
+        keep_objects: Optional[List[ad.ObjectRecord]] = None) -> Build:
+    """Run the requested stages, in order, on a fresh or existing build.
+
+    ``keep_objects``: the records the map already has. The scatter is then kept
+    where it stands and only re-seated -- see `objects.build`."""
     # `setpieces:` entries become authored tiers and pads here, so the
     # validation below sees the stamped positions and the pad extents too.
     spec = setpiece.expand(spec)
@@ -257,7 +261,10 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
         b.records, b.footprints, shortfalls = objects.build(
             spec, b.layout, b.height_cm, b.slope_deg, b.tiles,
             submerged=b.submerged, wet=b.wet, bbox_lookup=bbox_lookup,
-            extra=_bridge_tiers(b))
+            extra=_bridge_tiers(b), keep=keep_objects)
+        if objects.build.last_keep is not None:
+            b.note("objects: kept %d where they stood, %d lost their ground and were "
+                   "replaced in their own sectors" % objects.build.last_keep)
         os_ = objects.stats(b.records)
         b.note("objects: %d placed, %d distinct CRCs, roll-snap %.0f%%"
                % (os_.get("count", 0), os_.get("distinct_crcs", 0),

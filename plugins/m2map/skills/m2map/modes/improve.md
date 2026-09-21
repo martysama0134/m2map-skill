@@ -90,3 +90,12 @@ flattening, the object clearance and the attr corridor at the old width.
 **"Add more variety to the ground."** Almost never means more textures. It means
 the slot weights are too concentrated — the corpus median base share is 0.52,
 and a map using 7 slots with one at 0.8 reads as bare.
+
+## Rebuilding from a spec keeps the objects
+
+`build_map.py spec.yaml --out <existing map>` keeps the scatter the map already
+has when size, seed and object tiers are unchanged (SKILL rule 33): read the
+`objects: kept N where they stood, M lost their ground ...` line. `M` should be
+explained by the change you made -- a new road, a new plaza -- and be zero when
+you changed neither. Pass `--rescatter` only when the user asks for new flora.
+

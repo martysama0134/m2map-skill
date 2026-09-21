@@ -185,8 +185,22 @@ def _candidate_mask(spec: MapSpec, lay: Layout, tier: ObjectTier,
 
 def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarray,
           tiles: np.ndarray, submerged: Optional[np.ndarray] = None,
-          wet: Optional[np.ndarray] = None, bbox_lookup=None, extra=()):
+          wet: Optional[np.ndarray] = None, bbox_lookup=None, extra=(),
+          keep: Optional[List[ad.ObjectRecord]] = None):
     """Place every tier. Returns ``(records, footprints)``.
+
+    ``keep`` is the scatter a map ALREADY HAS (its `areadata.txt` records).
+    Given it, nothing is re-scattered: every kept record stays at its x, y, roll
+    and bias and is only re-seated on the new ground. One is dropped only when
+    its spot stopped being ground a prop can stand on -- a road or its shoulder,
+    a plaza, void, water -- and the tier is topped up by that many IN THE
+    SECTORS THAT LOST THEM, nowhere else. Authored placements (`positions`,
+    set-pieces, bridges) are always laid again from the spec.
+
+    Without it a rebuild re-rolls the whole map's flora for a terrain fix two
+    sectors away: the dart order is seeded, but the candidate mask it throws at
+    is not the same mask, so every tree moves. A map its author has walked is
+    not to be reshuffled under them.
 
     ``records`` are whole-map :class:`ObjectRecord`s in map-local cm;
     ``footprints`` are ``(tile_x, tile_y, radius_tiles)`` for scattered props
@@ -219,6 +233,28 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
     # same square metre.
     overlap = _Grid(w, h, cell=4.0)
     OVERLAP_M = 1.5
+
+    kept_by_crc: Dict[int, List[ad.ObjectRecord]] = {}
+    if keep is not None:
+        authored = set()
+        for tier in list(spec.objects) + list(extra):
+            for pos in tier.positions:
+                authored.add((tier.crc, int(round(float(np.clip(pos[0], 0, w - 1)) * 100.0)),
+                              int(round(float(np.clip(pos[1], 0, h - 1)) * 100.0))))
+        for r in keep:
+            if (r.crc, int(round(r.x)), int(round(-r.y))) in authored:
+                continue                      # laid again from the spec below
+            kept_by_crc.setdefault(r.crc, []).append(r)
+        # the painted CORE, not the shoulder: palms are scattered at 0-2 m from a
+        # road by their own tier, and a rebuild that changed nothing must move nothing
+        gone = lay.road_mask.copy()
+        for pz in lay.plazas:
+            gone |= pz.mask
+        if lay.void is not None:
+            gone |= lay.void
+        if submerged is not None:
+            gone |= submerged
+    kept_n = dropped_n = 0
 
     for tier in list(spec.objects) + list(extra):
         # Authored placements bypass every filter. See `ObjectTier.positions`:
@@ -262,6 +298,32 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
             continue
 
         mask = _candidate_mask(spec, lay, tier, tiles, slope_t, submerged, wet)
+        refill = None
+        if keep is not None:
+            refill = np.zeros((h, w), bool)
+            lost = 0
+            for r in kept_by_crc.pop(tier.crc, []):
+                tx, ty = r.x / 100.0, -r.y / 100.0
+                ix, iy = int(np.clip(tx, 0, w - 1)), int(np.clip(ty, 0, h - 1))
+                if gone[iy, ix] or slope_t[iy, ix] > tier.max_slope + 15.0:
+                    sy_, sx_ = (iy // SECTOR_TILES) * SECTOR_TILES, (ix // SECTOR_TILES) * SECTOR_TILES
+                    refill[sy_:sy_ + SECTOR_TILES, sx_:sx_ + SECTOR_TILES] = True
+                    lost += 1
+                    continue
+                r.z = float(height_t[iy, ix])
+                records.append(r)
+                kept_n += 1
+                own_grids.setdefault(tier.crc, _Grid(w, h, cell=max(4.0, tier.spacing_cm / 100.0 or 4.0))).add(tx, ty)
+                overlap.add(tx, ty)
+                box = bbox_lookup(tier.crc) if bbox_lookup else None
+                if box and tier.tier != "accent":
+                    radius = max(box[0], box[1]) / 200.0
+                    if radius >= 1.0:
+                        footprints.append((tx, ty, radius))
+            dropped_n += lost
+            if lost == 0:
+                continue
+            mask &= refill
         available = int(mask.sum())
         if available == 0:
             shortfalls.append((tier.name or str(tier.crc), tier.count or -1, 0,
@@ -280,7 +342,9 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
                 spacing_cm = max(box[0], box[1]) * 1.15
         spacing = max(0.5, spacing_cm / 100.0)
 
-        if tier.count > 0:
+        if refill is not None:
+            target = lost                     # top up what this tier lost, where it lost it
+        elif tier.count > 0:
             target = tier.count
         else:
             target = int(round(tier.density * available / 100.0))
@@ -349,6 +413,7 @@ def build(spec: MapSpec, lay: Layout, height_cm: np.ndarray, slope_deg: np.ndarr
                 "%d of %d placed -- %d candidate tiles at %.1f m spacing is not "
                 "enough room" % (placed, target, available, spacing)))
 
+    build.last_keep = (kept_n, dropped_n) if keep is not None else None
     return records, footprints, shortfalls
 
 

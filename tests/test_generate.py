@@ -649,6 +649,39 @@ def test_block_without_rock_is_never_a_sliver(built):
     assert thin.mean() < 0.0005, "%.2f%% of the map is unpainted sliver block" % (100 * thin.mean())
 
 
+def test_a_rebuild_keeps_the_scatter_and_replaces_only_what_lost_its_ground():
+    """A terrain fix two sectors away must not re-roll every tree on the map."""
+    import copy
+    spec = make_spec(size=(2, 2), plazas=[], regions=[], safezone_regions=[], water=[])
+    first = pipeline.run(copy.deepcopy(spec))
+    where = lambda b: sorted((r.crc, r.x, r.y, r.roll) for r in b.records)     # noqa: E731
+    assert len(first.records) > 40
+
+    # same spec over the map it made: nothing moves
+    again = pipeline.run(copy.deepcopy(spec), keep_objects=copy.deepcopy(first.records))
+    assert where(again) == where(first)
+
+    # a new road through the south-east sector only
+    spec2 = copy.deepcopy(spec)
+    spec2.roads = list(spec2.roads) + [RoadSpec(waypoints=[(300, 300), (400, 400), (500, 300)],
+                                                width_m=6.0, tile_index=1)]
+    third = pipeline.run(spec2, keep_objects=copy.deepcopy(first.records))
+    old, new = set(where(first)), set(where(third))
+    lost, added = old - new, new - old
+    assert lost, "the fixture's new road should have displaced something"
+    assert len(lost) < 0.25 * len(old), "%d of %d moved for one road" % (len(lost), len(old))
+    on_road = third.layout.road_mask
+    for crc, x, y, _ in lost:
+        assert on_road[int(-y / 100.0), int(x / 100.0)], "a record off the new road was dropped"
+    for crc, x, y, _ in added:
+        assert x >= 25600.0 and -y >= 25600.0, "top-up outside the sector that lost ground"
+    assert len(third.records) == len(first.records)
+    # and what was kept stands on the NEW ground
+    h = third.height_cm
+    for r in third.records[:50]:
+        assert abs(r.z - h[int(-r.y / 200.0), int(r.x / 200.0)]) < 400.0
+
+
 def test_levelling_a_road_leaves_no_saw_tooth_on_its_verge():
     """The corridor mask is binary on a 2 m grid: along a diagonal road cut
     across a slope, levelled ground met raw ground at a new height on every step

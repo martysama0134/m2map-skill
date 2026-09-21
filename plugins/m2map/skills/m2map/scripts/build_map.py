@@ -41,6 +41,35 @@ def bbox_lookup_from_catalog():
     return table.get if table else None
 
 
+def existing_scatter(out, spec):
+    """The records of the map already at ``out``, if it is THIS map: same size,
+    same seed, same object tiers. None otherwise -- a new seed or a changed
+    palette is a request for a new scatter."""
+    from m2map.codec.areadata import AreaData
+    old = out / "mapspec.yaml"
+    if not old.is_file():
+        return None
+    try:
+        prev = MapSpec.load(old)
+    except Exception:                                   # noqa: BLE001 -- an old or foreign spec
+        return None
+    tiers = lambda s: [(t.crc, t.density, t.count) for t in s.objects if not t.positions]  # noqa: E731
+    if prev.size != spec.size or prev.seed != spec.seed or tiers(prev) != tiers(setpiece_expanded(spec)):
+        return None
+    recs = []
+    for cx, cy in spec.sectors():
+        p = out / ("%03d%03d" % (cx, cy)) / "areadata.txt"
+        if p.is_file():
+            recs += AreaData.load(p).records
+    return recs or None
+
+
+def setpiece_expanded(spec):
+    import copy
+    from m2map.gen import setpiece
+    return setpiece.expand(copy.deepcopy(spec))
+
+
 def main(argv=None):
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -54,6 +83,10 @@ def main(argv=None):
     ap.add_argument("--stages", default=None,
                     help="comma-separated subset, e.g. texture,objects,attr")
     ap.add_argument("--audit", action="store_true", help="audit the result")
+    ap.add_argument("--rescatter", action="store_true",
+                    help="throw the scatter again even though the map exists. Default: a "
+                         "rebuild over an existing map of the same seed and object tiers "
+                         "KEEPS its objects and only re-seats them on the new ground")
     ns = ap.parse_args(argv)
 
     try:
@@ -78,8 +111,10 @@ def main(argv=None):
         out = base / spec.name
 
     stages = tuple(s.strip() for s in ns.stages.split(",")) if ns.stages else pipeline.STAGES
+    keep = None if ns.rescatter else existing_scatter(out, spec)
     b = pipeline.run(spec, bbox_lookup=bbox_lookup_from_catalog(), stages=stages,
-                     progress=lambda s: print("  %s..." % s, file=sys.stderr))
+                     progress=lambda s: print("  %s..." % s, file=sys.stderr),
+                     keep_objects=keep)
     for line in b.log:
         print("  " + line)
 
