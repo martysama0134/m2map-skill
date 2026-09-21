@@ -217,7 +217,50 @@ def _flatten_mask(height_cm: np.ndarray, mask: np.ndarray,
             cnt += np.roll(np.roll(m, dy, axis=0), dx, axis=1)
         blur = np.divide(acc, cnt, out=out.copy(), where=cnt > 0)
         out[mask] = out[mask] * (1 - strength) + blur[mask] * strength
-    return out
+    return _feather_out(height_cm.astype(np.float64), out, mask)
+
+
+#: How far past a levelled corridor its surface is blended into the ground, cells.
+FLATTEN_SKIRT = 5
+
+
+def _feather_out(raw: np.ndarray, levelled: np.ndarray, mask: np.ndarray) -> np.ndarray:
+    """Blend a levelled corridor into the ground beside it.
+
+    The corridor mask is binary on a 2 m grid, so along a diagonal road its edge
+    is a staircase -- and where the road cuts ACROSS a slope, levelled ground
+    meets raw ground at a different height on every step. That is a saw-tooth
+    of 2 m teeth down the whole verge: on `map_ad3` the roadside roughness at
+    one such verge measured 618 cm against 245 with no levelling at all.
+
+    So the levelled surface is carried outward `FLATTEN_SKIRT` cells (each ring
+    the mean of the known cells it touches) and mixed back with a weight taken
+    from a BLURRED mask, which has no staircase in it: 1 on the corridor,
+    falling smoothly to 0 across the skirt.
+    """
+    ext = levelled.copy()
+    known = mask.copy()
+    for _ in range(FLATTEN_SKIRT):
+        acc = np.zeros_like(ext)
+        cnt = np.zeros_like(ext)
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                if dy == 0 and dx == 0:
+                    continue
+                k = np.roll(np.roll(known, dy, axis=0), dx, axis=1)
+                acc += np.roll(np.roll(ext, dy, axis=0), dx, axis=1) * k
+                cnt += k
+        ring = ~known & (cnt > 0)
+        ext[ring] = acc[ring] / cnt[ring]
+        known |= ring
+    w = mask.astype(np.float64)
+    for _ in range(FLATTEN_SKIRT):
+        p = np.pad(w, 1, mode="edge")
+        w = sum(p[1 + dy:p.shape[0] - 1 + dy, 1 + dx:p.shape[1] - 1 + dx]
+                for dy in (-1, 0, 1) for dx in (-1, 0, 1)) / 9.0
+    w = np.clip(w * 2.0, 0.0, 1.0)              # ~0.5 at the mask edge -> 1
+    w = np.where(mask, 1.0, np.where(known, w * w * (3.0 - 2.0 * w), 0.0))
+    return raw * (1.0 - w) + ext * w
 
 
 def _level_pad(height_cm: np.ndarray, mask: np.ndarray,

@@ -649,6 +649,31 @@ def test_block_without_rock_is_never_a_sliver(built):
     assert thin.mean() < 0.0005, "%.2f%% of the map is unpainted sliver block" % (100 * thin.mean())
 
 
+def test_levelling_a_road_leaves_no_saw_tooth_on_its_verge():
+    """The corridor mask is binary on a 2 m grid: along a diagonal road cut
+    across a slope, levelled ground met raw ground at a new height on every step
+    of the staircase -- 2 m teeth down the verge (`map_ad3`: 618 cm against 245
+    unlevelled)."""
+    from m2map.gen import layout, terrain
+
+    def verge_roughness(levelled):
+        spec = _hilly_road_spec()
+        lay = layout.build(spec)
+        flat = lay.flatten_mask_cells()
+        h = terrain.build(spec, flatten_mask=flat if levelled else np.zeros_like(flat),
+                          ridge_gap=lay.ridge_gap)
+        lap = np.abs(4 * h[1:-1, 1:-1] - h[:-2, 1:-1] - h[2:, 1:-1] - h[1:-1, :-2] - h[1:-1, 2:])
+        rd = lay.road_distance[::2, ::2][1:h.shape[0] - 1, 1:h.shape[1] - 1]
+        m = np.zeros_like(lap, bool)
+        m[:rd.shape[0], :rd.shape[1]] = (rd >= 4.0) & (rd <= 14.0)
+        m[:8, :] = m[-8:, :] = False
+        m[:, :8] = m[:, -8:] = False
+        return float(np.percentile(lap[m], 95))
+
+    raw, cut = verge_roughness(False), verge_roughness(True)
+    assert cut <= raw * 1.15, "verge roughness p95 %.0f levelled vs %.0f raw" % (cut, raw)
+
+
 def _hilly_road_spec():
     return make_spec(plazas=[], objects=[], regions=[], safezone_regions=[], water=[],
                      height_range_cm=(0.0, 9000.0), slope_p50=18.0, slope_p95=44.0,
