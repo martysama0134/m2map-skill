@@ -87,6 +87,11 @@ def build(spec: MapSpec, lay: Layout, slope_deg: np.ndarray,
         for kind in ("settlement", "clearing"):
             if kind in lay.regions:
                 walk |= lay.regions[kind]
+        if lay.labyrinth_walk is not None:
+            # the measured walk of every placed kit piece (`gen/labyrinth.py`)
+            walk |= lay.labyrinth_walk
+            if lay.labyrinth_block is not None:
+                walk &= ~lay.labyrinth_block      # barricaded arms
         if not walk.any():
             # No corridor was specified; leave a walkable inset rather than
             # shipping a map the player cannot enter at all.

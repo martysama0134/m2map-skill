@@ -25,8 +25,11 @@ import numpy as np
 
 from ..codec import areadata as ad
 from . import attribute, finish, layout, objects, terrain, texture, water
-from . import setpiece
+from . import labyrinth, setpiece
 from .spec import MapSpec
+
+#: cm a labyrinth's kit floors stand over the hidden terrain plane
+LAB_FLOOR_LIFT_CM = 100.0
 
 STAGES = ("layout", "terrain", "water", "texture", "objects", "attr", "finish")
 
@@ -180,6 +183,15 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
     # `setpieces:` entries become authored tiers and pads here, so the
     # validation below sees the stamped positions and the pad extents too.
     spec = setpiece.expand(spec)
+    lab_plan = None
+    if spec.labyrinth is not None:
+        # planned first: the assembly decides how many sectors the map needs
+        lab_plan = labyrinth.plan(spec)
+        need = lab_plan.size
+        if need[0] > spec.size[0] or need[1] > spec.size[1]:
+            spec.size = (max(need[0], spec.size[0]), max(need[1], spec.size[1]))
+            lab_plan.notes.append("labyrinth: map grown to %dx%d sectors to hold it"
+                                  % spec.size)
     spec.require_valid()
     b = build or Build(spec=spec)
 
@@ -192,6 +204,18 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
 
     if step("layout"):
         b.layout = layout.build(spec)
+        if lab_plan is not None:
+            b.layout.labyrinth = lab_plan
+            b.layout.labyrinth_walk, b.layout.labyrinth_block = lab_plan.masks(b.layout.shape)
+            for line in lab_plan.notes:
+                b.log.append(("! " if line.startswith("!") else "") + line.lstrip("! "))
+            for tag in ("start", "boss"):
+                x, y = getattr(lab_plan, tag)
+                b.note("  %s at (%.0f, %.0f) m map-local -- regen/Town units of 100"
+                       % (tag, x / 100.0, -y / 100.0))
+            for i, (a, c) in enumerate(lab_plan.warps):
+                b.note("  warp %d: (%.0f, %.0f) <-> (%.0f, %.0f) m"
+                       % (i, a[0] / 100.0, -a[1] / 100.0, c[0] / 100.0, -c[1] / 100.0))
         b.note("layout: %d corridor(s), %d water feature(s), %d region(s)"
                % (len(b.layout.corridors), len(b.layout.water_masks),
                   len(b.layout.regions)))
@@ -262,6 +286,14 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
             spec, b.layout, b.height_cm, b.slope_deg, b.tiles,
             submerged=b.submerged, wet=b.wet, bbox_lookup=bbox_lookup,
             extra=_bridge_tiers(b), keep=keep_objects)
+        if b.layout is not None and b.layout.labyrinth is not None:
+            # The kit stands a metre over the plane, bias as mined. The corpus
+            # keeps its hidden terrain under the floors -- whitedragoncave_01 by
+            # 61 cm, anglar by ~4 m, the maze kits by their +20 cm bias -- and a
+            # floor ON the plane z-fights it in black streaks (the editor draws
+            # the terrain whatever TerrainVisible says).
+            z = float(np.median(b.height_cm)) + LAB_FLOOR_LIFT_CM
+            b.records = list(b.records) + b.layout.labyrinth.records(z)
         if objects.build.last_keep is not None:
             b.note("objects: kept %d where they stood, %d lost their ground and were "
                    "replaced in their own sectors" % objects.build.last_keep)
@@ -276,6 +308,9 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
         b.attr_cells = attribute.build(spec, b.layout, b.slope_deg,
                                        b.submerged, b.footprints, tiles=b.tiles)
         b.server_attr = attribute.build_server_attr(spec, b.attr_cells)
+        if b.layout is not None and b.layout.labyrinth is not None:
+            for line in labyrinth.reach_check(b.layout.labyrinth, b.attr_cells):
+                b.log.append(line)
         cov = attribute.coverage(b.attr_cells)
         b.note("attr: block %.0f%%, water %.0f%%, safezone %.0f%%"
                % (100 * cov["block"], 100 * cov["water"], 100 * cov["safezone"]))

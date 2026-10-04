@@ -266,6 +266,11 @@ class Layout:
     void: np.ndarray | None = None
     #: cm to add along the lips of the tops -- the rock berm. Vertex grid.
     island_berm: np.ndarray | None = None
+    #: `gen/labyrinth.Plan` for a `labyrinth:` spec, with its walk and its
+    #: barricade block rasterised in tile space
+    labyrinth: object = None
+    labyrinth_walk: np.ndarray | None = None
+    labyrinth_block: np.ndarray | None = None
 
     @property
     def road_mask(self) -> np.ndarray:

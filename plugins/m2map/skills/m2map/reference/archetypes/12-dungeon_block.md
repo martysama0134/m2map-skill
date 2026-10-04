@@ -311,6 +311,15 @@ tunnels in it" measures as.
 
 ---
 
+## Labyrinths
+
+Six of these maps are labyrinths built from a modular kit -- `anglar_dungeon_01`,
+`whitedragoncave_01/02` (themed, same build), `skipia_dungeon_01/02`,
+`spiderdungeon_02/03` and the maze/monkey six. Their pieces, sockets, measured
+walk and dressing are mined into `../labyrinth/kits.json`; a new labyrinth is a
+`labyrinth:` block in the mapspec, not hand-placed records. See
+`../labyrinth/README.md`.
+
 ## Border occlusion
 
 **Fog, not terrain.** Ring lift is **+0 cm** -- this archetype does not wall its border, and for the negative cases the map sits ON the high ground with the edges falling away. Occlusion comes from the environment instead. Leave `border_ridge_cm` at 0 and keep the archetype's `Fog.NearDistance`, which is what does the work.

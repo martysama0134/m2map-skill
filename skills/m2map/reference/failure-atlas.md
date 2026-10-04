@@ -1018,6 +1018,24 @@ Three traps met while fixing it (`modes/readapt.md`, rule 28):
 **The tell:** `MapSize` is a multiple of the source maps' size and the texture
 set name is three names joined with `_merged`.
 
+## 3.13 A labyrinth that renders and cannot be walked
+
+Three faults met while building `gen/labyrinth.py`, each invisible in the plan:
+
+| Fault | Seen as | Cause | Fix |
+|---|---|---|---|
+| Black streaks across every room floor | WorldEditor shot | kit floors exactly on the terrain plane; the editor draws the terrain whatever `TerrainVisible` says | floors 1 m over the plane (the corpus: 61 cm on `whitedragoncave_01`, ~4 m on anglar) and `TerrainVisible 0` |
+| Skipia start or boss sealed off, 2-5 walk components | `labyrinth check: ... NOT REACHABLE` | a piece's measured walk stops ~2 m short of its mouth (the wall-foot rim); two such mouths meet across a blocked line | walk painted across every join the generator makes -- the shipped attr is continuous through joins |
+| Spiked fences across open rooms | close-up render next to the corpus | the spider fences ride a third of the room placements, so the dressing miner kept them; they are there only because a third of the arms are shut | barricade CRCs never placed as dressing in a grid kit |
+
+And one that is a design limit, not a bug: the maze/monkey kit has ONE corridor
+length (63.5 m) and junction reaches that differ by 7 m from row to row, so no
+uniform grid closes. The source maps do not try -- they are letter islands and
+warp gates -- and neither does the generator (`warp` mode).
+
+**The tell:** the plan preview looks right. Only the reach check and the
+engine render catch these.
+
 ## 4. Unit boundaries — the faults a round trip cannot see
 
 Every entry above describes a file that is wrong in a way some check can notice.

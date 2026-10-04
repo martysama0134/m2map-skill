@@ -6,7 +6,8 @@ description: >
   "add a road", "the north sector is empty", "why do my objects not show up",
   "register this pattern", "save this group of objects", pasted AreaDataFile text,
   "players fall through the floor", "merge these maps", "connect these merged
-  maps", "there are gaps where the maps join", "add spawns"; provides a
+  maps", "there are gaps where the maps join", "add spawns", "make a labyrinth",
+  "maze dungeon"; provides a
   map folder or a screenshot of terrain to match; or references any map file
   (setting.txt, height.raw, tile.raw, attr.atr, water.wtr, areadata.txt,
   server_attr, a textureset, an .msenv, a .pr* property file, an XXXYYY sector
@@ -52,6 +53,7 @@ Read the matching mode file from `modes/` adjacent to this SKILL.md.
 | Any placement decision | `reference/placement.md` — the family's section |
 | Registering a new pattern | `modes/register.md` — verify the paste, read the ground, render source and copy |
 | Joining the pieces of a merged map | `modes/readapt.md` — blocks from the tears, the three-layer datum shift, weld, pass, road |
+| A labyrinth / maze dungeon built from dungeon pieces | `reference/labyrinth/README.md` — the six kits, `labyrinth:` in the mapspec |
 | A bridge, a moat, a pier or anything at a waterline | `reference/structures.md` §5-6 — the measured fit, `BRIDGE_MODELS`, shore patterns |
 | Reusing a shipped compound (camp, town square, yard, shrine) | `reference/setpieces/README.md` — the patterns, and how to turn and stamp one |
 | Choosing or composing a palette | `reference/textures.md` |
@@ -136,6 +138,8 @@ All modes, all generated output. Reference files cite these by number — number
 32. **A road keeps a shoulder, and block never runs ahead of the rock.** Stone does not have to be blocked -- by distance from the road paint `map_a2` measures rock 20.6 / 24.5 / 28.8 / 35.3% against block 19.3 / 21.4 / 24.6 / 30.9% (1-2, 2-3, 3-5, 5-8 m), rock ahead at every step, and `metin2_map_n_desert_01` is 2% blocked anywhere inside 5 m -- but block without stone beside a road is a saw-toothed slot. Opening only the painted core did that wherever a road crossed a hump: 42% blocked against 9% rock 2.5-4 m out. `Layout.road_clear` is the core plus `ROAD_SHOULDER_M` (2.5) and BOTH the attr stage and the rock skin read it, so the two retreat together.
 33. **A rebuild keeps the scatter.** Rebuilding over an existing map of the same size, seed and object tiers keeps every scattered object at its x, y, roll and bias and only re-seats it on the new ground; one is replaced only if its spot became a road core, a plaza, void or water, and the top-up is thrown only in the sectors that lost something. Authored placements are laid again from the spec. The dart order is seeded but the candidate mask is not the same mask after any terrain change, so without this **577 of 577** objects moved for one added road. `build_map.py` does it by default (`objects: kept N ...` in the log); `--rescatter` is the explicit request for a new throw. The author has walked the map -- do not reshuffle it under them for a fix two sectors away.
 34. **A levelled corridor is feathered out, never cut at its mask.** The corridor mask is binary on the 2 m grid; along a diagonal road crossing a slope, levelled ground met raw ground at a new height on every step of the staircase and the verge came out as 2 m saw-teeth (`map_ad3`, one verge: roughness 618 cm against 245 with no levelling). `terrain._feather_out` carries the levelled surface 5 cells outward and mixes it back through a BLURRED mask, which has no staircase in it. Isolate a terrain artefact by switching stages off one at a time and measuring -- the berm beside that road was the obvious suspect and was innocent.
+
+35. **A labyrinth is assembled from a kit, never placed piece by piece from statistics.** The corpus labyrinths (anglar, whitedragon 01/02, skipia, spider, maze/monkey) are mined into `reference/labyrinth/kits.json`: each piece's floor, its walk measured from the shipped attr, its sockets and what rides on it. Pieces join where their **socket families** joined in the corpus -- a whitedragon room's 10 m mouth only through a door, anglar's 31 m cave corridor and 41 m stone corridor only through `anglar_cavegate2` -- and a run between two junctions is solved to the centimetre from the kit's straights, on a grid whose columns and rows move so the runs close. Each family keeps its own way of making walls: `spider` builds the whole room grid and fences arms shut, the maze/monkey kits are letter islands joined by warp gates (their one 63.5 m corridor cannot close a grid), the rest lay corridors only where the maze runs. The floors stand 1 m over the hidden terrain and `TerrainVisible 0` is written, or the plane z-fights every floor. The build log must end `start -> boss REACHABLE`, read off the attr as written. `reference/labyrinth/README.md`.
 
 ## Verification — not optional
 

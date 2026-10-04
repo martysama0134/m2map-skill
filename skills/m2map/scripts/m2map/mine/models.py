@@ -117,7 +117,7 @@ def _cfg(key, *parts):
 
 
 __all__ = [
-    "DEFAULTS", "Gr2Error", "Gr2File", "read_gr2", "read_mdatr", "read_spt",
+    "DEFAULTS", "Gr2Error", "Gr2File", "read_gr2", "read_mesh", "read_mdatr", "read_spt",
     "resolve_art_path", "scan", "shape_envelope", "main",
 ]
 
@@ -589,6 +589,59 @@ def read_gr2(path, decomp: "Decompressor | None" = None) -> dict:
     except (Gr2Error, struct.error, IndexError, KeyError, TypeError) as exc:
         out["error"] = "%s: %s" % (type(exc).__name__, exc)
     return out
+
+
+def read_mesh(path, decomp: "Decompressor | None" = None):
+    """Every mesh's triangles as one ``(V, T)`` pair: ``V`` an ``(n, 3)`` float
+    array in model centimetres (Z up), ``T`` an ``(m, 3)`` int array into it.
+
+    ``read_gr2`` keeps only the extents; this keeps the geometry, which is what
+    a top-down floor plan of a dungeon block needs (``gen/labyrinth.py``). Each
+    mesh is its ``PrimaryVertexData`` indexed by its ``PrimaryTopology``. Model
+    placements are ignored -- the dungeon kits carry none.
+    """
+    import numpy as np
+    decomp = decomp or Decompressor(os.environ.get("M2MAP_GRN") or DEFAULTS["grn"])
+    f = Gr2File(decomp.load(pathlib.Path(path)))
+    fi = f.type(f.root_type)
+    root = f.root_obj
+    me_t = f.type(f.member(fi, "Meshes")["ref"])
+    vd_t = f.type(f.member(fi, "VertexDatas")["ref"])
+    tt_t = f.type(f.member(fi, "TriTopologies")["ref"])
+    verts, tris, base = [], [], 0
+    for mesh in f.array_of_refs(fi, root, "Meshes"):
+        if mesh is None:
+            continue
+        vd = f.get_ref(me_t, mesh, "PrimaryVertexData")
+        tp = f.get_ref(me_t, mesh, "PrimaryTopology")
+        if vd is None or tp is None:
+            continue
+        type_ref, count, data_ref = f.variant_array(vd_t, vd, "Vertices")
+        if count <= 0 or data_ref is None:
+            continue
+        vt = f.type(type_ref)
+        stride = vt[0]["_size"]
+        pos = f.member(vt, "Position")
+        buf = f.sections[data_ref[0]]
+        v = np.frombuffer(buf, np.uint8, count * stride,
+                          data_ref[1]).reshape(count, stride)
+        v = v[:, pos["off"]:pos["off"] + 12].copy().view("<f4").reshape(count, 3)
+        n32, r32 = f.ref_to_array(tt_t, tp, "Indices")
+        n16, r16 = f.ref_to_array(tt_t, tp, "Indices16")
+        if n32 and r32 is not None:
+            idx = np.frombuffer(f.sections[r32[0]], "<i4", n32, r32[1])
+        elif n16 and r16 is not None:
+            idx = np.frombuffer(f.sections[r16[0]], "<u2", n16, r16[1])
+        else:
+            continue
+        idx = idx[: len(idx) // 3 * 3].astype(np.int64).reshape(-1, 3)
+        idx = idx[(idx < count).all(axis=1)]
+        verts.append(v.astype(np.float64))
+        tris.append(idx + base)
+        base += count
+    if not verts:
+        raise Gr2Error("no triangle meshes")
+    return np.concatenate(verts), np.concatenate(tris)
 
 
 # ==========================================================================

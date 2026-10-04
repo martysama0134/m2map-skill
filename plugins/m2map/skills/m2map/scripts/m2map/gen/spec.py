@@ -587,6 +587,38 @@ class IslandsSpec:
 
 
 @dataclass
+class LabyrinthSpec:
+    """A labyrinth assembled from one dungeon kit (`gen/labyrinth.py`).
+
+    The kits are the DungeonBlock sets of the corpus labyrinths, mined into
+    `reference/labyrinth/kits.json` (`mine/dungeon_kits.py`): `anglar`,
+    `whitedragon_01`, `whitedragon_02`, `skipia`, `spider`, and the one maze
+    geometry in six skins `maze`/`maze02`/`maze03`/`monkey`/`monkey02`/
+    `monkey03`. Each is built the way its source map is -- `spider` as a full
+    room grid whose maze is barricades, the others as corridors only where the
+    paths run. `reference/labyrinth/README.md`.
+    """
+
+    kit: str
+    #: maze cells (columns, rows)
+    cells: Tuple[int, int] = (5, 5)
+    #: share of the walls a perfect maze leaves that are reopened as loops.
+    #: 0 = one solution and every dead end; the corpus anglar/skipia are braided
+    loops: float = 0.15
+    #: centre-to-centre distance of two cells, metres; None = the kit's own
+    pitch_m: Optional[float] = None
+    #: start room and boss room at the two far ends of the longest path
+    rooms: bool = True
+    #: the side of the grid the entrance is on
+    entrance: str = "S"
+    #: clear margin round the assembly, metres
+    margin_m: float = 40.0
+
+    def __post_init__(self):
+        self.cells = (int(self.cells[0]), int(self.cells[1]))
+
+
+@dataclass
 class MapSpec:
     """Everything needed to build a map, and nothing that can be derived."""
 
@@ -617,6 +649,8 @@ class MapSpec:
     objects: List[ObjectTier] = field(default_factory=list)
     #: mesas over one water plane (`map_a2`); see `IslandsSpec`
     islands: Optional[IslandsSpec] = None
+    #: a dungeon-kit labyrinth (`style: box` only); see `LabyrinthSpec`
+    labyrinth: Optional[LabyrinthSpec] = None
 
     # --- terrain shaping, clamped to the archetype's mined statistics ------
     height_range_cm: Tuple[float, float] = (0.0, 4000.0)
@@ -852,6 +886,17 @@ class MapSpec:
                     % (o.name or o.crc, o.road_clearance_cm / 100.0, span_m))
         if self.is_box() and self.water:
             out.append("style 'box' with water features -- interiors have none")
+        if self.labyrinth is not None:
+            lab = self.labyrinth
+            if not self.is_box() or self.attr_style != "painted_box":
+                out.append("labyrinth needs style 'box' and attr_style 'painted_box' -- "
+                           "the kits are interiors on a black plane")
+            if min(lab.cells) < 2 or max(lab.cells) > 24:
+                out.append("labyrinth cells %r outside 2..24" % (lab.cells,))
+            if not 0.0 <= lab.loops <= 1.0:
+                out.append("labyrinth loops %r outside 0..1" % lab.loops)
+            if lab.entrance not in ("N", "E", "S", "W"):
+                out.append("labyrinth entrance %r must be N, E, S or W" % lab.entrance)
         return out
 
     def require_valid(self) -> None:
@@ -890,6 +935,8 @@ class MapSpec:
         d["objects"] = [ObjectTier(**o) for o in d.get("objects", [])]
         if d.get("islands") is not None:
             d["islands"] = IslandsSpec(**d["islands"])
+        if d.get("labyrinth") is not None:
+            d["labyrinth"] = LabyrinthSpec(**d["labyrinth"])
         for k in ("size", "base_position", "height_range_cm"):
             if k in d and d[k] is not None:
                 d[k] = tuple(d[k])

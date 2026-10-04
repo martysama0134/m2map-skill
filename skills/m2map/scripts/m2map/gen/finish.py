@@ -38,6 +38,11 @@ def build_setting(spec: MapSpec) -> st_codec.Setting:
         base_position=tuple(spec.base_position),
         texture_set="textureset\\%s.txt" % (spec.textureset_name or spec.name),
         environment=spec.environment or "%s.msenv" % spec.name,
+        # The block dungeons hide their terrain: 18 of the corpus's 19
+        # `TerrainVisible 0` maps are dungeon_block. Drawn, the plane z-fights
+        # every kit floor standing on it -- black streaks across each room.
+        terrain_visible=(0 if (spec.labyrinth is not None
+                               or spec.archetype == "dungeon_block") else None),
     )
 
 
