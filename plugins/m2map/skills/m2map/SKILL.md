@@ -24,10 +24,10 @@ Dispatched as a subagent with a specific task? Skip mode detection and execute t
 
 Priority order:
 
-1. **Explicit keyword**: args start with `generate`, `improve`, `audit`, `merge`, `readapt`, `reskin`, `server` or `register` → that mode
+1. **Explicit keyword**: args start with `generate`, `improve`, `audit`, `merge`, `readapt`, `curate`, `reskin`, `server` or `register` → that mode
 1b. **One map that is already a merge** — "connect them", "join the maps with a road", "gaps / slits where the maps meet", "the merged maps are at different heights", or an audit showing `M2MAP-HGT-001` → **readapt mode**. Merging is step one and MapForge does it; readapt is step two
 1a. **Pasted `areadata.txt` text** (`AreaDataFile`, `Start Object000` …) or "register / save this group / pattern for later" → **register mode**. A paste is a selection to keep, not a map to audit
-1c. **"Is this map finished / low quality / what's wrong with this mapper's map"** → **audit mode**; the `M2MAP-QA-*` quality rules flag walkable cliffs, missing attr, ruler-cut roads and open map edges (`modes/audit.md`)
+1c. **"Is this map finished / low quality / what's wrong with this mapper's map"** → **audit mode**; the `M2MAP-QA-*` quality rules flag walkable cliffs, missing attr, ruler-cut roads and open map edges (`modes/audit.md`). **"Fix / upgrade / curate / polish this mapper's map"** → **curate mode** (`modes/curate.md`): list the flags, ASK which to fix and where, back up, fix, render before/after
 2. **Symptom report**: args contain a visible-fault phrase ("objects don't show", "falls through the floor", "blocked in open ground", "error texture", "map won't load", "seams", "blank minimap", "walks on water") → **audit mode first**, then `improve` if a fix is wanted
 3. **Two or more map paths**, or "combine"/"stitch"/"expand" → merge mode
 4. **One map path + a biome word** ("make it snowy", "desert version") → reskin mode
@@ -36,7 +36,7 @@ Priority order:
 7. **Spawn words** ("regen", "spawns", "npc", "boss", "stone", "add monsters") → server mode
 8. **Text description of a place** → generate mode
 9. **Image attached** → generate mode, using the image only for *style cues* (biome, density, palette feel). See "Screenshots" below.
-10. **No args**: ask — "(a) Generate a new map, (b) Improve an existing one, (c) Audit for problems, (d) Merge or expand, (e) Reskin to another biome, (f) Add spawns, (g) Register a group of objects as a reusable pattern, (h) Readapt a merged map — level it, close the joins, connect the pieces" — then dispatch
+10. **No args**: ask — "(a) Generate a new map, (b) Improve an existing one, (c) Audit for problems, (d) Merge or expand, (e) Reskin to another biome, (f) Add spawns, (g) Register a group of objects as a reusable pattern, (h) Readapt a merged map — level it, close the joins, connect the pieces, (i) Curate somebody's map — fix the unfinished parts the quality rules flag" — then dispatch
 
 Read the matching mode file from `modes/` adjacent to this SKILL.md.
 
@@ -54,6 +54,7 @@ Read the matching mode file from `modes/` adjacent to this SKILL.md.
 | Any placement decision | `reference/placement.md` — the family's section |
 | Registering a new pattern | `modes/register.md` — verify the paste, read the ground, render source and copy |
 | Joining the pieces of a merged map | `modes/readapt.md` — blocks from the tears, the three-layer datum shift, weld, pass, road |
+| Fixing an unfinished map somebody else made | `modes/curate.md` — the four QA fixes, ask first, backup, render |
 | A labyrinth / maze dungeon built from dungeon pieces | `reference/labyrinth/README.md` — the six kits, `labyrinth:` in the mapspec |
 | A bridge, a moat, a pier or anything at a waterline | `reference/structures.md` §5-6 — the measured fit, `BRIDGE_MODELS`, shore patterns |
 | Reusing a shipped compound (camp, town square, yard, shrine) | `reference/setpieces/README.md` — the patterns, and how to turn and stamp one |
@@ -141,6 +142,7 @@ All modes, all generated output. Reference files cite these by number — number
 34. **A levelled corridor is feathered out, never cut at its mask.** The corridor mask is binary on the 2 m grid; along a diagonal road crossing a slope, levelled ground met raw ground at a new height on every step of the staircase and the verge came out as 2 m saw-teeth (`map_ad3`, one verge: roughness 618 cm against 245 with no levelling). `terrain._feather_out` carries the levelled surface 5 cells outward and mixes it back through a BLURRED mask, which has no staircase in it. Isolate a terrain artefact by switching stages off one at a time and measuring -- the berm beside that road was the obvious suspect and was innocent.
 
 35. **A labyrinth is assembled from a kit, never placed piece by piece from statistics.** The corpus labyrinths (anglar, whitedragon 01/02, skipia, spider, mt_thunder, maze/monkey) are mined into `reference/labyrinth/kits.json`: each piece's floor, its walk measured from the shipped attr, its sockets and what rides on it. Pieces join where their **socket families** joined in the corpus -- a whitedragon room's 10 m mouth only through a door, anglar's 31 m cave corridor and 41 m stone corridor only through `anglar_cavegate2` -- and a run between two junctions is solved to the centimetre from the kit's straights, on a grid whose columns and rows move so the runs close. Each family keeps its own way of making walls: `spider` builds the whole room grid and fences arms shut, the maze/monkey kits are letter islands joined by warp gates (their one 63.5 m corridor cannot close a grid), the rest lay corridors only where the maze runs. The floors stand 1 m over the hidden terrain and `TerrainVisible 0` is written, or the plane z-fights every floor. The build log must end `start -> boss REACHABLE`, read off the attr as written. A labyrinth with **no objects** is `kit: orc_trench`: the same maze cut into the terrain as 29.5 m trenches (16 m floor, 12 m walkable, walls up in 8 m, 24 m ridges), letters joined by warp gates, measured on `metin2_map_orclabyrinth`. `reference/labyrinth/README.md`.
+36. **Curating somebody's map fixes only what the user picked, after a backup.** `scripts/curate_map.py --list` turns the `M2MAP-QA-*` findings into a menu (one fix per rule: `attr`, `rock`, `road`, `border`, and `water` for the staircase shore `WTR-005`, half-flagged water `WTR-004` and stray water bits `ATR-002`); ask with AskUserQuestion which fixes and which sectors, never assume -- a hard road edge or a low rim may be the mapper's style. The fixes are additive (blocks already painted stay), confined to the chosen sectors, seeded, and regenerate `server_attr`. With no attr at all every rim reads open, so the border is offered only after the attr is back (`a1` with its attr wiped: the attr fix alone cleared QA-004). A rebuilt attr agrees with Ymir's own on 77-94% of cells (`modes/curate.md`). A raised rim is a face and a crest with a wandering foot, painted as one feathered massif: a band of constant width left a ruler-straight rock line, the same fault QA-003 flags on roads. Whether a map flags its water at all is a convention (28 official maps never do): follow the map, never impose it. `modes/curate.md`.
 
 ## Verification — not optional
 

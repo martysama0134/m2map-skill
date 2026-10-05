@@ -448,16 +448,16 @@
    "id": "M2MAP-WTR-004",
    "severity": "major",
    "scope": "sector",
-   "symptom": "Player walks on the water surface instead of swimming, or drowns with no water visible.",
-   "checks": "Every VISIBLE water cell carries the ATTRIBUTE_WATER (0x02) bit.",
+   "symptom": "Some of the water swims and some is walked on: the map flags its water, but not all of it.",
+   "checks": "Per sector, deep water cells (surface > 50 cm over the cell's vertex) whose 2x2 attr tiles carry no ATTRIBUTE_WATER (0x02), on a sector that flags at least half of its deep water.",
    "reads": [
     "<map>/<XXXYYY>/water.wtr",
     "<map>/<XXXYYY>/attr.atr",
     "<map>/<XXXYYY>/height.raw"
    ],
-   "predicate": "MUST be height-aware. For water cell (cx,cy): v = cells[cy*128+cx]; skip if v == 0xFF or v >= N; terrain = height.raw[(cy+1)*131 + (cx+1)]; if heights[v] > terrain then assert any(attr[(cy*2+dy)*256 + (cx*2+dx)] & 0x02 for dy in (0,1) for dx in (0,1)).",
-   "fix": "Recompute the 0x02 bit from this predicate and OR it into the existing attr byte. Do not mask attr.atr itself -- its paint bits must survive. This is distinct from M2MAP-ATR-004, which masks on the way OUT to server_attr.",
-   "corpus": "The naive rule ('every non-0xFF cell must be flagged') fires on 452 of 1343 sectors and is unusable — a water cell only means 'inside a brush footprint', and water below terrain is correctly left unflagged. Height-aware measurements: map_a2/000000 (1 layer) 606 cells above terrain, 1677 below, 0 unflagged. metin2_map_duel/000000 (1 layer) 2749 above, 3689 below, 0 unflagged. metin2_map_b3/001002 (8 layers) 3190 above, 3378 below, 566 unflagged — a genuine defect the naive rule could not isolate.",
+   "predicate": "deep cells >= 100 AND flagged share >= 0.5 AND missed > 0.40 of the deep cells. MUST be height-aware, and MUST be convention-aware: flagging water at all is a convention.",
+   "fix": "OR 0x02 (and BLOCK, if the map blocks what it flags) into the missed cells -- curate's `water` fix. Do not mask attr.atr itself -- its paint bits must survive. On a map that flags none of its water, add none.",
+   "corpus": "28 official maps leave 85-100% of their deep water unflagged (e1, t2-t4, wl_01, capedragonhead, the miniboss maps...); the maps that flag it miss 0-23% map-wide. Per sector the official worst misses 35% (guild_01/000001, empirewar01-03/001001, capedragonhead/004002), so 40% fires on none of 1341 sectors. Until 3.1.x this check read `world_heights` as an attribute, raised, and was swallowed: it never ran, under the wrong id (WTR-001).",
    "spec": "mapformat/water-wtr.md, mapformat/attr-atr.md"
   },
   {

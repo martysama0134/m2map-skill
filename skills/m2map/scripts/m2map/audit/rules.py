@@ -303,19 +303,28 @@ def audit(map_dir, corpus_root=None, property_crcs: Optional[Iterable[int]] = No
                 wm = water_codec.read_water(wf)
                 am = attr_codec.read_attr(at_f)
                 hm = height_codec.read_height(hf)
-                sub = _submerged_mask(wm, hm)
-                if sub is not None and sub.any():
-                    flag = (am.cells & attr_codec.ATTR_WATER).astype(bool)
-                    sub_t = np.repeat(np.repeat(sub, 2, axis=0), 2, axis=1)[:256, :256]
-                    unflagged = int((sub_t & ~flag).sum())
-                    if unflagged > sub_t.sum() * 0.02:
+                deep = _submerged_mask(wm, hm, min_depth=50.0)
+                if deep is not None and deep.sum() >= 100:
+                    # Flagging water at all is a convention: 28 official maps
+                    # leave 85-100% of their deep water unflagged, the maps that
+                    # flag it miss 0-23%. So only a sector that flags its water
+                    # and misses much of it is inconsistent -- the naive "every
+                    # cell flagged" rule would fire on half the corpus. Per
+                    # sector the official worst misses 35% (guild_01/000001,
+                    # empirewar 01-03, capedragonhead/004002): 40% fires on none.
+                    f = (am.cells & attr_codec.ATTR_WATER).astype(bool)
+                    fc = f[0::2, 0::2] | f[1::2, 0::2] | f[0::2, 1::2] | f[1::2, 1::2]
+                    missed = int((deep & ~fc).sum())
+                    share = 1.0 - missed / float(deep.sum())
+                    if share >= 0.5 and missed > 0.40 * deep.sum():
                         out.append(Finding(
-                            "M2MAP-WTR-001", "major", "%s/attr.atr" % rel,
-                            "player runs across open water",
-                            "%d cells are submerged (water surface above "
-                            "terrain) but carry no ATTR_WATER."
-                            % unflagged,
-                            "OR 0x02 into those cells. Do not mask attr.atr."))
+                            "M2MAP-WTR-004", "major", "%s/attr.atr" % rel,
+                            "some of the water swims, some is walked on",
+                            "this sector flags %.0f%% of its deep water (surface "
+                            "> 50 cm over the ground) and misses %d cells"
+                            % (100 * share, missed),
+                            "OR 0x02 into those cells (curate's `water` fix). "
+                            "Do not mask attr.atr."))
             except Exception:                                # noqa: BLE001
                 pass
 
@@ -498,11 +507,13 @@ def torn_borders(terrain_root, sector_names) -> List[Tuple[str, str, float, floa
     return out
 
 
-def _submerged_mask(wm, hm) -> Optional[np.ndarray]:
-    """Water cells whose surface is above the terrain -- the only real water."""
+def _submerged_mask(wm, hm, min_depth: float = 0.0) -> Optional[np.ndarray]:
+    """Water cells whose surface is above the terrain -- the only real water.
+    ``world_heights`` is a method: read as an attribute it raised TypeError, the
+    caller swallowed it, and the water-attr check never ran at all."""
     try:
         cells = wm.cells
-        heights = list(wm.world_heights) if hasattr(wm, "world_heights") else list(wm.heights)
+        heights = list(wm.world_heights())
     except Exception:                                        # noqa: BLE001
         return None
     if not heights:
@@ -513,7 +524,7 @@ def _submerged_mask(wm, hm) -> Optional[np.ndarray]:
     for i, surf in enumerate(heights):
         m = cells == i
         if m.any():
-            out |= m & (float(surf) > terrain)
+            out |= m & (float(surf) > terrain + min_depth)
     return out
 
 

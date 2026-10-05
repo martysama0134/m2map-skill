@@ -19,3 +19,4 @@ If no arguments were given, ask which of these the user wants:
 - **(f) Server** files — spawns and registration
 - **(g) Register** a group of objects as a reusable pattern
 - **(h) Readapt** a merged map — level it, close the joins, connect the pieces with a road
+- **(i) Curate** somebody's map — fix the unfinished parts the quality rules flag, asking which first

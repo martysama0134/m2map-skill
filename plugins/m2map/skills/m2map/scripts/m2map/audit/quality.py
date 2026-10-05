@@ -116,6 +116,14 @@ def _specks(mask, band):
     return int((mask & band & (n <= 1)).sum())
 
 
+def rim_specks(road):
+    """Loose road tiles within 3 m of the road's edge per 100 m of edge (QA-003)."""
+    core = ~_dilate(~road, 2)
+    band = _dilate(road, 3) & ~core
+    edge = int((road & _dilate(~road, 1)).sum())
+    return 100.0 * _specks(road, band) / max(edge, 1)
+
+
 def _grids(root: pathlib.Path, sectors, size):
     """Whole-map height (vertex grid, cm), attr and water from the sector files."""
     W, H = size
@@ -145,6 +153,57 @@ def _where(mask, cap=4):
                 cells.append((n, "%03d%03d" % (sx, sy)))
     cells.sort(reverse=True)
     return ", ".join("%s (%d m2)" % (s, n) for n, s in cells[:cap])
+
+
+def edge_stretches(hu, walk, water, tiles, walls):
+    """The map edge in EDGE_STEP_M stretches, each judged on the outer EDGE_BAND_M:
+    ``(side, start_m, length_m, kind)``, kind one of void / water / wall / open.
+    `edit/curate.py` raises its ridge on exactly the stretches this calls open."""
+    H, W = walk.shape
+    b, step = EDGE_BAND_M, EDGE_STEP_M
+    inner = hu[b * 3:H - b * 3, b * 3:W - b * 3]
+    iw = walk[b * 3:H - b * 3, b * 3:W - b * 3]
+    ref = float(np.median(inner[iw])) if iw.any() else float(np.median(hu))
+    out = []
+    for side in "NESW":
+        L = W if side in "NS" else H
+        for i in range(0, L - step + 1, step):
+            sl = {"N": (slice(0, b), slice(i, i + step)), "S": (slice(H - b, H), slice(i, i + step)),
+                  "W": (slice(i, i + step), slice(0, b)), "E": (slice(i, i + step), slice(W - b, W))}[side]
+            lift = float(np.median(hu[sl])) - ref
+            along = walls[sl].any(axis=1 if side in "WE" else 0)
+            if (tiles[sl] == 0).mean() > 0.5:
+                kind = "void"        # unpainted sectors: no world here to see the end of
+            elif water[sl].mean() > 0.3:
+                kind = "water"
+            elif along.mean() >= WALL_OBJECT_COVER:
+                kind = "wall"        # a castle wall hides the edge as a mountain does
+            elif lift > WALL_LIFT_CM or walk[sl].mean() < 0.3:
+                kind = "wall"
+            else:
+                kind = "open"
+            out.append((side, i, step, kind))
+    return out
+
+
+def open_runs(stretches):
+    """Consecutive open stretches along one side: ``(length_m, (side, start_m))``."""
+    runs, cur, start, last_side = [], 0, None, None
+    for side, i, step, kind in stretches:
+        if side != last_side and cur:
+            runs.append((cur, start))
+            cur = 0
+        last_side = side
+        if kind == "open":
+            if not cur:
+                start = (side, i)
+            cur += step
+        elif cur:
+            runs.append((cur, start))
+            cur = 0
+    if cur:
+        runs.append((cur, start))
+    return runs
 
 
 def quality(view, textureset_dir=None) -> List:
@@ -229,10 +288,7 @@ def quality(view, textureset_dir=None) -> List:
         road = tiles == s["index"]
         if road.sum() < ROAD_MIN_TILES:
             continue
-        core = ~_dilate(~road, 2)
-        band = _dilate(road, 3) & ~core
-        edge = int((road & _dilate(~road, 1)).sum())
-        per100 = 100.0 * _specks(road, band) / max(edge, 1)
+        per100 = rim_specks(road)
         if per100 < SPECKS_MIN:
             out.append(Finding(
                 "M2MAP-QA-003", "minor", "%s slot %d (%s)" % (root, s["index"], mt.slot_name(s["index"])),
@@ -244,39 +300,7 @@ def quality(view, textureset_dir=None) -> List:
 
     # QA-004 the world ends in plain sight
     if not interior:
-        b, step = EDGE_BAND_M, EDGE_STEP_M
-        inner = hu[b * 3:H - b * 3, b * 3:W - b * 3]
-        iw = walk[b * 3:H - b * 3, b * 3:W - b * 3]
-        ref = float(np.median(inner[iw])) if iw.any() else float(np.median(hu))
-        walls = _wall_objects(root, view.sectors, (H, W))
-        runs, cur, start = [], 0, None
-        for side in "NESW":
-            L = W if side in "NS" else H
-            for i in range(0, L - step + 1, step):
-                sl = {"N": (slice(0, b), slice(i, i + step)), "S": (slice(H - b, H), slice(i, i + step)),
-                      "W": (slice(i, i + step), slice(0, b)), "E": (slice(i, i + step), slice(W - b, W))}[side]
-                lift = float(np.median(hu[sl])) - ref
-                along = walls[sl].any(axis=1 if side in "WE" else 0)
-                if (tiles[sl] == 0).mean() > 0.5:
-                    kind = "void"        # unpainted sectors: no world here to see the end of
-                elif water[sl].mean() > 0.3:
-                    kind = "water"
-                elif along.mean() >= WALL_OBJECT_COVER:
-                    kind = "wall"        # a castle wall hides the edge as a mountain does
-                elif lift > WALL_LIFT_CM or walk[sl].mean() < 0.3:
-                    kind = "wall"
-                else:
-                    kind = "open"
-                if kind == "open":
-                    if not cur:
-                        start = (side, i)
-                    cur += step
-                elif cur:
-                    runs.append((cur, start))
-                    cur = 0
-            if cur:
-                runs.append((cur, start))
-                cur = 0
+        runs = open_runs(edge_stretches(hu, walk, water, tiles, _wall_objects(root, view.sectors, (H, W))))
         long = [r for r in runs if r[0] > OPEN_EDGE_OK_M]
         if long:
             total = sum(r[0] for r in runs)

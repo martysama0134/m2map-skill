@@ -54,7 +54,9 @@ and QA-003 on 3 official roads of 146:
 | QA-004 minor | an open map edge > 64 m: no mountain, no wall of tall buildings (a castle's curtain wall counts), no water horizon | 0 m; an entrance (the S-shaped kind too) <= 32 m; unpainted void is not an edge |
 
 Report them as "this map looks unfinished here", with the sectors the finding
-names, and offer `improve` for the fix. QA-003 especially: say it may be a style.
+names, and offer **curate** for the fix (`modes/curate.md`: the user picks which
+flags and which sectors, the map is backed up, each rule has its own fix).
+QA-003 especially: say it may be a style.
 
 ## Judgement the tool cannot make
 
