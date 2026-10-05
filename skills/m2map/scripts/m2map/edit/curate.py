@@ -66,7 +66,7 @@ from ..gen import terrain as T
 from ..gen import texture as TX
 from ..gen import walkable
 
-FIXES = ("rock", "attr", "road", "border", "water")
+FIXES = ("rock", "attr", "road", "border", "water", "water_level")
 BLOCK_SLOPE_DEG = 20.0
 BORDER_BAND_M = 4
 NOISE_BLOCK_M2 = 30
@@ -97,9 +97,21 @@ FLAGS_WATER_SHARE, WATER_MISSED_MAX = 0.5, 0.25
 DEEP_CM = 50.0
 #: A perched plane -- its surface over flat banks, so no growth finds a shore --
 #: gets a bank instead: the ground under its new edge raised this far over the
-#: surface, feathered back to the old ground over BANK_FEATHER vertices (2 m each).
-BANK_CM = 30.0
-BANK_FEATHER = 3
+#: surface, held flat BANK_HOLD vertices (2 m each), eased back to the old ground
+#: over BANK_FEATHER more.
+BANK_CM = 10.0
+#: How far an upper level may spread down a seam, cells (2 m).
+SEAM_SPREAD_CELLS = 16
+#: ...and only over ground it covers this shallowly: deeper, the ground between
+#: two levels is the bank of a real drop, not a hole (a 5 m cascade spread its
+#: upper level down the slope and stood a water cliff at the bottom).
+SEAM_MAX_DEPTH_CM = 100.0
+#: `water_level`: levels of one body within this of their neighbour become one.
+#: Ymir does step its rivers -- a1's runs 5 levels over 85 m -- so a real drop
+#: stays a step; a lake cut into bands a metre apart does not.
+LEVEL_SPAN_CM = 300.0
+BANK_HOLD = 2
+BANK_FEATHER = 6
 
 
 @dataclass
@@ -118,6 +130,8 @@ class Grids:
     #: water surface per 2 m cell (cm), -inf where dry
     water: Optional[np.ndarray] = None
     objects_dz: Optional[np.ndarray] = None
+    #: tiles whose trees go: ground a fix turned into bare rock
+    no_trees: Optional[np.ndarray] = None
     notes: List[str] = field(default_factory=list)
     #: where to point the camera for a before/after pair, tile metres
     spots: Dict[str, Tuple[float, float]] = field(default_factory=dict)
@@ -347,7 +361,12 @@ def fix_border(g: Grids, region: np.ndarray, seed: int = 0) -> str:
     if rock_ids:
         commonest = max(rock_ids, key=lambda i: int((g.tiles == i).sum()))
         wt = np.repeat(np.repeat(weight, 2, 0), 2, 1)[:H, :W]
-        g.tiles[_rock_skin(lt, wt, slope, region, rng)] = commonest
+        skin = _rock_skin(lt, wt, slope, region, rng)
+        g.tiles[skin] = commonest
+        # a tree on the bare rock of a cliff face reads as a mistake (the user,
+        # on the first rim): the ones it lifted there go
+        face = skin & (lt > RIDGE_BLOCK_CM)                 # the massif, not its speckled foot
+        g.no_trees = face if g.no_trees is None else (g.no_trees | face)
     else:
         g.notes.append("border: the palette has no rock texture; the ridge is not repainted")
     g.attr[(lt > RIDGE_BLOCK_CM) & region] |= ATTR_BLOCK
@@ -390,6 +409,18 @@ def water_findings(g: Grids) -> List[Dict]:
                     "where": Q._where(m_t), "symptom": "Some lakes swim, some are walked on.",
                     "detail": "this map flags its water but %d of %d deep cells are missed (official "
                               "maps that flag: 0-23%%)" % (int(missed.sum()), int(deep.sum()))})
+    holes = seam_holes(g)
+    banded = [(levels, grp) for body, levels in water_bodies(g) for grp in _level_groups(levels, LEVEL_SPAN_CM)]
+    if banded:
+        out.append({"rule": "curate:water_level", "severity": "choice", "fix": "water_level",
+                    "where": Q._where(np.repeat(np.repeat(holes, 2, 0), 2, 1)[:H, :W]) if holes.any() else "",
+                    "symptom": "Water cut into levels a little apart: the band edges show as strips of sand.",
+                    "detail": "%d run(s) of levels within %.0f m of each other (%s); %d cells of bare ground "
+                              "between two levels. Ymir steps descending rivers too (a1: 5 levels over 85 m) -- "
+                              "a choice, not a fault: one level suits a lake or a slow reach"
+                              % (len(banded), LEVEL_SPAN_CM / 100,
+                                 ", ".join("%.1f-%.1f m" % (g_[0] / 100, g_[-1] / 100) for _, g_ in banded[:4]),
+                                 int(holes.sum()))})
     b, exposed = _shore(g)
     if b.sum() >= 40 and exposed.sum() > SHORE_EXPOSED_MAX * b.sum():
         e_t = np.repeat(np.repeat(exposed, 2, 0), 2, 1)[:H, :W]
@@ -441,6 +472,8 @@ def fix_water(g: Grids, region: np.ndarray) -> str:
     by the ground, not by the plane's 2 m grid (`gen/water.py` PLANE_OVERRUN) --
     and then the WATER bit is made to match the water the player sees."""
     rc = region[::2, ::2][:g.water.shape[0], :g.water.shape[1]]
+    holes0 = int(seam_holes(g).sum())
+    seams = _close_seams(g, rc)
     _, exp0 = _shore(g)
     before = np.isfinite(g.water)
     grown = 0
@@ -487,9 +520,11 @@ def fix_water(g: Grids, region: np.ndarray) -> str:
         ys, xs = np.nonzero(exp0)
         k = len(ys) // 2
         g.spots["shore"] = (float(xs[k] * 2), float(ys[k] * 2))
-    return ("water: plane carried %d m2 onto its shore, banked %d m of perched edge, exposed edge "
+    return ("water: seam holes between levels %d -> %d (%d cells given to the upper level); "
+            "plane carried %d m2 onto its shore, banked %d m of perched edge, exposed edge "
             "%d -> %d of %d cells; %s; WATER cleared from %d cells with no water over them"
-            % (grown * 4, banked * 2, int(exp0.sum()), int(exp1.sum()), int(b.sum()),
+            % (holes0, int(seam_holes(g).sum()), seams,
+               grown * 4, banked * 2, int(exp0.sum()), int(exp1.sum()), int(b.sum()),
                ("WATER set on %d cells%s" % (int(add.sum()), " and BLOCK, as this map blocks its water"
                                              if blocks_water else "")) if flags
                else "this map does not flag its water (like 28 official maps), so none was added",
@@ -505,6 +540,85 @@ def _dry_buried(g: Grids, region: np.ndarray) -> int:
     hit = dry & region & ((g.attr & ATTR_WATER) != 0)
     g.attr[hit] &= np.uint8(~ATTR_WATER & 0xFF)
     return int(hit.sum())
+
+
+def _high_corner(g: Grids) -> np.ndarray:
+    h = g.height
+    return np.maximum.reduce([h[:-1, :-1], h[1:, :-1], h[:-1, 1:], h[1:, 1:]])
+
+
+def seam_holes(g: Grids) -> np.ndarray:
+    """Cells where two water levels meet and bare ground shows between them: the
+    cell belongs to the LOWER plane, its ground pokes out of that plane, and a
+    neighbour's HIGHER plane would still cover it. The generator's river bands
+    leave these (the test fixture: 188); the corpus 0-36 visible steps a map."""
+    w = g.water
+    up = np.maximum.reduce([_shift(np.where(np.isfinite(w), w, -np.inf), dy, dx, -np.inf)
+                            for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1))])
+    return (np.isfinite(w) & (up > w + 10.0) & (_high_corner(g) > w) & (_low_corner(g) < up)
+            & (_low_corner(g) >= up - SEAM_MAX_DEPTH_CM))
+
+
+def _close_seams(g: Grids, rc: np.ndarray) -> int:
+    """Give each seam hole to the higher level beside it, repeatedly: the bare
+    strip between the waters goes under the upper plane, and the levels then
+    meet as a step of water where the ground drops, not as a gap."""
+    moved = 0
+    for _ in range(SEAM_SPREAD_CELLS):
+        holes = seam_holes(g) & rc
+        if not holes.any():
+            break
+        w = g.water
+        up = np.maximum.reduce([_shift(np.where(np.isfinite(w), w, -np.inf), dy, dx, -np.inf)
+                                for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1))])
+        g.water[holes] = up[holes]
+        moved += int(holes.sum())
+    return moved
+
+
+def water_bodies(g: Grids):
+    """Connected water planes: (cells mask, sorted distinct levels cm)."""
+    from ..mine import tile_stats
+    wet = np.isfinite(g.water)
+    lab = tile_stats._components(wet)
+    lab = lab[0] if isinstance(lab, tuple) else lab
+    out = []
+    for i in range(1, int(lab.max()) + 1 if lab.size else 1):
+        m = lab == i
+        if m.sum() >= 50:
+            out.append((m, sorted(float(v) for v in np.unique(g.water[m]))))
+    return out
+
+
+def _level_groups(levels, span_cm):
+    """Neighbouring levels within span_cm of each other, as groups."""
+    groups = [[levels[0]]]
+    for v in levels[1:]:
+        if v - groups[-1][-1] <= span_cm and v - groups[-1][0] <= span_cm:
+            groups[-1].append(v)
+        else:
+            groups.append([v])
+    return [grp for grp in groups if len(grp) > 1]
+
+
+def fix_water_level(g: Grids, region: np.ndarray, span_cm: float = LEVEL_SPAN_CM) -> str:
+    """One level for each run of a body's levels within span_cm: the level that
+    changes least which cells show water. A lake cut into bands shows its band
+    edges as strips of sand (the user, on the first curated map); a real drop of
+    a river stays a step."""
+    rc = region[::2, ::2][:g.water.shape[0], :g.water.shape[1]]
+    low = _low_corner(g)
+    done = []
+    for body, levels in water_bodies(g):
+        for grp in _level_groups(levels, span_cm):
+            cells = body & rc & np.isin(g.water, grp)
+            if not cells.any():
+                continue
+            vis0 = g.water[cells] > low[cells]
+            best = min(grp, key=lambda L: (int(((L > low[cells]) != vis0).sum()), L))
+            g.water[cells] = best
+            done.append("%d levels %.1f-%.1f m -> %.1f m" % (len(grp), grp[0] / 100, grp[-1] / 100, best / 100))
+    return "water_level: %s" % ("; ".join(done) or "no body has levels within %.0f m of each other" % (span_cm / 100))
 
 
 def _flood(seed, within):
@@ -553,11 +667,14 @@ def _bank(g: Grids, rc: np.ndarray) -> int:
     # feather outward over dry vertices, so the bank is a slope, not a kerb
     ring = on.copy()
     reach = target.copy()
-    for k in range(1, BANK_FEATHER + 1):
+    for k in range(1, BANK_HOLD + BANK_FEATHER + 1):
         grow = np.maximum.reduce([_shift(reach, dy, dx, -np.inf)
                                   for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1))])
         nxt = np.isfinite(grow) & ~ring & ~wetv & rv
-        w = 1.0 - k / (BANK_FEATHER + 1.0)
+        # held flat, then eased down: a 30 cm lip falling straight back to the
+        # perched-under ground drew a dark kerb along the shore
+        t = max(0.0, (k - BANK_HOLD) / float(BANK_FEATHER + 1))
+        w = 1.0 - t * t * (3.0 - 2.0 * t)
         lift = np.where(nxt, old + (grow - old) * w, -np.inf)
         g.height[nxt] = np.maximum(g.height[nxt], lift[nxt])
         reach = np.where(nxt, grow, -np.inf)
@@ -705,7 +822,8 @@ def write(g: Grids) -> List[str]:
         if not np.array_equal(g.height[vs], g.orig["height"][vs]):
             write_height(d / "height.raw", HeightMap(T.to_sector_raw(g.height, sx, sy)))
             written.append(name + "/height.raw")
-            _reseat_objects(g, d, sx, sy)
+        if _edit_objects(g, d, sx, sy):
+            written.append(name + "/areadata.txt")
         if not np.array_equal(g.tiles[ts], g.orig["tiles"][ts]):
             write_tile(d / "tile.raw", TileMap(TX.to_sector_raw(g.tiles, sx, sy)))
             written.append(name + "/tile.raw")
@@ -741,27 +859,56 @@ def _water_map(surf: np.ndarray, old_path: pathlib.Path) -> WaterMap:
     return WaterMap(cells, heights)
 
 
-def _reseat_objects(g: Grids, d: pathlib.Path, sx: int, sy: int) -> None:
-    """Lift the records standing where the ground was raised by the same amount."""
+_TREES = None
+
+
+def _tree_crcs():
+    global _TREES
+    if _TREES is None:
+        import json
+        objs = json.loads((pathlib.Path(Q._CATALOG) / "objects.json").read_text(encoding="utf-8"))["objects"]
+        _TREES = {int(k) for k, o in objs.items() if o.get("property_type") == "Tree"}
+    return _TREES
+
+
+def _edit_objects(g: Grids, d: pathlib.Path, sx: int, sy: int) -> bool:
+    """Lift the records standing where the ground was raised by the same amount,
+    and drop the trees standing on ground a fix turned to bare rock."""
     p = d / "areadata.txt"
-    if g.objects_dz is None or not p.is_file():
-        return
+    if (g.objects_dz is None and g.no_trees is None) or not p.is_file():
+        return False
     area = AreaData.parse(p.read_bytes())
-    vh, vw = g.objects_dz.shape
     moved = 0
-    for r in area.records:
-        cx = min(vw - 1, max(0, int(round(r.x / 200.0))))
-        cy = min(vh - 1, max(0, int(round(-r.y / 200.0))))
-        dz = float(g.objects_dz[cy, cx])
-        if dz:
-            r.z += dz
-            moved += 1
-    if moved:
+    if g.objects_dz is not None:
+        vh, vw = g.objects_dz.shape
+        for r in area.records:
+            cx = min(vw - 1, max(0, int(round(r.x / 200.0))))
+            cy = min(vh - 1, max(0, int(round(-r.y / 200.0))))
+            dz = float(g.objects_dz[cy, cx])
+            if dz:
+                r.z += dz
+                moved += 1
+    dropped = 0
+    if g.no_trees is not None:
+        trees, H, W = _tree_crcs(), g.no_trees.shape[0], g.no_trees.shape[1]
+        keep = []
+        for r in area.records:
+            tx, ty = int(r.x // 100), int(-r.y // 100)
+            if r.crc in trees and 0 <= ty < H and 0 <= tx < W and g.no_trees[ty, tx]:
+                dropped += 1
+                continue
+            keep.append(r)
+        area.records = keep
+        g.trees_dropped = getattr(g, "trees_dropped", 0) + dropped
+    if moved or dropped:
         p.write_bytes(area.to_bytes())
+        return True
+    return False
 
 
 def curate(map_dir, fixes: Sequence[str], sectors: Optional[Iterable[str]] = None,
-           textureset_dir=None, make_backup: bool = True, seed: int = 0) -> Dict:
+           textureset_dir=None, make_backup: bool = True, seed: int = 0,
+           level_span_cm: float = LEVEL_SPAN_CM) -> Dict:
     """Apply the chosen fixes inside the chosen sectors; returns a report."""
     bad = [f for f in fixes if f not in FIXES]
     if bad:
@@ -774,17 +921,20 @@ def curate(map_dir, fixes: Sequence[str], sectors: Optional[Iterable[str]] = Non
     lines = []
     # terrain first (the border moves the ground), then the water that ground
     # decides, then the attr built from both, the rock on top of it, the paint
-    for name in ("border", "water", "attr", "rock", "road"):
+    for name in ("border", "water_level", "water", "attr", "rock", "road"):
         if name not in fixes:
             continue
-        fn = {"attr": fix_attr, "rock": fix_rock, "water": fix_water}.get(name)
+        fn = {"attr": fix_attr, "rock": fix_rock, "water": fix_water,
+              "water_level": lambda g_, r_: fix_water_level(g_, r_, level_span_cm)}.get(name)
         if fn:
             lines.append(fn(g, region))
         elif name == "road":
             lines.append(fix_road(g, region, seed))
         else:
             lines.append(fix_border(g, region, seed))
+    report["written"] = write(g)
+    if getattr(g, "trees_dropped", 0):
+        g.notes.append("border: %d trees taken off the new bare rock" % g.trees_dropped)
     report["changes"] = lines + g.notes
     report["spots"] = {k: [round(v[0]), round(v[1])] for k, v in g.spots.items()}
-    report["written"] = write(g)
     return report

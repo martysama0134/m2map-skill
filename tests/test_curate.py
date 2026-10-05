@@ -117,8 +117,13 @@ def test_an_open_edge_gets_a_ridge_and_its_objects_ride_up(flat, tmp_path):
     assert dz.min() >= 0 and dz.max() > 800
     assert dz[60:70, 60:70].max() == 0, "the middle of the map is not touched"
     rec1 = AreaData.load(m / "000000" / "areadata.txt").records
-    assert len(rec1) == len(rec0)
-    for r0, r1 in zip(rec0, rec1):
+    # trees on the new bare rock go (test below); every survivor rides up
+    left = {(r.crc, round(r.x, 2), round(r.y, 2)): r for r in rec1}
+    assert left
+    for r0 in rec0:
+        r1 = left.get((r0.crc, round(r0.x, 2), round(r0.y, 2)))
+        if r1 is None:
+            continue
         vx, vy = int(round(r0.x / 200.0)), int(round(-r0.y / 200.0))
         assert r1.z - r0.z == pytest.approx(dz[vy + 1, vx + 1], abs=1.0)
     assert rep["spots"]
@@ -213,3 +218,41 @@ def test_the_audit_water_attr_check_runs(finished, tmp_path):
     assert rules._submerged_mask(read_water(m / "000000" / "water.wtr"),
                                  read_height(m / "000000" / "height.raw")) is not None
     assert "M2MAP-WTR-004" in {f.rule for f in rules.audit(m)}
+
+
+def test_water_level_merges_close_levels_and_keeps_real_drops(flat, tmp_path):
+    """The fixture's river runs 3.1, 3.8, 5.5, 10.6, 11.6 m: the band edges show
+    as strips of sand. Within 3 m they become one level; the 5 m drop stays."""
+    m = copy(flat, tmp_path)
+    g = curate.load(m, ts(m))
+    assert "curate:water_level" in {f["rule"] for f in curate.water_findings(g)}
+    curate.fix_water_level(g, curate.region_mask(g, None))
+    levels = sorted({round(float(v)) for v in g.water[np.isfinite(g.water)]})
+    assert len(levels) == 2 and levels[1] - levels[0] > curate.LEVEL_SPAN_CM
+    assert "curate:water_level" not in {f["rule"] for f in curate.water_findings(g)}
+
+
+def test_seam_holes_close_only_where_the_upper_level_is_shallow(flat, tmp_path):
+    m = copy(flat, tmp_path)
+    g = curate.load(m, ts(m))
+    rc = np.ones(g.water.shape, bool)
+    w0 = g.water.copy()
+    curate._close_seams(g, rc)
+    assert not curate.seam_holes(g).any()
+    moved = g.water != w0
+    moved &= np.isfinite(w0)
+    # never a water cliff: everything handed up is covered by at most a metre
+    assert (g.water[moved] - curate._low_corner(g)[moved] <= curate.SEAM_MAX_DEPTH_CM + 1e-6).all()
+
+
+def test_the_rim_takes_its_trees_off_the_bare_rock(flat, tmp_path):
+    from m2map.edit.curate import _tree_crcs
+    m = copy(flat, tmp_path)
+    before = AreaData.load(m / "000000" / "areadata.txt").records
+    rep = curate.curate(m, ["border"], textureset_dir=ts(m), make_backup=False)
+    after = AreaData.load(m / "000000" / "areadata.txt").records
+    trees = _tree_crcs()
+    gone = sum(r.crc in trees for r in before) - sum(r.crc in trees for r in after)
+    assert gone > 0 and any("trees taken off" in c for c in rep["changes"])
+    assert sum(r.crc not in trees for r in before) == sum(r.crc not in trees for r in after), \
+        "only trees go, and only off the rock (keep the scatter)"

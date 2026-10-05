@@ -15,7 +15,8 @@ user knows which parts of the map are deliberate.
 | `M2MAP-WTR-005` (info) | the shoreline is a staircase of 2 m water cells | `water` | carries the plane over the shallows (up to 16 m, never over a lip deeper than 8 m) until the ground rises through it; where the surface is perched over flat ground and no shore is in reach, takes that growth back and raises a 30 cm bank under the plane's edge instead, feathered over 6 m. Objects on it ride up |
 | `M2MAP-WTR-004` | some water swims, some is walked on | `water` | WATER on the deep water it missed, BLOCK too if the map blocks its water -- only on a map that flags its water at all |
 | `M2MAP-ATR-002` | swimming in mid-air | `water` | clears WATER where no plane is |
-| `M2MAP-QA-004` | the world ends in plain sight | `border` | a rock rim along the open stretches only: about 15 m high (9–21 m with relief), a face and then a crest, its foot wandering, tapered at the ends. Painted with the map's commonest rock, blocked, objects lifted with the ground |
+| — (a choice, `curate:water_level`) | water cut into levels a little apart: band edges show as strips of sand | `water_level` | each run of a body's levels within `--level-span-m` (3 m) of each other becomes the one level that changes least which cells show water. `water` then closes seam holes: ground poking out of the lower level that the upper covers by under 1 m goes to the upper level |
+| `M2MAP-QA-004` | the world ends in plain sight | `border` (also takes the trees off the new bare rock; nothing else) | a rock rim along the open stretches only: about 15 m high (9–21 m with relief), a face and then a crest, its foot wandering, tapered at the ends. Painted with the map's commonest rock, blocked, objects lifted with the ground |
 
 Every fix also regenerates `server_attr` whenever attr changes (rule 14). It
 writes only the sectors whose bytes changed.
@@ -100,8 +101,18 @@ writes only the sectors whose bytes changed.
     the skill's own builds. It is over 30% only on milgyo, smhgate_c1 and
     eastplain_03: pools set into carved floors, where the staircase is by
     design. Ask before banking a pool like that.
-  - Steps between two water levels that meet (a river's level bands) are not
-    fixed. The corpus shows 0–36 such cells per map.
+  - **One level or several is the user's call. Ask.** Ymir steps its descending
+    rivers: a1 runs 5 levels over 85 m, c1 6 levels over 53 m.
+  - A lake or a slow reach cut into bands looks better as one level (the user,
+    on the first curated map).
+  - The span decides how far merging goes. On the test river, 3 m merged
+    3.1–5.5 m and 10.6–11.6 m cleanly. 8 m pulled 3.1–10.6 m down to 5.5 m:
+    the upper reach dried and a new seam appeared at 11.6 m. Render, then
+    widen the span only where the user wants it.
+  - Seam holes (bare ground between two levels) run 0–41 per official map
+    (12zi_stage 134).
+  - The perched-plane bank is 10 cm over the surface, held 4 m, eased out over
+    12 m. A 30 cm lip falling straight back drew a dark kerb along the shore.
   - Raising terrain out of the water (a rim or a bank) clears WATER from the
     cells it lifted dry.
 - **road.** A hard edge can be a style choice: 3 of 146 official roads are

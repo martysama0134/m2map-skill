@@ -2,7 +2,7 @@
 """Curate somebody's map: fix what the quality rules flag, where the user says.
 
     python curate_map.py <map> --list
-    python curate_map.py <map> --fix attr,rock,road,border,water [--sectors 000001,001001] --render
+    python curate_map.py <map> --fix attr,rock,road,border,water,water_level [--sectors 000001,001001] --render
 
 --list runs the quality pass (M2MAP-QA-001..004) and the water rules
 (M2MAP-WTR-005 staircase shore, WTR-004 water half flagged, ATR-002 stray water
@@ -77,7 +77,11 @@ def main(argv=None):
     ap.add_argument("--sectors", default="", help="comma list of XXXYYY; default the whole map")
     ap.add_argument("--textureset-dir", default=None)
     ap.add_argument("--seed", type=int, default=0)
+    ap.add_argument("--level-span-m", type=float, default=curate.LEVEL_SPAN_CM / 100.0,
+                    help="water_level: merge a body's levels within this many metres of each other")
     ap.add_argument("--no-backup", action="store_true")
+    ap.add_argument("--at", action="append", default=[], metavar="X,Y",
+                    help="also render this spot (metres, as the editor's status bar shows them)")
     ap.add_argument("--render", action="store_true",
                     help="before/after shots of every changed spot in WorldEditorRemix")
     a = ap.parse_args(argv)
@@ -90,7 +94,8 @@ def main(argv=None):
 
     fixes = [f.strip() for f in a.fix.split(",") if f.strip()]
     sectors = [s.strip() for s in a.sectors.split(",") if s.strip()] or None
-    report = curate.curate(a.map, fixes, sectors, tsdir, make_backup=not a.no_backup, seed=a.seed)
+    report = curate.curate(a.map, fixes, sectors, tsdir, make_backup=not a.no_backup, seed=a.seed,
+                           level_span_cm=a.level_span_m * 100.0)
     report["flagged_before"] = sorted({f["rule"] for f in before})
     report["flagged_after"] = sorted({f["rule"] for f in flagged(a.map, tsdir)})
     print(json.dumps(report, indent=1))
@@ -101,6 +106,8 @@ def main(argv=None):
             return 1
         out = pathlib.Path(a.map) / "_curate"
         spots = {k: tuple(v) for k, v in report["spots"].items()}
+        for i, v in enumerate(a.at):
+            spots["at%d" % i] = tuple(float(t) for t in v.split(","))
         if not spots:
             print("nothing visible to render: the fixes only changed attr", file=sys.stderr)
             return 0
