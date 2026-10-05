@@ -47,7 +47,8 @@ Expect the next map to find another: the procedure is the part to keep.
    `m2map.paths.json`) -- tell the user the map was not checked in the engine.
 6. Show the user the renders. Whatever they correct becomes code, a line in this
    file, a test and a failure-atlas entry. Tell them the one step left to
-   them: **F6 in WorldEditorRemix** (shadowmap + minimap) — then
+   them: **F6 in WorldEditorRemix** (shadowmap + minimap; with v61 the skill
+   can do it headless: `we_shots.bake(map)`) — then
    `tools/readapt_regress.py` (every merged test map against
    `tests/baselines/readapt.json` -- **before** saying the other maps are
    unchanged; `--accept` when the move is the one you meant, and add the new map
@@ -218,9 +219,10 @@ found in the first shot. Ten shots and the sheet take about a minute.
 
 - **`shadowmap` and `minimap` are left as merged.** They are stale over the
   pass, and along every welded join. Open the result in WorldEditorRemix and
-  press **F6**: that regenerates both, and for now it is the only way -- the
-  headless `--regen` is the same key and bakes black minimaps (`we-api.md`), nothing
-  in this repo bakes a shadowmap or a minimap, and rebaking two sectors here
+  press **F6**: that regenerates both. On WorldEditorRemix v61+ the same bake
+  runs headless -- `m2map.edit.we_shots.bake(map)` (`--bake`, which waits for
+  the map to render before baking; v60's `--regen` baked black minimaps,
+  `we-api.md`). It bakes every sector, never two: rebaking two sectors here
   would put a lighting seam where there was none. Say so when handing the map
   over; the report carries the same line as `shadowmap_minimap`.
 - **Spawns** are not touched: `regen.txt` heights are the server's business and

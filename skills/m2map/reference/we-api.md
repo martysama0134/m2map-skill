@@ -23,6 +23,34 @@ Verification marks used per entry:
 
 ---
 
+## v61 -- what changed (read this first)
+
+WorldEditorRemix **v61** (fixme096-099) fixed most of the traps below. Everything
+after this section describes **v60 and older**, where they all still apply; check
+the editor's About box. On v61:
+
+| Trap (§) | v61 |
+|---|---|
+| Wrong arity is a silent no-op (§0.1) | `TypeError: WorldEditor.<Name>: missing or mistyped arguments` |
+| A float for a `long` silently becomes -1 (§0.1) | truncated; a non-number is a `TypeError` |
+| Error messages surface as `SystemError` | `RuntimeError` with the message -- the `PyExc_*` objects were bound to the address of the DLL variable, not the object |
+| `SetAttrAt` / `DrawAttrBrush` write the wrong place (§1.3); `SetAttrAtWorld` paints a radius-2 brush offset by `(cell % 4) * 2` half-cells | all three take **world cm** (positive y), any resident sector; `SetAttrAt` / `SetAttrAtWorld(x, y, flag[, on])` set or clear exactly the one half-cell `GetAttrAt` reads back |
+| `DrawHeightBrush` always draws on the edit terrain | lands on the sector its global cells name |
+| `GetMapBounds` / `GetTerrainWorldBounds` mix cm and cells | cm |
+| `GetPropertyType` / `GetPropertyExtension` swapped | `GetPropertyType("Building") -> int`, `GetPropertyExtension(int) -> ".prb"` |
+| `GetObjectList` / `GetBrushType` stubs | `GetObjectList([sx, sy])` -> `(x, y, z, crc, yaw, pitch, roll, bias)` per record; `GetBrushType` real |
+| CRCs signed | unsigned (`GetObjectData`, `GetObjectList`, `GetLastSelectedObjectData`) |
+| `SetObjectHeightBias` does not move the instance | it does |
+| `GetTerrainNumFromCoord` aliases off-window sectors into wrong slots (§1.4) | -1 outside the 3x3 window |
+| `GetWaterHeight` samples the wrong cell (200/128) | right cell |
+| `UpdateMap` unreachable, whole-map loops cover 9 sectors (§1.4) | **`GotoSector(sx, sy)`** moves the window; wrapper `ForEachSector(fn)` |
+| No script entry point but F5 (§0) | **`--script file.py`** headless, after the map settles; `--save` after it |
+| `--regen` bakes black minimaps (§5) | **`--bake`** (F6 after 10 settle frames), `--bake-shadows`, `--bake-minimap`; `WorldEditor.Bake([mask])` |
+
+From this skill: `m2map.edit.we_shots.bake(map)` / `run_script(map, file.py, save=)`,
+and `build_map.py --bake`. Both check the editor's `log.txt` (a v61 Release build
+writes one when automation runs) and refuse to pretend on an older editor.
+
 ## 0. How the module is reached
 
 - Native module name is `WorldEditor`; `import WorldEditor as we`.

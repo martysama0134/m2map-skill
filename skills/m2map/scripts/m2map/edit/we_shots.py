@@ -16,8 +16,10 @@ against the map, so the map's textureset is copied there first; without it the
 shot is an untextured plane, exit 0, and the editor leaves a 32-byte
 ``TextureCount 0`` stub behind that must be overwritten.
 
-``--regen`` is never passed: headless it bakes black minimaps into every sector
-(``we-api.md``).
+``--regen`` is never passed. Before WorldEditorRemix v61 it pressed F6 on the
+frame the map loaded and baked BLACK minimaps into every sector of a textured
+map; v61 renders 10 frames first and names it ``--bake`` (fixme096). Use
+:func:`bake`, which checks the editor's log that the bake really ran.
 """
 
 from __future__ import annotations
@@ -95,6 +97,51 @@ def shoot(map_dir, target_cm: Tuple[float, float], png, cam: Sequence[float] = C
     if not png.is_file() or png.stat().st_size < MIN_PNG_BYTES:
         raise RuntimeError("the editor wrote no usable shot at %s" % png)
     return png
+
+
+#: what --bake* asks for, by name
+BAKE_SWITCH = {"all": "--bake", "shadows": "--bake-shadows", "minimap": "--bake-minimap"}
+
+
+def _run(map_dir, extra, timeout):
+    exe, data = editor()
+    stage_textureset(map_dir, data)
+    log = data / "log.txt"
+    before = log.stat().st_mtime if log.is_file() else 0.0
+    subprocess.run([str(exe), "--map", str(pathlib.Path(map_dir).resolve())] + list(extra) + ["--quit"],
+                   cwd=str(data), timeout=timeout, check=False)
+    if not log.is_file() or log.stat().st_mtime <= before:
+        raise RuntimeError("the editor wrote no log: it is older than v61 (no --bake / --script, "
+                           "no log in a Release build), or it did not start")
+    return log.read_text(errors="replace")
+
+
+def bake(map_dir, what: str = "all", timeout: int = 900) -> int:
+    """F6 headless: regenerate the shadowmap and/or minimap of every sector, in the
+    map folder, through WorldEditorRemix v61+. Returns the number of terrains baked.
+
+    The generator writes `shadowmap.raw` and a flat-shaded minimap but no
+    `shadowmap.dds` -- the editor logs "ShadowTexture is Empty" for every sector of
+    a fresh map -- and only the editor's own renderer makes the real ones.
+    """
+    text = _run(map_dir, [BAKE_SWITCH[what]], timeout)
+    for line in reversed(text.splitlines()):
+        if "bake:" in line and "terrains" in line:
+            return int(line.split(" on ")[-1].split()[0])
+    raise RuntimeError("the editor ran but logged no bake (needs WorldEditorRemix v61+)")
+
+
+def run_script(map_dir, script, save: bool = False, timeout: int = 900) -> str:
+    """Run a Python file inside the editor on a loaded map (module ``WorldEditor``,
+    `reference/we-api.md`), optionally ``SaveMap`` after it. v61+. Returns the log;
+    a script reports back by writing its own file."""
+    extra = ["--script", str(pathlib.Path(script).resolve())] + (["--save"] if save else [])
+    text = _run(map_dir, extra, timeout)
+    if "automation: script" not in text:
+        raise RuntimeError("the editor ran no script (needs WorldEditorRemix v61+)")
+    if "-> FAILED" in text.split("automation: script")[-1].splitlines()[0]:
+        raise RuntimeError("the script raised; its traceback is in syserr.txt in the editor data root")
+    return text
 
 
 def pairs(before_map, after_map, spots: Dict[str, Tuple[float, float]], out_dir,

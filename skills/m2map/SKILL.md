@@ -169,6 +169,8 @@ Then read `_preview/*.png` and ask:
 | `attr` cleared the road corridor before the water pass, sealing the route where the road crossed the river | Every layer preview looked correct except `attr` |
 | Object spacing pinned to a stipple texture; 17 of 20 props never placed | Placement is best-effort, so "fewer than asked" was not an error |
 
+The generator writes no `shadowmap.dds` and only a flat-shaded minimap; with WorldEditorRemix v61+ `build_map.py --bake` has the editor bake both headless (F6), and the build log says so -- or says `bake: NOT DONE` and why.
+
 The 2D previews validate the **model**, and in all three cases the model was right. Only the real engine validates the **boundary between the model and the bytes**. `reference/we-api.md` has the verified command — run it from the data dir, aim `--target` at a sector centre, and use `--shot-frames 60` or the shot catches a half-loaded map.
 
 If the editor is genuinely unavailable, say so when you hand the map over rather than implying it was checked.

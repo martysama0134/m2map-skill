@@ -83,6 +83,10 @@ def main(argv=None):
     ap.add_argument("--stages", default=None,
                     help="comma-separated subset, e.g. texture,objects,attr")
     ap.add_argument("--audit", action="store_true", help="audit the result")
+    ap.add_argument("--bake", action="store_true",
+                    help="after writing, have WorldEditorRemix (v61+, configured in "
+                         "m2map.paths.json) bake every sector's shadowmap and minimap -- F6, "
+                         "headless. The generator writes no shadowmap.dds of its own")
     ap.add_argument("--rescatter", action="store_true",
                     help="throw the scatter again even though the map exists. Default: a "
                          "rebuild over an existing map of the same seed and object tiers "
@@ -130,6 +134,14 @@ def main(argv=None):
         print("  LOOK AT THESE before shipping the map. A map that parses is not")
         print("  a map that plays, and the statistics can read fine while the")
         print("  picture is obviously wrong.")
+
+    if ns.bake:
+        from m2map.edit import we_shots
+        try:
+            n = we_shots.bake(out)
+            print("\nbake: shadowmap + minimap of %d sectors by WorldEditorRemix" % n)
+        except (we_shots.RenderUnavailable, RuntimeError) as exc:
+            print("\nbake: NOT DONE -- %s" % exc)
 
     if ns.audit:
         from m2map.audit import rules

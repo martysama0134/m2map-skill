@@ -43,3 +43,24 @@ def test_an_unconfigured_editor_is_said_not_hidden(monkeypatch):
     monkeypatch.setattr(config, "paths", lambda: config.Paths())
     with pytest.raises(we_shots.RenderUnavailable, match="worldeditor_exe"):
         we_shots.editor()
+
+
+def test_a_bake_is_read_off_the_editor_log(monkeypatch):
+    """v61 logs "bake: shadowmap minimap on N terrains"; that line, and only that
+    line, says the bake happened."""
+    log = ("1005 13:48:02996 :: automation: bake mask 3\n"
+           "1005 13:48:03279 :: bake: shadowmap minimap on 9 terrains\n")
+    monkeypatch.setattr(we_shots, "_run", lambda m, extra, timeout: log)
+    assert we_shots.bake("D:/somewhere") == 9
+    monkeypatch.setattr(we_shots, "_run", lambda m, extra, timeout: "automation: loading map x\n")
+    with pytest.raises(RuntimeError, match="v61"):
+        we_shots.bake("D:/somewhere")
+
+
+def test_a_failed_script_is_reported(monkeypatch):
+    monkeypatch.setattr(we_shots, "_run",
+                        lambda m, extra, timeout: "automation: script C:/x.py -> FAILED\n")
+    with pytest.raises(RuntimeError, match="raised"):
+        we_shots.run_script("D:/somewhere", __file__)
+    monkeypatch.setattr(we_shots, "_run", lambda m, extra, timeout: "automation: script C:/x.py -> ok\n")
+    assert "-> ok" in we_shots.run_script("D:/somewhere", __file__)
