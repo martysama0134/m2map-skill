@@ -119,7 +119,7 @@ def _sector_xy(name: str) -> Tuple[int, int]:
 
 
 def audit(map_dir, corpus_root=None, property_crcs: Optional[Iterable[int]] = None,
-          textureset_dir=None) -> List[Finding]:
+          textureset_dir=None, quality: bool = True) -> List[Finding]:
     """Run every check. Returns findings sorted worst-first."""
     view = resolve(map_dir, corpus_root)
     out: List[Finding] = []
@@ -457,6 +457,14 @@ def audit(map_dir, corpus_root=None, property_crcs: Optional[Iterable[int]] = No
             "Generate it before deploying."))
 
     order = {s: i for i, s in enumerate(SEVERITIES)}
+    # quality: maps that load and play but were never finished (`audit/quality.py`)
+    if quality and not view.is_proxy:
+        from .quality import quality as _quality
+        try:
+            out.extend(_quality(view, textureset_dir))
+        except Exception as exc:                           # noqa: BLE001
+            out.append(Finding("M2MAP-QA-000", "info", str(root),
+                               "The quality pass could not run.", repr(exc)[:200]))
     out.sort(key=lambda f: (order.get(f.severity, 9), f.rule, f.where))
     return out
 

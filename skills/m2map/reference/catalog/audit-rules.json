@@ -857,6 +857,69 @@
    "predicate": "boundary cells >= 40 AND submerged share of the plane < 0.80 AND exposed boundary share > 0.30. Cells on the sector rim are excluded, since the plane usually continues into the neighbour.",
    "fix": "Widen the plane past the basin rather than clipping it to the water (gen/water.py PLANE_OVERRUN, 1.2x the basin radius), so the terrain rising through it draws the waterline.",
    "corpus": "Exposed boundary share: metin2_map_c1 0.3%, metin2_map_b1 0.4%, metin2_map_n_desert_01 1.2%, metin2_map_a1 2.5%. Fires on 5 of 142 shipped maps -- devilscatacomb, milgyo, 12zi_stage, eastplain_01 and _03 -- all interiors or near-flooded, where a decorative pool set into a carved floor has no shore to get wrong. INFO for that reason; on an outdoor shore it is real."
+  },
+  {
+   "id": "M2MAP-QA-001",
+   "severity": "major",
+   "scope": "map",
+   "symptom": "Players walk up painted cliffs: rock-textured slopes with no block on them.",
+   "checks": "Of the tiles painted with a stone/rock/cliff/mountain texture (by file name) on ground of 25 deg or more, the share whose attr has no BLOCK.",
+   "reads": [
+    "<map>/<sector>/tile.raw",
+    "<map>/<sector>/height.raw",
+    "<map>/<sector>/attr.atr",
+    "<textureset>"
+   ],
+   "predicate": "steep rock tiles >= 2000 AND walkable share > 0.30. Skipped when TerrainVisible is 0.",
+   "fix": "Block the rock skin -- rule 19: the cliff paint covers exactly the ground the player cannot walk on -- and regenerate server_attr.",
+   "corpus": "Walkable share of steep rock: median 0.6%, p95 7.5%, worst metin2_map_n_flame_01 15%. Fires on 0 of 116 maps with terrain.",
+   "spec": "audit/quality.py"
+  },
+  {
+   "id": "M2MAP-QA-002",
+   "severity": "major",
+   "scope": "map",
+   "symptom": "The whole map is walkable -- mountains, cliffs, the map edge: nobody made the attr.",
+   "checks": "Blocked share of the stitched attr grid.",
+   "reads": [
+    "<map>/<sector>/attr.atr"
+   ],
+   "predicate": "blocked share < 0.02.",
+   "fix": "Generate the attr: block steep ground, the rock skin and the border band; regenerate server_attr (rules 5, 14).",
+   "corpus": "Blocked share: p5 44%, median 85%, least metin2_map_smhgate_c1 8.6%. Fires on 0 of 116.",
+   "spec": "audit/quality.py"
+  },
+  {
+   "id": "M2MAP-QA-003",
+   "severity": "minor",
+   "scope": "map",
+   "symptom": "A road painted with hard straight edges -- it may read as pasted on (flag only: some styles want it).",
+   "checks": "For each palette slot the road classifier (mine/roads.py) calls a road: road tiles within 3 m of its edge with at most one road neighbour -- the loose tiles a dithered rim is made of -- per 100 m of edge.",
+   "reads": [
+    "<map>/<sector>/tile.raw",
+    "<textureset>"
+   ],
+   "predicate": "road slot >= 2000 tiles AND specks per 100 m of edge < 2.0.",
+   "fix": "Dither the rim ~3 m into the ground with a sibling of the road texture (rule 19, taste.md 1.9).",
+   "corpus": "146 official roads: p5 7.1, median 24 per 100 m. Three are hard-edged too -- map_b_fielddungeon slot 11, gm_guild_build slot 7, metin2_map_smhgate_devils slot 1 -- which is why it is minor and only a flag.",
+   "spec": "audit/quality.py"
+  },
+  {
+   "id": "M2MAP-QA-004",
+   "severity": "minor",
+   "scope": "map",
+   "symptom": "The map edge is open -- no mountain, no wall of buildings, no water horizon: the player sees where the world stops.",
+   "checks": "The map edge in 16 m stretches, each judged on the outer 30 m: void (mostly unpainted), water (> 30% water attr), wall (median height > 5 m over the walkable interior, mostly blocked, or >= 60% of its length under a Building >= 4 m tall -- a castle's curtain wall), else open. The longest run of open stretches.",
+   "reads": [
+    "<map>/<sector>/height.raw",
+    "<map>/<sector>/attr.atr",
+    "<map>/<sector>/tile.raw",
+    "<map>/<sector>/areadata.txt"
+   ],
+   "predicate": "an open run > 64 m. Skipped when TerrainVisible is 0. Up to 64 m passes: an entrance, the S-shaped kind included, measures <= 32 m at the edge in the corpus.",
+   "fix": "Wall it in -- border ridge (taste.md, ring lift median 13.5 m) or a curtain wall of buildings -- or end it in water; leave a gap only where an entrance bends out of sight (thunder_zone_gate_east).",
+   "corpus": "Open edge on 66 of 68 outdoor maps: 0 m; the rest <= 32 m. The three smhgate stages (one walled town sector amid unpainted ones) read as void, not open. Fires on 0 of 116.",
+   "spec": "audit/quality.py"
   }
  ]
 }

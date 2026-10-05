@@ -27,6 +27,7 @@ Priority order:
 1. **Explicit keyword**: args start with `generate`, `improve`, `audit`, `merge`, `readapt`, `reskin`, `server` or `register` → that mode
 1b. **One map that is already a merge** — "connect them", "join the maps with a road", "gaps / slits where the maps meet", "the merged maps are at different heights", or an audit showing `M2MAP-HGT-001` → **readapt mode**. Merging is step one and MapForge does it; readapt is step two
 1a. **Pasted `areadata.txt` text** (`AreaDataFile`, `Start Object000` …) or "register / save this group / pattern for later" → **register mode**. A paste is a selection to keep, not a map to audit
+1c. **"Is this map finished / low quality / what's wrong with this mapper's map"** → **audit mode**; the `M2MAP-QA-*` quality rules flag walkable cliffs, missing attr, ruler-cut roads and open map edges (`modes/audit.md`)
 2. **Symptom report**: args contain a visible-fault phrase ("objects don't show", "falls through the floor", "blocked in open ground", "error texture", "map won't load", "seams", "blank minimap", "walks on water") → **audit mode first**, then `improve` if a fix is wanted
 3. **Two or more map paths**, or "combine"/"stitch"/"expand" → merge mode
 4. **One map path + a biome word** ("make it snowy", "desert version") → reskin mode
