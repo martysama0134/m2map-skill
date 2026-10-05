@@ -1,7 +1,7 @@
 {
   "name": "m2map",
   "description": "Metin2 map generator — generate, improve, audit, merge, reskin and populate maps using conventions distilled from the official map corpus",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "author": {
     "name": "martysama0134"
   }

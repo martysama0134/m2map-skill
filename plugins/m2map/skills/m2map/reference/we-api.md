@@ -38,14 +38,23 @@ the editor's About box. On v61:
 | `DrawHeightBrush` always draws on the edit terrain | lands on the sector its global cells name |
 | `GetMapBounds` / `GetTerrainWorldBounds` mix cm and cells | cm |
 | `GetPropertyType` / `GetPropertyExtension` swapped | `GetPropertyType("Building") -> int`, `GetPropertyExtension(int) -> ".prb"` |
-| `GetObjectList` / `GetBrushType` stubs | `GetObjectList([sx, sy])` -> `(x, y, z, crc, yaw, pitch, roll, bias)` per record; `GetBrushType` real |
+| `GetObjectList` / `GetBrushType` stubs | `GetObjectList(sx, sy)` -- or `([sx, sy])` / `((sx, sy))` since fixme100; before it a list silently answered for the edit sector -- -> `(x, y, z, crc, yaw, pitch, roll, bias)` per record; `GetObjectList()` = the edit sector; `GetBrushType` real |
 | CRCs signed | unsigned (`GetObjectData`, `GetObjectList`, `GetLastSelectedObjectData`) |
 | `SetObjectHeightBias` does not move the instance | it does |
 | `GetTerrainNumFromCoord` aliases off-window sectors into wrong slots (§1.4) | -1 outside the 3x3 window |
-| `GetWaterHeight` samples the wrong cell (200/128) | right cell |
-| `UpdateMap` unreachable, whole-map loops cover 9 sectors (§1.4) | **`GotoSector(sx, sy)`** moves the window; wrapper `ForEachSector(fn)` |
+| `GetWaterHeight` samples the wrong cell (200/128) | right cell. It answers **world cm** (the engine's `CTerrain::GetWaterHeight` returns raw / 2, the game's unit for a surface); `DrawWaterBrush` takes **raw**, and `water.wtr` stores raw -- a 35050 raw brush reads back 17525 |
+| `UpdateMap` unreachable, whole-map loops cover 9 sectors (§1.4) | **`GotoSector(sx, sy)`** moves the window **and the edit sector** (fixme100: before it the edit sector stayed where the mouse last picked, so `DeleteObjectsByCRCList(..., 0)` deleted from the wrong sector); wrapper `ForEachSector(fn)` |
+| `InitBaseTexture` rewrote `tile.raw` on disk only: nothing changed on screen and the next save put the old tiles back | fixme100: the terrains in memory reload, so the view and `--save` agree |
 | No script entry point but F5 (§0) | **`--script file.py`** headless, after the map settles; `--save` after it |
 | `--regen` bakes black minimaps (§5) | **`--bake`** (F6 after 10 settle frames), `--bake-shadows`, `--bake-minimap`; `WorldEditor.Bake([mask])` |
+
+**Verified live on v61, then read back from the saved files with this skill's codecs**
+(`tests/test_we_live.py`, opt-in: `M2MAP_WE_LIVE=1`, on a copy of corpus a1):
+`DrawHeightPixel`, `SetHeightAt`, `DrawHeightRegion` (inverted corners swap),
+`DrawHeightBrush`, `DrawTextureBrush`, `DrawWaterBrush` (a new layer at the raw height
+asked), `DrawAttrBrush` and its erase, `DeleteObjectsByCRCList(scope 0)` after
+`GotoSector`, `InsertObject` (exact x/y, bias, roll), `InitBaseTexture`; and every grid of
+every sector outside those spots byte-identical after `--save`.
 
 From this skill: `m2map.edit.we_shots.bake(map)` / `run_script(map, file.py, save=)`,
 and `build_map.py --bake`. Both check the editor's `log.txt` (a v61 Release build
