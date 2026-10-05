@@ -42,7 +42,7 @@ jobs:
       # setup-python does not ship pytest. Without this the gate printed
       # "pytest SKIP" and exited 0, so CI ran no unit tests while looking green.
       - name: Install test dependencies
-        run: pip install pytest numpy pillow
+        run: pip install pytest numpy pillow opencv-python-headless
 
       # The full gate, not just the sync check: this also runs
       # scrub_paths.py --check (the host-path leak gate) and the unit tests.
@@ -64,7 +64,7 @@ jobs:
           python-version: '3.11'
 
       - name: Install test dependencies
-        run: pip install pytest numpy pillow
+        run: pip install pytest numpy pillow opencv-python-headless
 
       - name: Configure git identity
         run: |
