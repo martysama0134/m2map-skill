@@ -110,6 +110,20 @@ SEAM_MAX_DEPTH_CM = 100.0
 #: Ymir does step its rivers -- a1's runs 5 levels over 85 m -- so a real drop
 #: stays a step; a lake cut into bands a metre apart does not.
 LEVEL_SPAN_CM = 300.0
+#: Two levels may only meet where TERRAIN parts them: the shared edge buried in
+#: ground over the higher surface. "Two water levels close enough will always be
+#: terrible" (the user); the corpus agrees -- visible contact edges run 0-36 a
+#: map (12zi_stage 509, e1 75 aside), the test river 188. Over this: WTR-006.
+CONTACT_MAX = 40
+#: Separating them: the upper plane is pulled back off the drop through cells it
+#: covers deeper than SEP_DEPTH_CM (up to SEP_REACH cells), and a sill raised to
+#: SILL_CM over its surface under its new edge.
+SEP_DEPTH_CM = 100.0
+#: 12 cells left a 6.5 m dam mid-slab on the test river: a slab that wide IS the
+#: fault, so it is pulled back until the upper water is shallow, wherever that is.
+SEP_REACH = 256
+SILL_CM = 30.0
+SILL_HOLD, SILL_FEATHER = 1, 6
 BANK_HOLD = 2
 BANK_FEATHER = 6
 
@@ -421,6 +435,14 @@ def water_findings(g: Grids) -> List[Dict]:
                               % (len(banded), LEVEL_SPAN_CM / 100,
                                  ", ".join("%.1f-%.1f m" % (g_[0] / 100, g_[-1] / 100) for _, g_ in banded[:4]),
                                  int(holes.sum()))})
+    n_contacts, up_cells, _ = level_contacts(g)
+    if n_contacts > CONTACT_MAX:
+        out.append({"rule": "M2MAP-WTR-006", "severity": "minor", "fix": "water",
+                    "where": Q._where(np.repeat(np.repeat(up_cells, 2, 0), 2, 1)[:H, :W]),
+                    "symptom": "Two water levels meet in the open: a slab of water hangs over the lower one.",
+                    "detail": "%d cell edges where two levels touch with no terrain between them "
+                              "(official maps 0-36 bar 12zi_stage and e1) -- levels must be parted by "
+                              "ground, or be one level" % n_contacts})
     b, exposed = _shore(g)
     if b.sum() >= 40 and exposed.sum() > SHORE_EXPOSED_MAX * b.sum():
         e_t = np.repeat(np.repeat(exposed, 2, 0), 2, 1)[:H, :W]
@@ -466,12 +488,16 @@ def _shift(a, dy, dx, fill):
     return out
 
 
-def fix_water(g: Grids, region: np.ndarray) -> str:
+def fix_water(g: Grids, region: np.ndarray, level_span_cm: float = LEVEL_SPAN_CM,
+              merge_levels: bool = True) -> str:
     """WTR-005, then WTR-004 and ATR-002. The plane is carried out over the
     shallows until the terrain rises through it -- the corpus waterline is drawn
     by the ground, not by the plane's 2 m grid (`gen/water.py` PLANE_OVERRUN) --
     and then the WATER bit is made to match the water the player sees."""
     rc = region[::2, ::2][:g.water.shape[0], :g.water.shape[1]]
+    merged = fix_water_level(g, region, level_span_cm) if merge_levels else ""
+    contacts0 = level_contacts(g)[0]
+    pulled, sills = _separate_levels(g, rc)
     holes0 = int(seam_holes(g).sum())
     seams = _close_seams(g, rc)
     _, exp0 = _shore(g)
@@ -520,7 +546,10 @@ def fix_water(g: Grids, region: np.ndarray) -> str:
         ys, xs = np.nonzero(exp0)
         k = len(ys) // 2
         g.spots["shore"] = (float(xs[k] * 2), float(ys[k] * 2))
-    return ("water: seam holes between levels %d -> %d (%d cells given to the upper level); "
+    return ((merged + "; " if merged else "") +
+            "water: levels meeting with no terrain between %d -> %d edges (%d cells of hanging "
+            "slab pulled back, %d cells of sill); " % (contacts0, level_contacts(g)[0], pulled, sills) +
+            "seam holes between levels %d -> %d (%d cells given to the upper level); "
             "plane carried %d m2 onto its shore, banked %d m of perched edge, exposed edge "
             "%d -> %d of %d cells; %s; WATER cleared from %d cells with no water over them"
             % (holes0, int(seam_holes(g).sum()), seams,
@@ -602,8 +631,8 @@ def _level_groups(levels, span_cm):
 
 
 def fix_water_level(g: Grids, region: np.ndarray, span_cm: float = LEVEL_SPAN_CM) -> str:
-    """One level for each run of a body's levels within span_cm: the level that
-    changes least which cells show water. A lake cut into bands shows its band
+    """One level for each run of a body's levels within span_cm: the lowest, so
+    the upper reach shows its ground instead of water standing over the lower. A lake cut into bands shows its band
     edges as strips of sand (the user, on the first curated map); a real drop of
     a river stays a step."""
     rc = region[::2, ::2][:g.water.shape[0], :g.water.shape[1]]
@@ -614,11 +643,93 @@ def fix_water_level(g: Grids, region: np.ndarray, span_cm: float = LEVEL_SPAN_CM
             cells = body & rc & np.isin(g.water, grp)
             if not cells.any():
                 continue
-            vis0 = g.water[cells] > low[cells]
-            best = min(grp, key=lambda L: (int(((L > low[cells]) != vis0).sum()), L))
+            # the LOWEST level: it floods nothing and perches nothing. Picking the
+            # one that kept most water visible chose 5.5 m for a 3.1-5.5 m reach,
+            # stood it over 1-3 m ground and the shore fix built 4.8 m dykes
+            best = grp[0]
             g.water[cells] = best
             done.append("%d levels %.1f-%.1f m -> %.1f m" % (len(grp), grp[0] / 100, grp[-1] / 100, best / 100))
     return "water_level: %s" % ("; ".join(done) or "no body has levels within %.0f m of each other" % (span_cm / 100))
+
+
+def level_contacts(g: Grids):
+    """Edges where two water levels meet with no terrain between: both cells wet,
+    levels apart, and a vertex of the shared edge under the higher surface.
+    Returns (edge count, upper-side cells, the lower level each of them meets)."""
+    w, h = g.water, g.height
+    up_cells = np.zeros(w.shape, bool)
+    meets = np.full(w.shape, -np.inf)
+    n = 0
+    with np.errstate(invalid="ignore"):
+        for axis in (0, 1):
+            if axis == 1:
+                a, b = w[:, :-1], w[:, 1:]
+                e = np.minimum(h[:-1, 1:-1], h[1:, 1:-1])
+            else:
+                a, b = w[:-1, :], w[1:, :]
+                e = np.minimum(h[1:-1, :-1], h[1:-1, 1:])
+            m = np.isfinite(a) & np.isfinite(b) & (np.abs(a - b) > 10.0) & (e < np.maximum(a, b))
+            n += int(m.sum())
+            a_up, b_up = m & (a > b), m & (b > a)
+            sa = (slice(None), slice(0, -1)) if axis == 1 else (slice(0, -1), slice(None))
+            sb = (slice(None), slice(1, None)) if axis == 1 else (slice(1, None), slice(None))
+            up_cells[sa] |= a_up
+            up_cells[sb] |= b_up
+            meets[sa] = np.where(a_up, np.maximum(meets[sa], b), meets[sa])
+            meets[sb] = np.where(b_up, np.maximum(meets[sb], a), meets[sb])
+    return n, up_cells, meets
+
+
+def _separate_levels(g: Grids, rc: np.ndarray) -> Tuple[int, int]:
+    """Part every pair of touching levels with terrain. The upper plane is pulled
+    back off the drop -- through the cells it covers more than SEP_DEPTH_CM deep,
+    the slab that hung over the slope -- each of them handed to the lower level
+    where the ground is under it, left dry where not; then the ground under the
+    upper plane's new edge is raised SILL_CM over its surface, so both planes end
+    inside terrain."""
+    pulled = sills = 0
+    low = _low_corner(g)
+    for _ in range(4):
+        n, up_cells, meets = level_contacts(g)
+        if not n:
+            break
+        for L in sorted({float(v) for v in g.water[up_cells & rc]}, reverse=True):
+            mine = (g.water == L) & rc
+            seed = up_cells & mine
+            if not seed.any():
+                continue
+            lower = float(meets[seed].max())
+            deep = mine & ((L - low) > SEP_DEPTH_CM)
+            slab = seed & deep
+            for _ in range(SEP_REACH):
+                nxt = (slab | _shift(slab, 1, 0, False) | _shift(slab, -1, 0, False)
+                       | _shift(slab, 0, 1, False) | _shift(slab, 0, -1, False)) & deep
+                if (nxt == slab).all():
+                    break
+                slab = nxt
+            g.water[slab & (low < lower)] = lower
+            g.water[slab & (low >= lower)] = -np.inf
+            pulled += int(slab.sum())
+            # the new edge of the upper plane, wherever it meets lower water or dry ground
+            left = (g.water == L) & rc
+            other = ~(g.water == L)
+            edge = left & (_shift(other, 1, 0, False) | _shift(other, -1, 0, False)
+                           | _shift(other, 0, 1, False) | _shift(other, 0, -1, False))
+            edge &= _dilate_cells(slab | seed, 1)
+            # the sill: up to SILL_CM over the upper surface under the plane's new
+            # edge, eased down the dry side and into the lower water
+            _raise_eased(g, _cell_vertices(edge, np.full(edge.shape, L + SILL_CM)),
+                         left & ~edge, rc, SILL_HOLD, SILL_FEATHER)
+            sills += int(edge.sum())
+            low = _low_corner(g)
+    return pulled, sills
+
+
+def _dilate_cells(m, k):
+    out = m.copy()
+    for _ in range(k):
+        out = out | _shift(out, 1, 0, False) | _shift(out, -1, 0, False) | _shift(out, 0, 1, False) | _shift(out, 0, -1, False)
+    return out
 
 
 def _flood(seed, within):
@@ -646,34 +757,45 @@ def _bank(g: Grids, rc: np.ndarray) -> int:
     if not rim.any():
         return 0
     g.water[rim] = best[rim]
+    _raise_eased(g, _cell_vertices(rim, best + BANK_CM), np.isfinite(g.water) & ~rim, rc,
+                 BANK_HOLD, BANK_FEATHER)
+    return int(rim.sum())
+
+
+def _cell_vertices(cells, values):
+    """Per vertex, the highest value of the cells it is a corner of (-inf: none)."""
+    vh, vw = cells.shape[0] + 1, cells.shape[1] + 1
+    out = np.full((vh, vw), -np.inf)
+    v = np.where(cells, values, -np.inf)
+    for dy in (0, 1):
+        for dx in (0, 1):
+            out[dy:dy + cells.shape[0], dx:dx + cells.shape[1]] = np.maximum(
+                out[dy:dy + cells.shape[0], dx:dx + cells.shape[1]], v)
+    return out
+
+
+def _raise_eased(g: Grids, target: np.ndarray, keep_cells: np.ndarray, rc: np.ndarray,
+                 hold: int, feather: int) -> None:
+    """Raise the ground to `target` (per vertex, -inf = leave), hold it for `hold`
+    vertices outward, then ease it back to the old ground over `feather` more --
+    a landform, not a kerb. Vertices of `keep_cells` (water that must keep its
+    depth) and outside the region are never touched by the easing. Objects ride."""
     vh, vw = g.height.shape
-    target = np.full((vh, vw), -np.inf)                    # per vertex
-    for dy in (0, 1):
-        for dx in (0, 1):
-            t = np.full((vh, vw), -np.inf)
-            t[dy:dy + rim.shape[0], dx:dx + rim.shape[1]] = np.where(rim, best + BANK_CM, -np.inf)
-            target = np.maximum(target, t)
-    wetv = np.zeros((vh, vw), bool)                        # vertices of water cells keep their depth
-    wet = np.isfinite(g.water) & ~rim
-    for dy in (0, 1):
-        for dx in (0, 1):
-            wetv[dy:dy + wet.shape[0], dx:dx + wet.shape[1]] |= wet
-    rv = np.zeros((vh, vw), bool)                          # the region, on vertices
-    rv[:-1, :-1] |= rc
-    rv[1:, 1:] |= rc
+    keepv = np.isfinite(_cell_vertices(keep_cells, np.zeros(keep_cells.shape)))
+    rv = np.isfinite(_cell_vertices(rc, np.zeros(rc.shape)))
     old = g.height.copy()
     on = np.isfinite(target)
     g.height[on] = np.maximum(g.height[on], target[on])
-    # feather outward over dry vertices, so the bank is a slope, not a kerb
     ring = on.copy()
     reach = target.copy()
-    for k in range(1, BANK_HOLD + BANK_FEATHER + 1):
+    for k in range(1, hold + feather + 1):
         grow = np.maximum.reduce([_shift(reach, dy, dx, -np.inf)
                                   for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1))])
-        nxt = np.isfinite(grow) & ~ring & ~wetv & rv
+        nxt = np.isfinite(grow) & ~ring & ~keepv & rv
         # held flat, then eased down: a 30 cm lip falling straight back to the
-        # perched-under ground drew a dark kerb along the shore
-        t = max(0.0, (k - BANK_HOLD) / float(BANK_FEATHER + 1))
+        # perched-under ground drew a dark kerb along the shore, and a one-cell
+        # sill between two water levels stood as a wall with a 4 m cliff behind it
+        t = max(0.0, (k - hold) / float(feather + 1))
         w = 1.0 - t * t * (3.0 - 2.0 * t)
         lift = np.where(nxt, old + (grow - old) * w, -np.inf)
         g.height[nxt] = np.maximum(g.height[nxt], lift[nxt])
@@ -681,7 +803,6 @@ def _bank(g: Grids, rc: np.ndarray) -> int:
         ring |= nxt
     dz = g.height - old
     g.objects_dz = dz if g.objects_dz is None else g.objects_dz + dz
-    return int(rim.sum())
 
 
 def _rock_skin(lift, weight, slope, region, rng):
@@ -924,7 +1045,10 @@ def curate(map_dir, fixes: Sequence[str], sectors: Optional[Iterable[str]] = Non
     for name in ("border", "water_level", "water", "attr", "rock", "road"):
         if name not in fixes:
             continue
-        fn = {"attr": fix_attr, "rock": fix_rock, "water": fix_water,
+        if name == "water_level" and "water" in fixes:
+            continue                                        # `water` merges the levels itself
+        fn = {"attr": fix_attr, "rock": fix_rock,
+              "water": lambda g_, r_: fix_water(g_, r_, level_span_cm),
               "water_level": lambda g_, r_: fix_water_level(g_, r_, level_span_cm)}.get(name)
         if fn:
             lines.append(fn(g, region))

@@ -256,3 +256,20 @@ def test_the_rim_takes_its_trees_off_the_bare_rock(flat, tmp_path):
     assert gone > 0 and any("trees taken off" in c for c in rep["changes"])
     assert sum(r.crc not in trees for r in before) == sum(r.crc not in trees for r in after), \
         "only trees go, and only off the rock (keep the scatter)"
+
+
+def test_two_levels_never_meet_without_terrain_between(flat, tmp_path):
+    """The user's rule: different levels only where ground parts them; levels
+    close together become one. The fixture river's 5 m drop hung a slab of upper
+    water over the slope (188 open contact edges, corpus 0-36)."""
+    m = copy(flat, tmp_path)
+    g = curate.load(m, ts(m))
+    assert "M2MAP-WTR-006" in {f["rule"] for f in curate.water_findings(g)}
+    curate.fix_water(g, curate.region_mask(g, None))
+    assert curate.level_contacts(g)[0] == 0
+    levels = sorted({round(float(v)) for v in g.water[np.isfinite(g.water)]})
+    assert all(b - a > curate.LEVEL_SPAN_CM for a, b in zip(levels, levels[1:]))
+    # the sill is a landform: no vertex stands more than 3 m over a neighbour
+    h = g.height
+    assert max(np.abs(np.diff(h, axis=0)).max(), np.abs(np.diff(h, axis=1)).max()) < \
+        max(300.0, np.abs(np.diff(g.orig["height"], axis=0)).max() + 1)

@@ -920,6 +920,21 @@
    "fix": "Wall it in -- border ridge (taste.md, ring lift median 13.5 m) or a curtain wall of buildings -- or end it in water; leave a gap only where an entrance bends out of sight (thunder_zone_gate_east).",
    "corpus": "Open edge on 66 of 68 outdoor maps: 0 m; the rest <= 32 m. The three smhgate stages (one walled town sector amid unpainted ones) read as void, not open. Fires on 0 of 116.",
    "spec": "audit/quality.py"
+  },
+  {
+   "id": "M2MAP-WTR-006",
+   "severity": "minor",
+   "scope": "map",
+   "symptom": "Two water levels meet in the open: a slab of the upper one hangs over the lower, its edge a wall of water.",
+   "checks": "Edges between two wet 2 m cells whose levels differ (> 10 cm) where a vertex of the shared edge is under the higher surface -- the seam is not buried in terrain.",
+   "reads": [
+    "<map>/<sector>/water.wtr",
+    "<map>/<sector>/height.raw"
+   ],
+   "predicate": "open contact edges > 40, map-wide (planes run across sectors).",
+   "fix": "Levels close together become one (the lowest: it floods and perches nothing); levels apart are parted by terrain -- the upper plane pulled back off the drop to where it is under 1 m deep, a sill raised 30 cm over it under its new edge and eased down the dry side. curate's `water` fix.",
+   "corpus": "Open contact edges: 0-36 on official maps, 12zi_stage 509 and e1 75 aside; a1 steps its river 5 levels over 85 m and buries every seam. The rule is the user's: \"if you want two different water levels they should be separated by a terrain ... two water levels close enough will always be terrible\".",
+   "spec": "edit/curate.py level_contacts"
   }
  ]
 }
