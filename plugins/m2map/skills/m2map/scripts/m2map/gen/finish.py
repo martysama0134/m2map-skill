@@ -14,6 +14,7 @@ Two things here are easy to get wrong and fatal:
 from __future__ import annotations
 
 import pathlib
+import zlib
 from typing import Dict, List, Sequence, Tuple
 
 import numpy as np
@@ -142,7 +143,9 @@ def _slot_colour(slot: int, palette: Sequence) -> Tuple[int, int, int]:
         "cliff": (122, 116, 110), "shore": (150, 142, 108),
         "accent": (96, 112, 78), "interior": (46, 44, 48),
     }.get(role, (110, 118, 84))
-    jitter = (hash((role, slot)) % 31) - 15
+    # zlib, not hash(): Python salts str hashes per process (spec.stream_seed),
+    # and the minimap differed from one build of the same spec to the next
+    jitter = (zlib.crc32(("%s:%d" % (role, slot)).encode("ascii")) % 31) - 15
     return tuple(int(np.clip(c + jitter, 0, 255)) for c in base)
 
 

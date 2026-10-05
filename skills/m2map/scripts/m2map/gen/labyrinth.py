@@ -823,7 +823,9 @@ class _Builder:
             stubs = []
             for cell, sides in ex.items():
                 piece, roll = self.chosen[cell]
-                for side in sides:
+                # a fixed order: `sides` is a set of letters, which iterates by str
+                # hash -- per process -- and every stub draws from the rng
+                for side in sorted(sides, key=SIDES.index):
                     pt, sk = self.node_socket(piece, roll, self.X[cell[0]], -self.Y[cell[1]], side)
                     stubs.append((cell, side, pt, sk["family"], sk["width"]))
             blocks.append((self.plan.placed, self.plan.extra, stubs, self.plan.seams))

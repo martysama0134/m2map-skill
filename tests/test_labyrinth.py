@@ -184,3 +184,38 @@ def test_trench_build_writes_visible_terrain(tmp_path):
     pipeline.write(b, out)
     text = (out / "setting.txt").read_text()
     assert "TerrainVisible" not in text, "a trench labyrinth IS its terrain"
+
+
+_FINGERPRINT = r'''
+import hashlib, sys
+sys.path.insert(0, sys.argv[1]); sys.path.insert(0, sys.argv[2])
+from test_labyrinth import spec_for, trench_spec
+from m2map.gen import labyrinth
+from m2map.gen.finish import _slot_colour
+h = hashlib.sha256()
+for kit in ("maze", "spider", "whitedragon_01"):
+    pl = labyrinth.plan(spec_for(kit, (4, 4), 7, 0.15))
+    for r in pl.records(0.0):
+        h.update(("%.1f %.1f %d %.1f|" % (r.x, r.y, r.crc, r.roll)).encode())
+    h.update(repr(pl.warps).encode())
+pl = labyrinth.plan(trench_spec(None, (4, 4), 7))
+h.update(pl.raster((pl.size[1] * 256, pl.size[0] * 256), 7)["height"].tobytes())
+h.update(repr([_slot_colour(i, []) for i in range(8)]).encode())
+print(h.hexdigest())
+'''
+
+
+def test_the_same_spec_builds_the_same_labyrinth_in_any_process():
+    """Two processes, two PYTHONHASHSEEDs, one answer. Warp mode walked a set of
+    side letters before drawing from the rng, and the minimap hue jitter used
+    hash() -- both differ per process because Python salts str hashes."""
+    import os
+    import subprocess
+    outs = set()
+    for hs in ("1", "4242"):
+        env = dict(os.environ, PYTHONHASHSEED=hs)
+        r = subprocess.run([sys.executable, "-c", _FINGERPRINT, str(REPO_ROOT / "tests"),
+                            str(SKILL / "scripts")], capture_output=True, text=True, env=env, timeout=600)
+        assert r.returncode == 0, r.stderr[-2000:]
+        outs.add(r.stdout.strip())
+    assert len(outs) == 1, outs
