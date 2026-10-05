@@ -41,9 +41,19 @@ def build_setting(spec: MapSpec) -> st_codec.Setting:
         # The block dungeons hide their terrain: 18 of the corpus's 19
         # `TerrainVisible 0` maps are dungeon_block. Drawn, the plane z-fights
         # every kit floor standing on it -- black streaks across each room.
-        terrain_visible=(0 if (spec.labyrinth is not None
-                               or spec.archetype == "dungeon_block") else None),
+        terrain_visible=_terrain_visible(spec),
     )
+
+
+def _terrain_visible(spec: MapSpec):
+    """0 for a block dungeon, None (the default, visible) otherwise -- and a
+    trench labyrinth IS its terrain, whatever archetype the spec names."""
+    lab = spec.labyrinth
+    if lab is not None and lab.kit.endswith("_trench"):
+        return None
+    if lab is not None or spec.archetype == "dungeon_block":
+        return 0
+    return None
 
 
 def build_map_property(spec: MapSpec) -> st_codec.MapProperty:

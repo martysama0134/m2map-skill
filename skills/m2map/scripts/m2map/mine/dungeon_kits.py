@@ -85,9 +85,12 @@ KITS = {
     "whitedragon_02": ["metin2_map_whitedragoncave_02"],
     "spider": ["metin2_map_spiderdungeon_02", "metin2_map_spiderdungeon_03"],
     "skipia": ["metin2_map_skipia_dungeon_01", "metin2_map_skipia_dungeon_02"],
+    "mt_thunder": ["metin2_map_mt_th_dungeon_01"],
 }
 
 RES = 100.0                 # cm per local cell
+FLOOR_MIN_M2 = 20           # less floor than this: a rider, not a piece
+FOOTPRINT_MIN_M2 = 30       # ... or a smaller bbox (`Mt_Thunder_startroompillar` 18 m2)
 FLOOR_RISE = 400.0          # a floor face lies wholly below this, cm
 WALK_SHARE = 0.25          # open in this share of placements -> walk
 SIDES = ("E", "N", "W", "S")
@@ -239,6 +242,14 @@ def mine_kit(name, maps, corpus, objs, models, dec, verbose=True):
                        "floor": floor_mask(V, T, g), "height": float(V[:, 2].max() - V[:, 2].min()),
                        "seen": np.zeros(g.shape, np.int32), "open": np.zeros(g.shape, np.int32),
                        "inst": []}
+    # A DungeonBlock with next to no floor of its own is not a piece but
+    # something laid on one: `Mt_Thunder_passagepillar` (3 x 3 m, 132 at the
+    # passage joints), the start-room pillars, `anglar_cavegate1_door`. Kept as
+    # riders, so they come back as dressing or are recognised as doors.
+    for crc in [c for c, p in pieces.items()
+                if p["floor"].sum() < FLOOR_MIN_M2
+                or np.prod((p["hi"] - p["lo"]) / RES) < FOOTPRINT_MIN_M2]:
+        del pieces[crc]
 
     # -- walk: shipped attr sampled in each piece's frame ---------------------
     for m, walk, recs in sources:
@@ -305,8 +316,11 @@ def mine_kit(name, maps, corpus, objs, models, dec, verbose=True):
             if best is None:
                 continue
             _d, r, lx, ly = best
+            col, row = int(o.x // RES), int(-o.y // RES)
+            shut = bool(0 <= row < walk.shape[0] and 0 <= col < walk.shape[1]
+                        and not walk[max(0, row - 1):row + 2, max(0, col - 1):col + 2].any())
             riders[r.crc].append((id(r), o.crc, lx, ly, int(round(o.roll)) % 360,
-                                  int(round(o.roll - r.roll)) % 360, o.height_bias))
+                                  int(round(o.roll - r.roll)) % 360, o.height_bias, shut))
 
     # -- assemble --------------------------------------------------------------
     out_pieces = {}
@@ -320,7 +334,7 @@ def mine_kit(name, maps, corpus, objs, models, dec, verbose=True):
         walk_mask = (prob >= WALK_SHARE) & p["floor"]
         socks = _cluster_sockets(contacts.get(crc, []), n, p["lo"], p["hi"])
         _true_lateral(socks, p["floor"], p["grid"])
-        dressing = _cluster_riders(riders[crc], n)
+        dressing = _cluster_riders(riders[crc], n, walk_mask, p["grid"])
         rolls = Counter(int(round(r.roll)) % 360 for _m, r in p["inst"])
         biases = Counter(int(round(r.height_bias)) for _m, r in p["inst"])
         out_pieces[str(crc)] = {
@@ -366,7 +380,7 @@ SIDE_DEG = {"E": 0, "N": 90, "W": 180, "S": 270}
 OPPOSITE = {"E": "W", "W": "E", "N": "S", "S": "N"}
 
 
-def _cluster_riders(rows, n_inst, radius=150.0, min_share=1.0 / 3.0):
+def _cluster_riders(rows, n_inst, walk_mask=None, grid=None, radius=150.0, min_share=1.0 / 3.0):
     """What rides on a piece: riders of one CRC within 1.5 m of each other in the
     piece frame, kept when a third of the placements carry one.
 
@@ -377,20 +391,29 @@ def _cluster_riders(rows, n_inst, radius=150.0, min_share=1.0 / 3.0):
     relative roll is not.
     """
     groups = []
-    for inst, c2, lx, ly, roll, droll, bias in rows:
+    for inst, c2, lx, ly, roll, droll, bias, shut in rows:
         for g in groups:
             if g["crc"] == c2 and math.hypot(g["x"] - lx, g["y"] - ly) < radius:
-                g["rows"].append((inst, lx, ly, roll, droll, bias))
+                g["rows"].append((inst, lx, ly, roll, droll, bias, shut))
                 break
         else:
             groups.append({"crc": c2, "x": lx, "y": ly,
-                           "rows": [(inst, lx, ly, roll, droll, bias)]})
+                           "rows": [(inst, lx, ly, roll, droll, bias, shut)]})
     out = []
     for g in groups:
         k = len({r[0] for r in g["rows"]})
         if k < 2 or k < min_share * n_inst:
             continue
         a = np.array([r[1:] for r in g["rows"]], float)
+        # A door: the rider is shut in the corpus attr where the piece it rides
+        # is open (it stands in a corridor that is walkable in the placements
+        # without it) -- `anglar_cavegate1_door`, 37 of 56 cavegates. Dungeon
+        # logic, never dressing.
+        if walk_mask is not None and a[:, 5].mean() > 0.8:
+            j = int((np.median(a[:, 0]) - grid.x0) // RES)
+            i = int((np.median(a[:, 1]) - grid.y0) // RES)
+            if 0 <= i < grid.ny and 0 <= j < grid.nx and walk_mask[i, j]:
+                continue
         rolls, drolls = Counter(a[:, 2].astype(int)), Counter(a[:, 3].astype(int))
         absolute = rolls.most_common(1)[0][1] > drolls.most_common(1)[0][1]
         out.append({"crc": g["crc"], "x": round(float(np.median(a[:, 0]))),

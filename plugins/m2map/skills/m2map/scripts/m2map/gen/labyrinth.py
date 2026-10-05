@@ -69,6 +69,7 @@ SEAM_CM = 500.0        # a two-socket piece shorter than this is a seam cover:
                        # `skipia_passis4/5` 4.6 m, against `passIs3` 6.2 m, the
                        # shortest real filler
 ROOM_M2 = 2500         # a one-socket piece with more walk than this is a room
+JOG_CM = 300.0         # a straight's two mouths may sit this far off one axis
 ISLAND_M2 = 500        # an island with less walk was never a playable room
 QUANT = 10.0           # cm, the run solver's position step
 WARP_FALLBACK = 929619867   # effect/background/warpgate01.mse
@@ -136,7 +137,13 @@ def _classify(p: Piece) -> None:
     elif n == 2 and OPP[p.sides[0]] == p.sides[1]:
         a, b = p.sockets
         length = abs(a["x"] - b["x"]) if a["side"] in ("E", "W") else abs(a["y"] - b["y"])
-        p.kind = "seam" if length < SEAM_CM else "straight"
+        jog = abs(a["y"] - b["y"]) if a["side"] in ("E", "W") else abs(a["x"] - b["x"])
+        if jog > JOG_CM:
+            # mouths on two different axes: a room the corridor passes
+            # through off-line (`Mt_Thunder_centerroom`, 36 m), not a filler
+            p.kind = "hub"
+        else:
+            p.kind = "seam" if length < SEAM_CM else "straight"
     elif n == 2:
         p.kind = "corner"
     elif n == 3 and len(set(p.sides)) == 3:
@@ -491,6 +498,16 @@ class Plan:
     #: warp gate pairs, engine cm after the shift: what a server quest links
     warps: List[Tuple[Tuple[float, float], Tuple[float, float]]] = field(default_factory=list)
     notes: List[str] = field(default_factory=list)
+    #: a trench labyrinth's geometry (`labyrinth_terrain.TrenchShape`); None
+    #: for a kit of pieces
+    terrain: object = None
+    _raster: object = None
+
+    def raster(self, shape, seed=0):
+        """Trench labyrinths: height, floor, walk and edge distance, once per shape."""
+        if self._raster is None or self._raster["edge"].shape != tuple(shape):
+            self._raster = self.terrain.raster(tuple(shape), seed)
+        return self._raster
 
     def records(self, floor_z: float) -> List[ad.ObjectRecord]:
         sx, sy = self.shift
@@ -507,6 +524,8 @@ class Plan:
 
     def masks(self, shape) -> Tuple[np.ndarray, np.ndarray]:
         """(walk, block) in tile space."""
+        if self.terrain is not None:
+            return self.raster(shape)["walk"], np.zeros(shape, bool)
         h, w = shape
         walk = np.zeros(shape, bool)
         sx, sy = self.shift
@@ -1343,6 +1362,9 @@ class _Builder:
 
 
 def plan(spec: MapSpec, kits_json=KITS_JSON) -> Plan:
+    from . import labyrinth_terrain
+    if spec.labyrinth.kit in labyrinth_terrain.TRENCH_STYLES:
+        return labyrinth_terrain.build(spec, Plan, maze, bfs, sides_of)
     kit = load_kit(spec.labyrinth.kit, kits_json)
     return _Builder(spec, kit).build()
 

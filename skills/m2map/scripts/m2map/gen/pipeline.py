@@ -239,6 +239,9 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
                                               if b.layout else None),
                                     island_berm=(b.layout.island_berm
                                                  if b.layout else None))
+        if lab_plan is not None and lab_plan.terrain is not None:
+            # a trench labyrinth is its own terrain
+            b.height_cm = lab_plan.raster(b.layout.shape, spec.seed)["height"]
         b.slope_deg = terrain.slope_degrees(b.height_cm)
         # Report the PLAYABLE interior, not the whole grid. The border ridge is
         # a 40 deg wall by design, and including it pushed the reported slope
@@ -275,6 +278,9 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
                                 b.wet if b.wet is not None else
                                 np.zeros(b.layout.shape, bool),
                                 submerged=b.submerged)
+        if lab_plan is not None and lab_plan.terrain is not None:
+            from . import labyrinth_terrain
+            b.tiles = labyrinth_terrain.paint(spec, lab_plan.raster(b.layout.shape, spec.seed))
         for line in texture.paint_ground_stamps(spec):
             b.log.append(("! " if "no slot for" in line else "") + line)
         st = texture.stipple_stats(b.tiles)
@@ -286,7 +292,17 @@ def run(spec: MapSpec, bbox_lookup: Optional[Callable] = None,
             spec, b.layout, b.height_cm, b.slope_deg, b.tiles,
             submerged=b.submerged, wet=b.wet, bbox_lookup=bbox_lookup,
             extra=_bridge_tiers(b), keep=keep_objects)
-        if b.layout is not None and b.layout.labyrinth is not None:
+        if b.layout is not None and b.layout.labyrinth is not None \
+                and b.layout.labyrinth.terrain is not None:
+            # a trench labyrinth's gates stand on the trench floor
+            recs = b.layout.labyrinth.records(0.0)
+            vh, vw = b.height_cm.shape
+            for r in recs:
+                cx = min(vw - 1, max(0, int(round(r.x / 200.0))))
+                cy = min(vh - 1, max(0, int(round(-r.y / 200.0))))
+                r.z = float(b.height_cm[cy, cx])
+            b.records = list(b.records) + recs
+        elif b.layout is not None and b.layout.labyrinth is not None:
             # The kit stands a metre over the plane, bias as mined. The corpus
             # keeps its hidden terrain under the floors -- whitedragoncave_01 by
             # 61 cm, anglar by ~4 m, the maze kits by their +20 cm bias -- and a

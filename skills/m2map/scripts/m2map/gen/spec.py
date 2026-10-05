@@ -613,6 +613,9 @@ class LabyrinthSpec:
     entrance: str = "S"
     #: clear margin round the assembly, metres
     margin_m: float = 40.0
+    #: trench kits (`orc_trench`): cut the maze into letters joined by warp
+    #: gates (None = the style's own way, which is letters)
+    islands: Optional[bool] = None
 
     def __post_init__(self):
         self.cells = (int(self.cells[0]), int(self.cells[1]))

@@ -15,7 +15,8 @@ textures:
 height_range_cm: [16383.5, 16384.0]
 labyrinth:
   kit: whitedragon_01      # anglar | whitedragon_01 | whitedragon_02 | skipia | spider
-                           # | maze maze02 maze03 monkey monkey02 monkey03
+                           # | mt_thunder | maze maze02 maze03 monkey monkey02 monkey03
+                           # | orc_trench (no pieces: cut into the terrain, below)
   cells: [5, 5]            # maze cells, columns x rows (2..24)
   loops: 0.15              # share of the leftover walls reopened; 0 = one solution
   pitch_m: null            # null = aimed at the kit's corpus junction spacing
@@ -29,7 +30,7 @@ prints the start and boss positions in metres and every warp pair, and ends
 with `labyrinth check: ... start -> boss REACHABLE`, which is read off the attr
 as written. A `NOT REACHABLE` line is a broken map.
 
-## The six families
+## The families
 
 Sheets in `sheets/`: `<kit>.png` is every piece from above (floor grey, measured
 walk green, sockets red, origin yellow); `layout_<map>.png` is each source map
@@ -45,6 +46,7 @@ are also kept verbatim in `kits.json` (`layouts`, records as
 | `skipia` | `skipia_dungeon_01`, `_02` | path, every junction a 77 m room | 100.6 m | 26 m | `skipia_dungeon.msenv` |
 | `spider` | `spiderdungeon_02`, `_03` | **grid**: every arm of a 5x5 room grid built, the maze shut with fences | 99 m | 26 m | `skipia_dungeon.msenv` |
 | `maze` … `monkey03` | `maze_dungeon1-3`, `monkeydungeon/_02/_03` | **warp**: letter-shaped islands joined by warp gates | 66.5 m | 18-19 m | `moonlight04` / `dark` / `monkeydungeon_02/_03` |
+| `mt_thunder` | `mt_th_dungeon_01` | path: the concentric maze of short passages | 60 m | 22 m | `dark.msenv` |
 
 The maze and monkey dungeons are **one geometry in six skins** — identical
 bboxes, identical layouts, different CRCs. Their textureset is
@@ -61,10 +63,52 @@ over the whole map (archetype 12).
 | skipia | `passi` 63.5, `passis1` 26, `passis2` 12.6 and seven short variants; **`passis4/5` are 1 m seam covers** laid over joints (`seam_rate`) | `passl` 77 | `passt` 76 | `passc` 76 | `passic` | `passp` 80 (boss, one mouth); `skipia_boss` has no measured walk and is not used |
 | spider | — (arms meet tip to tip) | `01` 82 | `02` 100x110 | `03` 100 | `06` | `04` 82x64 (start); `boss03` island (boss, by warp) |
 | maze | `cave01` 63.5 **only** | `cave02` 42x50 | `cave03` 63x50 | — | `cave04` 7x18 | `dungeon01` 85x69 (start), `dungeon02` 84x96 (boss), both islands |
+| mt_thunder | `passage01/02` 12, `passage03` 25; `closinggate` 3.7 a seam (all 46 stand on walkable attr) | `conerroom` 34 | `three-way` 44x33 | — | `startroom`, `finishroom` | `centerroom` 66x88 has its mouths 36 m off one axis and is not used; the joint pillars ride the passages as dressing |
 
 Every piece rides its kit's modal height bias (`anglar` +5, maze +20, skipia 0
 or -178 on the seam covers) and turns by 90 degrees only (98.9-100 % in the
 corpus).
+
+## Trench labyrinths: no pieces at all (`orc_trench`)
+
+`kit: orc_trench` cuts the maze into the terrain instead of laying pieces. It
+was measured on `metin2_map_orclabyrinth` (x 515-770, y 768-1538 m; a user map,
+not in the corpus) and checked against the letter floor of
+`metin2_map_devilscatacomb` (around 18, 553 m) -- which is the maze/monkey
+letter layout carved into terrain. `sheets/trench_orclabyrinth.png` and
+`trench_devilscatacomb.png`: plateau red, wall brown, floor dark, walk green.
+
+| | orclabyrinth | devilscatacomb letters |
+|---|---|---|
+| plateau | 16,384 cm flat, blocked 99.6 % | 21,482 cm rolling |
+| trench depth | **29.5 m** | 36.6 m |
+| floor width | p50 **16 m** (12-22) | 16.7 m |
+| walkable width | p50 **12 m**: the floor less a 2 m rim | 12 m |
+| wall | full height within **8 m** (~75 deg): 7.5 m at 1 m out, 17.9 at 3, 23.9 at 5, 29.5 at 8 | ~25 m run |
+| ridge between trenches | p50 **24 m** (16-30) | -- |
+| paint | floor `dc_field_01`, walls and plateau `dc_rock_01`, `dc_grass_00` patches | `dc_rock_00` |
+| objects | 14 `warpgate01` on letter tips, bias 0 | `warpgate02/03`, ivy, pagodas, bone tunnels |
+
+The generator: the same cell maze at a 40 m pitch (16 m floor + 24 m ridge),
+cut into letters of 4-9 cells (`islands: false` for one connected maze), each
+letter drawn on its own grid with rounded pads on its tips, the letters
+shelf-packed 50 m apart inside a frame ridge (orc: +27-50 m), a gate pair per
+letter along a spanning tree (more only at the `loops` rate), the entrance a
+stub out of the first letter, the boss a 30 m round arena reached by gate. The
+mapspec declares three texture roles -- `floor`, `wall`, `floor_patch` -- and
+the terrain is left visible.
+
+```yaml
+style: box
+attr_style: painted_box
+archetype: dungeon_themed
+environment: dark.msenv
+textures:
+  - {path: "d:/ymir work/terrainmaps/dungeon/devilcave/dc_field_01.dds", role: floor, u_scale: 3.0, v_scale: 3.0}
+  - {path: "d:/ymir work/terrainmaps/dungeon/devilcave/dc_rock_01.dds", role: wall, u_scale: 3.0, v_scale: 3.0}
+  - {path: "d:/ymir work/terrainmaps/dungeon/devilcave/dc_grass_00.dds", role: floor_patch, u_scale: 3.0, v_scale: 3.0}
+labyrinth: {kit: orc_trench, cells: [8, 8], loops: 0.1}
+```
 
 ## What was measured, and how
 
@@ -97,6 +141,11 @@ corpus).
   lattice and its invisible `skipia_collision` posts (6,739 of 6,778). A
   rider's roll is absolute when the world roll is constant (every effect) and
   relative otherwise.
+- **Riders, not pieces**: a DungeonBlock with under 20 m2 of floor or a
+  footprint under 30 m2 is laid on a piece, not joined to one --
+  `Mt_Thunder_passagepillar` (132 at the joints) comes back as dressing. A rider
+  shut in the corpus attr where its host is open is a quest door
+  (`anglar_cavegate1_door`) and is never placed.
 - **Barricade** (spider): a shut socket has its walk blocked 23 m in from the
   tip and 4-7 `ob-7-02-01/02` spiked fences across the mouth 16-19 m in. The
   template is copied verbatim in the socket frame.

@@ -27,7 +27,8 @@ KITS = json.loads((SKILL / "reference/labyrinth/kits.json").read_text(encoding="
 CATALOG = json.loads((SKILL / "reference/catalog/objects.json").read_text(encoding="utf-8"))["objects"]
 
 #: one kit per geometry; the five other maze/monkey skins share `maze`'s
-FAMILIES = ["anglar", "maze", "whitedragon_01", "whitedragon_02", "spider", "skipia"]
+FAMILIES = ["anglar", "maze", "whitedragon_01", "whitedragon_02", "spider", "skipia",
+            "mt_thunder"]
 
 
 def spec_for(kit, cells=(4, 4), seed=3, loops=0.15):
@@ -115,3 +116,71 @@ def test_unbraided_mazes_stay_connected(kit, seed):
     plan = labyrinth.plan(spec_for(kit, cells=(3, 3), seed=seed, loops=0.0))
     line = labyrinth.reach_check(plan, attr_of(plan))[0]
     assert "NOT" not in line, line
+
+
+def test_pillars_and_doors_are_not_pieces():
+    """A DungeonBlock with no floor of its own rides a piece: the mt_thunder
+    joint pillars come back as dressing, anglar's quest doors not at all."""
+    kit = labyrinth.load_kit("mt_thunder")
+    names = {p.name for p in kit.pieces.values()}
+    assert "Mt_Thunder_passagepillar" not in names
+    assert "Mt_Thunder_startroompillar" not in names
+    pillar = 2874598244
+    assert any(d["crc"] == pillar for p in kit.pieces.values() for d in p.dressing)
+    anglar = labyrinth.load_kit("anglar")
+    door = 3565590118
+    assert not any(d["crc"] == door for p in anglar.pieces.values() for d in p.dressing)
+
+
+def test_offset_mouths_are_not_fillers():
+    kit = labyrinth.load_kit("mt_thunder")
+    centre = next(p for p in kit.pieces.values() if p.name == "Mt_Thunder_centerroom")
+    assert centre.kind != "straight"
+
+
+# --- trench labyrinths: the maze cut into the terrain -----------------------
+
+def trench_spec(islands=None, cells=(6, 6), seed=5):
+    from m2map.gen.spec import TextureSlot
+    s = spec_for("orc_trench", cells=cells, seed=seed, loops=0.1)
+    s.labyrinth.islands = islands
+    s.archetype = "dungeon_themed"
+    s.textures = [TextureSlot(path="d:/ymir work/terrainmaps/dungeon/devilcave/dc_field_01.dds", role="floor"),
+                  TextureSlot(path="d:/ymir work/terrainmaps/dungeon/devilcave/dc_rock_01.dds", role="wall"),
+                  TextureSlot(path="d:/ymir work/terrainmaps/dungeon/devilcave/dc_grass_00.dds", role="floor_patch")]
+    return s
+
+
+@pytest.mark.parametrize("islands", [None, False])
+def test_trench_is_reachable_and_cut_to_the_measured_depth(islands):
+    from m2map.gen import labyrinth_terrain as LT
+    spec = trench_spec(islands)
+    plan = labyrinth.plan(spec)
+    shape = (plan.size[1] * 256, plan.size[0] * 256)
+    ras = plan.raster(shape, spec.seed)
+    st = LT.TRENCH_STYLES["orc_trench"]
+    walk, floor = ras["walk"], ras["floor"]
+    assert walk.any() and not (walk & ~floor).any(), "walk lies inside the floor"
+    hv = ras["height"]
+    fl = floor[::2, ::2][:hv.shape[0], :hv.shape[1]]
+    depth = st["plateau_cm"] - np.median(hv[:fl.shape[0], :fl.shape[1]][fl])
+    assert abs(depth - st["depth_cm"]) < 300, depth
+    cells = np.ones(shape, np.uint8)
+    cells[walk] = 0
+    line = labyrinth.reach_check(plan, cells)[0]
+    assert "NOT" not in line, line
+    if islands is None:
+        assert len(plan.warps) >= 2, "letters joined by gates"
+    for r in plan.records(0.0):
+        assert str(r.crc) in CATALOG
+
+
+def test_trench_build_writes_visible_terrain(tmp_path):
+    from m2map.gen import pipeline
+    spec = trench_spec(cells=(4, 4))
+    b = pipeline.run(spec)
+    assert any("REACHABLE" in l and "NOT" not in l for l in b.log)
+    out = tmp_path / "map"
+    pipeline.write(b, out)
+    text = (out / "setting.txt").read_text()
+    assert "TerrainVisible" not in text, "a trench labyrinth IS its terrain"
